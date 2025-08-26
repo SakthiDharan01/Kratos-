@@ -4,20 +4,27 @@ import Layout from '@/components/Layout'
 import EventCard from '@/components/EventCard'
 import { motion } from 'framer-motion'
 import { Event } from '@/lib/store'
+import { useEffect, useState } from 'react'
+import { fetchEvents } from '@/lib/events'
+import { EventModal } from '@/components/EventModal'
 
 export default function PreEventsPage() {
-  // Mock data - replace with actual data from Supabase
-  const events: Event[] = [
-    {
-      id: '3',
-      name: 'Code Hunt',
-      description: 'A treasure hunt but for programmers! Solve coding clues to find the next location.',
-      price: 100,
-      min_team_size: 2,
-      max_team_size: 4,
-      category: 'pre-events'
-    }
-  ]
+  const [events, setEvents] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<Event | null>(null)
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await fetchEvents('pre-events')
+        setEvents(data)
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [])
 
   return (
     <Layout>
@@ -34,19 +41,26 @@ export default function PreEventsPage() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map((event, index) => (
-            <motion.div
-              key={event.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <EventCard event={event} />
-            </motion.div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center text-gray-400 py-20">Loading events...</div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {events.map((event, index) => (
+              <motion.div
+                key={event.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                onClick={() => setSelected(event)}
+                className="cursor-pointer"
+              >
+                <EventCard event={event} />
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
+      <EventModal open={!!selected} onOpenChange={(o) => !o && setSelected(null)} event={selected} />
     </Layout>
   )
 }

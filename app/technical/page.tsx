@@ -4,19 +4,27 @@ import Layout from '@/components/Layout'
 import EventCard from '@/components/EventCard'
 import { motion } from 'framer-motion'
 import { Event } from '@/lib/store'
+import { useEffect, useState } from 'react'
+import { fetchEvents } from '@/lib/events'
+import { EventModal } from '@/components/EventModal'
 
 export default function TechnicalPage() {
-  const events: Event[] = [
-    {
-      id: '4',
-      name: 'Hackathon',
-      description: 'Build innovative solutions in 24 hours. Bring your ideas to life and compete for amazing prizes.',
-      price: 500,
-      min_team_size: 2,
-      max_team_size: 6,
-      category: 'technical'
-    }
-  ]
+  const [events, setEvents] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<Event | null>(null)
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await fetchEvents('technical')
+        setEvents(data)
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [])
 
   return (
     <Layout>
@@ -33,19 +41,26 @@ export default function TechnicalPage() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map((event, index) => (
-            <motion.div
-              key={event.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <EventCard event={event} />
-            </motion.div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center text-gray-400 py-20">Loading events...</div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {events.map((event, index) => (
+              <motion.div
+                key={event.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                onClick={() => setSelected(event)}
+                className="cursor-pointer"
+              >
+                <EventCard event={event} />
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
+      <EventModal open={!!selected} onOpenChange={(o) => !o && setSelected(null)} event={selected} />
     </Layout>
   )
 }
