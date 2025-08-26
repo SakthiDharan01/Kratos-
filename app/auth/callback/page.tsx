@@ -24,17 +24,23 @@ export default function AuthCallbackPage() {
       // Set Zustand state
       setUser({
         id: user.id,
+        phone: user.phone ?? "",
         name: user.user_metadata?.name || "",
         email: user.email || "",
-        avatar_url: user.user_metadata?.avatar_url || "",
+        college: user.user_metadata?.college || "",
+        department: user.user_metadata?.department || "",
+        year: user.user_metadata?.year || ""
       });
       setAuthenticated(true);
       // Optionally, insert/update user in your custom users table
       await supabase.from("users").upsert({
         id: user.id,
+        phone: user.phone ?? "",
         name: user.user_metadata?.name || "",
         email: user.email || "",
-        avatar_url: user.user_metadata?.avatar_url || "",
+        college: user.user_metadata?.college || "",
+        department: user.user_metadata?.department || "",
+        year: user.user_metadata?.year || ""
       });
       router.push("/profile");
     }
