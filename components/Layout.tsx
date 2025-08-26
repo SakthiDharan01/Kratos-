@@ -17,13 +17,13 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
       <AnimatedBackground />
-      <div className="relative z-10">
+      <div className="sticky top-0 z-50">
         <Navbar enableAutoHide={isMainPage} />
         <main className="container mx-auto px-4 py-8">
           {children}
         </main>
       </div>
-      <Toaster 
+      {/* <Toaster 
         position="top-right"
         toastOptions={{
           style: {
@@ -32,7 +32,19 @@ export default function Layout({ children }: LayoutProps) {
             border: '1px solid #dc2626'
           }
         }}
-      />
+      /> */
+      <Toaster 
+          position="top-right"
+          gutter={12} // spacing between toasts
+          toastOptions={{
+            style: {
+              background: '#1a1a1a',
+              color: '#fff',
+              border: '1px solid #dc2626',
+            },
+          }}
+          containerClassName="mt-16 mr-4" // offset below navbar
+        />}
     </div>
   )
 }
