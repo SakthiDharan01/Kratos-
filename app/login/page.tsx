@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useStore } from '@/lib/store'
 import Layout from '@/components/Layout'
+import GoogleLoginButton from '@/components/GoogleLoginButton'
 
 export default function LoginPage() {
   const [step, setStep] = useState<'phone' | 'profile'>('phone')
@@ -58,6 +59,10 @@ export default function LoginPage() {
   return (
     <Layout>
       <div className="max-w-md mx-auto">
+        {/* Add Google Login */}
+        <div className="mb-6">
+          <GoogleLoginButton />
+        </div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -18,6 +18,7 @@ export type Database = {
           department: string
           year: string
           created_at: string
+          photo_url: string | null
         }
         Insert: {
           id?: string
@@ -28,6 +29,7 @@ export type Database = {
           department: string
           year: string
           created_at?: string
+          photo_url?: string | null
         }
         Update: {
           id?: string
@@ -38,6 +40,7 @@ export type Database = {
           department?: string
           year?: string
           created_at?: string
+          photo_url?: string | null
         }
       }
       events: {
@@ -45,6 +48,7 @@ export type Database = {
           id: string
           name: string
           description: string
+          rules: string | null
           price: number
           min_team_size: number
           max_team_size: number
@@ -55,6 +59,7 @@ export type Database = {
           id?: string
           name: string
           description: string
+          rules?: string | null
           price: number
           min_team_size: number
           max_team_size: number
@@ -65,10 +70,78 @@ export type Database = {
           id?: string
           name?: string
           description?: string
+          rules?: string | null
           price?: number
           min_team_size?: number
           max_team_size?: number
           category?: string
+          created_at?: string
+        }
+      }
+      registrations: {
+        Row: {
+          id: string
+          user_id: string
+          total_amount: number
+          status: string
+          payment_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          total_amount: number
+          status: string
+          payment_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          total_amount?: number
+          status?: string
+          payment_id?: string | null
+          created_at?: string
+        }
+      }
+      registration_participants: {
+        Row: {
+          id: string
+          registration_id: string
+          event_id: string
+          name: string
+          email: string
+          phone: string
+          college: string | null
+          department: string | null
+          year: string | null
+          is_leader: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          registration_id: string
+          event_id: string
+          name: string
+          email: string
+          phone: string
+          college?: string | null
+          department?: string | null
+          year?: string | null
+          is_leader: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          registration_id?: string
+          event_id?: string
+          name?: string
+          email?: string
+          phone?: string
+          college?: string | null
+          department?: string | null
+          year?: string | null
+          is_leader?: boolean
           created_at?: string
         }
       }
