@@ -1,6 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { useForm, useFieldArray } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { supabase } from '@/lib/supabase'
 import Layout from '@/components/Layout'
 import { motion } from 'framer-motion'
 import { User, Mail, Building, BookOpen, Calendar, Phone, IndianRupee, CreditCard } from 'lucide-react'
@@ -8,97 +12,98 @@ import { useStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
-interface Participant {
-  name: string
-  email: string
-  college: string
-  department: string
-  year: string
-  phone: string
-}
+
+const participantSchema = z.object({
+  name: z.string().min(1, 'Name required'),
+  email: z.string().email('Invalid email'),
+  phone: z.string().min(10, 'Phone required'),
+  college: z.string().optional(),
+  department: z.string().optional(),
+  year: z.string().optional(),
+})
+
+const formSchema = z.object({
+  events: z.array(z.object({
+    eventId: z.string(),
+    participants: z.array(participantSchema)
+  }))
+})
+
 
 export default function CheckoutPage() {
   const { cart, user, getCartTotal, clearCart } = useStore()
   const router = useRouter()
-  const [participants, setParticipants] = useState<{ [eventId: string]: Participant[] }>({})
   const [loading, setLoading] = useState(false)
-
   const total = getCartTotal()
 
-  const initializeParticipants = (eventId: string, teamSize: number) => {
-    if (!participants[eventId]) {
-      const newParticipants = Array.from({ length: teamSize }, (_, index) => ({
-        name: index === 0 ? user?.name || '' : '',
-        email: index === 0 ? user?.email || '' : '',
-        college: index === 0 ? user?.college || '' : '',
-        department: index === 0 ? user?.department || '' : '',
-        year: index === 0 ? user?.year || '' : '',
-        phone: index === 0 ? user?.phone || '' : ''
+  // Build initial form values
+  const defaultValues = {
+    events: cart.map(item => ({
+      eventId: item.event.id,
+      participants: Array.from({ length: item.teamSize }, (_, idx) => ({
+        name: idx === 0 ? user?.name || '' : '',
+        email: idx === 0 ? user?.email || '' : '',
+        phone: idx === 0 ? user?.phone || '' : '',
+        college: idx === 0 ? user?.college || '' : '',
+        department: idx === 0 ? user?.department || '' : '',
+        year: idx === 0 ? user?.year || '' : '',
       }))
-      setParticipants(prev => ({ ...prev, [eventId]: newParticipants }))
-    }
-  }
-
-  const updateParticipant = (eventId: string, index: number, field: keyof Participant, value: string) => {
-    setParticipants(prev => ({
-      ...prev,
-      [eventId]: prev[eventId].map((p, i) => i === index ? { ...p, [field]: value } : p)
     }))
   }
 
-  const validateParticipants = () => {
-    for (const item of cart) {
-      const eventParticipants = participants[item.event.id] || []
-      if (eventParticipants.length !== item.teamSize) {
-        return false
-      }
-      for (const participant of eventParticipants) {
-        if (!participant.name || !participant.email || !participant.phone) {
-          return false
-        }
-      }
-    }
-    return true
-  }
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+    mode: 'onBlur',
+  })
 
-  const handleCheckout = async () => {
-    if (!validateParticipants()) {
-      toast.error('Please fill in all required participant details')
-      return
-    }
-
+  const handleCheckout = form.handleSubmit(async (data) => {
     setLoading(true)
     try {
-      // Generate receipt ID
-      const receiptId = `TECH${Date.now()}`
-      
-      // Create order object
-      const orderData = {
-        user_id: user?.id || '',
-        events: cart.map(item => ({
-          event: item.event,
-          teamSize: item.teamSize,
-          participants: participants[item.event.id]
-        })),
-        participants: participants,
-        total_amount: total,
-        receipt_id: receiptId,
-        status: 'pending'
+      // Create registration
+      const { data: reg, error: regErr } = await supabase
+        .from('registrations')
+        .insert({
+          user_id: user?.id,
+          total_amount: total,
+          status: 'pending',
+        })
+        .select()
+        .single()
+      if (regErr || !reg) throw regErr || new Error('Registration failed')
+
+      // Insert participants
+      let allRows: any[] = []
+      for (const event of data.events) {
+        for (let i = 0; i < event.participants.length; i++) {
+          const p = event.participants[i]
+          allRows.push({
+            registration_id: reg.id,
+            event_id: event.eventId,
+            name: p.name,
+            email: p.email,
+            phone: p.phone,
+            college: p.college,
+            department: p.department,
+            year: p.year,
+            is_leader: i === 0,
+          })
+        }
       }
+      const { error: partErr } = await supabase
+        .from('registration_participants')
+        .insert(allRows)
+      if (partErr) throw partErr
 
-      // Simulate order creation - replace with actual Supabase integration
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      // Clear cart and redirect to receipt
       clearCart()
       toast.success('Order placed successfully!')
-      router.push(`/receipt?id=${receiptId}`)
-    } catch (error) {
-      toast.error('Checkout failed. Please try again.')
+      router.push(`/receipt?id=${reg.id}`)
+    } catch (error: any) {
+      toast.error(error.message || 'Checkout failed. Please try again.')
     } finally {
       setLoading(false)
     }
-  }
+  })
 
   if (cart.length === 0) {
     return (
@@ -134,13 +139,11 @@ export default function CheckoutPage() {
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <form onSubmit={handleCheckout} className="grid lg:grid-cols-3 gap-8">
           {/* Participant Details */}
           <div className="lg:col-span-2 space-y-6">
             {cart.map((item, index) => {
-              initializeParticipants(item.event.id, item.teamSize)
-              const eventParticipants = participants[item.event.id] || []
-
+              const eventField = form.getValues(`events.${index}`)
               return (
                 <motion.div
                   key={item.event.id}
@@ -152,15 +155,13 @@ export default function CheckoutPage() {
                   <h3 className="text-2xl font-bold text-yellow-400 mb-4">
                     {item.event.name}
                   </h3>
-                  
                   <div className="space-y-6">
-                    {eventParticipants.map((participant, participantIndex) => (
+                    {eventField.participants.map((_, participantIndex) => (
                       <div key={participantIndex} className="border-b border-gray-700 pb-4">
                         <h4 className="text-lg font-semibold text-white mb-4">
                           Participant {participantIndex + 1}
                           {participantIndex === 0 && ' (Team Leader)'}
                         </h4>
-                        
                         <div className="grid md:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -170,14 +171,12 @@ export default function CheckoutPage() {
                               <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                               <input
                                 type="text"
-                                value={participant.name}
-                                onChange={(e) => updateParticipant(item.event.id, participantIndex, 'name', e.target.value)}
+                                {...form.register(`events.${index}.participants.${participantIndex}.name`)}
                                 className="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-red-500 focus:outline-none text-sm"
-                                required
                               />
+                              <span className="text-red-400 text-xs">{form.formState.errors?.events?.[index]?.participants?.[participantIndex]?.name?.message}</span>
                             </div>
                           </div>
-
                           <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
                               Email *
@@ -186,14 +185,12 @@ export default function CheckoutPage() {
                               <Mail className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                               <input
                                 type="email"
-                                value={participant.email}
-                                onChange={(e) => updateParticipant(item.event.id, participantIndex, 'email', e.target.value)}
+                                {...form.register(`events.${index}.participants.${participantIndex}.email`)}
                                 className="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-red-500 focus:outline-none text-sm"
-                                required
                               />
+                              <span className="text-red-400 text-xs">{form.formState.errors?.events?.[index]?.participants?.[participantIndex]?.email?.message}</span>
                             </div>
                           </div>
-
                           <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
                               Phone *
@@ -202,14 +199,12 @@ export default function CheckoutPage() {
                               <Phone className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                               <input
                                 type="tel"
-                                value={participant.phone}
-                                onChange={(e) => updateParticipant(item.event.id, participantIndex, 'phone', e.target.value)}
+                                {...form.register(`events.${index}.participants.${participantIndex}.phone`)}
                                 className="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-red-500 focus:outline-none text-sm"
-                                required
                               />
+                              <span className="text-red-400 text-xs">{form.formState.errors?.events?.[index]?.participants?.[participantIndex]?.phone?.message}</span>
                             </div>
                           </div>
-
                           <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
                               College
@@ -218,13 +213,11 @@ export default function CheckoutPage() {
                               <Building className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                               <input
                                 type="text"
-                                value={participant.college}
-                                onChange={(e) => updateParticipant(item.event.id, participantIndex, 'college', e.target.value)}
+                                {...form.register(`events.${index}.participants.${participantIndex}.college`)}
                                 className="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-red-500 focus:outline-none text-sm"
                               />
                             </div>
                           </div>
-
                           <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
                               Department
@@ -233,13 +226,11 @@ export default function CheckoutPage() {
                               <BookOpen className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                               <input
                                 type="text"
-                                value={participant.department}
-                                onChange={(e) => updateParticipant(item.event.id, participantIndex, 'department', e.target.value)}
+                                {...form.register(`events.${index}.participants.${participantIndex}.department`)}
                                 className="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-red-500 focus:outline-none text-sm"
                               />
                             </div>
                           </div>
-
                           <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
                               Year
@@ -247,8 +238,7 @@ export default function CheckoutPage() {
                             <div className="relative">
                               <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                               <select
-                                value={participant.year}
-                                onChange={(e) => updateParticipant(item.event.id, participantIndex, 'year', e.target.value)}
+                                {...form.register(`events.${index}.participants.${participantIndex}.year`)}
                                 className="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-red-500 focus:outline-none text-sm"
                               >
                                 <option value="">Select Year</option>
@@ -278,7 +268,6 @@ export default function CheckoutPage() {
                 className="bg-gradient-to-r from-red-600 to-maroon-700 p-6 rounded-xl"
               >
                 <h3 className="text-2xl font-bold text-white mb-6">Order Summary</h3>
-                
                 <div className="space-y-4 mb-6">
                   {cart.map((item) => (
                     <div key={item.event.id} className="flex justify-between items-start border-b border-white/20 pb-3">
@@ -293,7 +282,6 @@ export default function CheckoutPage() {
                     </div>
                   ))}
                 </div>
-                
                 <div className="border-t border-white/20 pt-4 mb-6">
                   <div className="flex justify-between items-center">
                     <span className="text-xl font-bold text-white">Total</span>
@@ -303,15 +291,13 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 </div>
-
                 <div className="bg-blue-600 text-white px-4 py-2 rounded-lg mb-6 text-center">
                   <span className="text-sm">💳 Razorpay integration ready</span>
                 </div>
-                
                 <motion.button
+                  type="submit"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={handleCheckout}
                   disabled={loading}
                   className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 rounded-lg transition-colors disabled:opacity-50"
                 >
@@ -320,7 +306,7 @@ export default function CheckoutPage() {
               </motion.div>
             </div>
           </div>
-        </div>
+        </form>
       </div>
     </Layout>
   )
