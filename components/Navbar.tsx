@@ -70,9 +70,9 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
 
   return (
     <motion.nav 
-      className="bg-black/90 backdrop-blur-md border-b border-red-500/20 fixed top-0 left-0 right-0 z-50"
+    className="bg-black/90 backdrop-blur-md border-b border-red-500/20 sticky top-0 left-0 right-0 z-50"
       initial={false}
-      animate={{ y: isVisible ? 0 : -100 }}
+    animate={{ y: 0 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
     >
       <div className="container mx-auto px-4">
