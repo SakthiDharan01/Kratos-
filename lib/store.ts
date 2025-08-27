@@ -39,6 +39,8 @@ interface StoreState {
   updateCartItem: (eventId: string, teamSize: number) => void
   clearCart: () => void
   getCartTotal: () => number
+  registrationDraft: any
+  setRegistrationDraft: (data: any) => void
 }
 
 export const useStore = create<StoreState>()(
@@ -86,7 +88,9 @@ export const useStore = create<StoreState>()(
         return get().cart.reduce((total, item) => {
           return total + (item.event.price * item.teamSize)
         }, 0)
-      }
+      },
+  registrationDraft: null,
+  setRegistrationDraft: (data) => set({ registrationDraft: data }),
     }),
     {
       name: 'event-store',

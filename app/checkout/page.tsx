@@ -45,7 +45,7 @@ const formSchema = z.object({
 });
 
 export default function CheckoutPage() {
-  const { cart, user, getCartTotal, clearCart } = useStore()
+  const { cart, user, getCartTotal, clearCart, setRegistrationDraft } = useStore()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const total = getCartTotal()
@@ -79,15 +79,14 @@ export default function CheckoutPage() {
       // Validate form
       const valid = await form.trigger();
       if (!valid) return;
-      // Route to review page with form data, including userId and total
+      // Pass registration data to global state
       const formData = form.getValues();
-      const reviewData = {
+      setRegistrationDraft({
         ...formData,
         userId: user?.id,
         total: total,
-      };
-      const query = '?formData=' + encodeURIComponent(JSON.stringify(reviewData));
-      router.push('/checkout/review' + query);
+      });
+      router.push('/checkout/review');
     } catch (error: any) {
       toast.error(error.message || 'Checkout failed. Please try again.')
     } finally {
@@ -142,7 +141,7 @@ export default function CheckoutPage() {
         <form onSubmit={handleCheckout} className="grid lg:grid-cols-3 gap-8">
           {/* Participant Details */}
           <div className="lg:col-span-2 space-y-6">
-            {cart.map((item, index) => {
+            {(cart || []).map((item, index) => {
               const eventField = form.getValues(`events.${index}`)
               return (
                 <motion.div
@@ -166,7 +165,7 @@ export default function CheckoutPage() {
                     <span className="text-red-400 text-xs">{form.formState.errors?.events?.[index]?.teamName?.message}</span>
                   </div>
                   <div className="space-y-6">
-                    {eventField.participants.map((participant, participantIndex) => (
+                    {(eventField.participants || []).map((participant, participantIndex) => (
                       <div key={participantIndex} className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
                         <h4 className="text-lg font-semibold text-white mb-4">
                           Participant {participantIndex + 1}

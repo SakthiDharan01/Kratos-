@@ -8,19 +8,19 @@ import toast from 'react-hot-toast';
 
 export default function ReviewPage({ searchParams }: { searchParams: any }) {
   const router = useRouter();
-  const { cart } = useStore();
-  // Assume form data is passed via query or state (for demo, use searchParams)
-  const formData = searchParams?.formData ? JSON.parse(searchParams.formData) : null;
+  const { cart, registrationDraft } = useStore();
+  // Use registrationDraft from store
+  const formData = registrationDraft;
   // Helper to get event name from cart
   const getEventName = (eventId: string) => {
-    const found = cart.find(e => e.event.id === eventId);
+    const found = (cart || []).find(e => e.event.id === eventId);
     return found ? found.event.name : eventId;
   };
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!formData) {
+  if (!formData || !(formData.events && formData.events.length)) {
     return (
       <Layout>
         <div className="text-center py-20">
@@ -103,13 +103,13 @@ export default function ReviewPage({ searchParams }: { searchParams: any }) {
           </p>
         </motion.div>
         <div className="space-y-8">
-          {formData.events.map((event: any, idx: number) => (
+          {(formData.events || []).map((event: any, idx: number) => (
             <div key={idx} className="bg-gray-900/50 border border-yellow-400/20 rounded-xl p-6">
               <h2 className="text-2xl font-bold text-yellow-400 mb-2">{getEventName(event.eventId)}</h2>
               <div className="mb-2 text-white font-semibold">Team Name: {event.teamName}</div>
               <div className="text-white">Participants:</div>
               <ul className="ml-4 mt-1">
-                {event.participants.map((p: any, i: number) => (
+                {(event.participants || []).map((p: any, i: number) => (
                   <li key={i} className="text-gray-200">
                     {i === 0 ? <span className="text-yellow-400 font-bold">Leader:</span> : null} {p.name} ({p.email}, {p.phone})
                     <span className="ml-2 text-gray-400">{p.college}, {p.department}, {p.year}</span>
