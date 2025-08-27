@@ -3,12 +3,25 @@
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import { motion } from 'framer-motion'
-import { User, Mail, Building, BookOpen, Calendar, Phone, Edit, ShoppingBag } from 'lucide-react'
+import { User, Mail, Building, BookOpen, Calendar, Phone, Edit, ShoppingBag, Loader2 } from 'lucide-react'
 import { useStore } from '@/lib/store'
+import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import toast from 'react-hot-toast'
 
 export default function ProfilePage() {
-  const { user, isAuthenticated } = useStore()
-  const router = useRouter()
+  const { user, isAuthenticated, setUser } = useStore();
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    college: user?.college || '',
+    department: user?.department || '',
+    year: user?.year || '',
+  });
 
   if (!isAuthenticated || !user) {
     return (
@@ -24,17 +37,31 @@ export default function ProfilePage() {
           </button>
         </div>
       </Layout>
-    )
+    );
   }
 
-  const profileFields = [
-    { icon: <User className="w-5 h-5" />, label: 'Full Name', value: user.name },
-    { icon: <Mail className="w-5 h-5" />, label: 'Email', value: user.email },
-    { icon: <Phone className="w-5 h-5" />, label: 'Phone', value: user.phone },
-    { icon: <Building className="w-5 h-5" />, label: 'College', value: user.college },
-    { icon: <BookOpen className="w-5 h-5" />, label: 'Department', value: user.department },
-    { icon: <Calendar className="w-5 h-5" />, label: 'Year', value: user.year },
-  ]
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('users').update({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        college: form.college,
+        department: form.department,
+        year: form.year,
+      }).eq('id', user.id);
+      if (error) throw error;
+      setUser({ ...user, ...form });
+      toast.success('Profile updated!');
+      setEditing(false);
+    } catch (err: any) {
+      toast.error('Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Layout>
@@ -63,35 +90,152 @@ export default function ProfilePage() {
             >
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-bold text-white">Personal Information</h2>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
-                >
-                  <Edit className="w-4 h-4" />
-                  <span>Edit Profile</span>
-                </motion.button>
+                {!editing && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+                    onClick={() => setEditing(true)}
+                  >
+                    <Edit className="w-4 h-4" />
+                    <span>Edit Profile</span>
+                  </motion.button>
+                )}
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                {profileFields.map((field, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="space-y-2"
-                  >
+              {editing ? (
+                <form onSubmit={handleSave} className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
                     <label className="flex items-center space-x-2 text-sm font-medium text-gray-300">
-                      {field.icon}
-                      <span>{field.label}</span>
+                      <User className="w-5 h-5" />
+                      <span>Full Name</span>
                     </label>
-                    <div className="bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white">
-                      {field.value}
-                    </div>
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-300">
+                      <Mail className="w-5 h-5" />
+                      <span>Email</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={form.email}
+                      onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-300">
+                      <Phone className="w-5 h-5" />
+                      <span>Phone</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={form.phone}
+                      onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-300">
+                      <Building className="w-5 h-5" />
+                      <span>College</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={form.college}
+                      onChange={e => setForm(f => ({ ...f, college: e.target.value }))}
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-300">
+                      <BookOpen className="w-5 h-5" />
+                      <span>Department</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={form.department}
+                      onChange={e => setForm(f => ({ ...f, department: e.target.value }))}
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-300">
+                      <Calendar className="w-5 h-5" />
+                      <span>Year</span>
+                    </label>
+                    <select
+                      value={form.year}
+                      onChange={e => setForm(f => ({ ...f, year: e.target.value }))}
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      required
+                    >
+                      <option value="">Select Year</option>
+                      <option value="1st Year">1st Year</option>
+                      <option value="2nd Year">2nd Year</option>
+                      <option value="3rd Year">3rd Year</option>
+                      <option value="4th Year">4th Year</option>
+                      <option value="Graduate">Graduate</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2 flex space-x-4 mt-4">
+                    <button
+                      type="button"
+                      className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 rounded-lg transition-colors"
+                      onClick={() => setEditing(false)}
+                      disabled={loading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center"
+                      disabled={loading}
+                    >
+                      {loading ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : null}
+                      {loading ? 'Saving...' : 'Save Profile'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-6">
+                  <motion.div className="space-y-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-300"><User className="w-5 h-5" /><span>Full Name</span></label>
+                    <div className="bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white">{user.name}</div>
                   </motion.div>
-                ))}
-              </div>
+                  <motion.div className="space-y-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-300"><Mail className="w-5 h-5" /><span>Email</span></label>
+                    <div className="bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white">{user.email}</div>
+                  </motion.div>
+                  <motion.div className="space-y-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-300"><Phone className="w-5 h-5" /><span>Phone</span></label>
+                    <div className="bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white">{user.phone}</div>
+                  </motion.div>
+                  <motion.div className="space-y-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-300"><Building className="w-5 h-5" /><span>College</span></label>
+                    <div className="bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white">{user.college}</div>
+                  </motion.div>
+                  <motion.div className="space-y-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-300"><BookOpen className="w-5 h-5" /><span>Department</span></label>
+                    <div className="bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white">{user.department}</div>
+                  </motion.div>
+                  <motion.div className="space-y-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-300"><Calendar className="w-5 h-5" /><span>Year</span></label>
+                    <div className="bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white">{user.year}</div>
+                  </motion.div>
+                </div>
+              )}
             </motion.div>
           </div>
 
