@@ -41,5 +41,6 @@ export default function GoogleLoginButton() {
       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
       <span>{loading ? "Connecting..." : "Continue with Google"}</span>
     </motion.button>
+    //Continue with Google
   );
 }
