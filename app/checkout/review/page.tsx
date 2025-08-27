@@ -39,43 +39,17 @@ export default function CheckoutReviewPage() {
     setLoading(true);
     setError(null);
     try {
-      // Create registration
-      const { data: reg, error: regErr } = await supabase
-        .from('registrations')
-        .insert({
-          user_id: formData.userId,
-          total_amount: formData.total || 0,
-          status: 'pending',
-        })
-        .select()
-        .single();
-      if (regErr || !reg) throw regErr || new Error('Registration failed');
-      // Insert participants
-      let allRows: any[] = [];
-      for (const event of formData.events) {
-        for (let i = 0; i < (event.participants || []).length; i++) {
-          const p = event.participants[i];
-          allRows.push({
-            registration_id: reg.id,
-            event_id: event.eventId,
-            name: p.name,
-            email: p.email,
-            phone: p.phone,
-            college: p.college,
-            department: p.department,
-            year: p.year,
-            is_leader: i === 0,
-            team_name: event.teamName,
-          });
-        }
-      }
-      const { error: partErr } = await supabase
-        .from('registration_participants')
-        .insert(allRows);
-      if (partErr) throw partErr;
-
+      const res = await fetch('/api/registrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formData }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Registration failed');
       toast.success('Registration successful!');
-      router.push(`/receipt?id=${reg.id}`);
+      // If multiple created, redirect to receipt of first
+      const first = json.registrations?.[0];
+      router.push(first ? `/receipt?id=${first.id}` : '/receipt');
     } catch (error: any) {
       setError(error.message || 'Registration failed. Please try again.');
       toast.error(error.message || 'Registration failed. Please try again.');
