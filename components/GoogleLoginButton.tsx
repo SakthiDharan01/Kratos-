@@ -11,6 +11,26 @@ export default function GoogleLoginButton() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    // Localhost test mode: set mock user
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      setLoading(true);
+      setTimeout(() => {
+        setUser({
+          id: 'test-user',
+          name: 'Test User',
+          email: 'test@localhost.com',
+          phone: '9999999999',
+          college: 'Test College',
+          department: 'Testing',
+          year: '4th Year',
+        });
+        setAuthenticated(true);
+        setLoading(false);
+        toast.success('Logged in as Test User');
+      }, 500);
+      return;
+    }
+    // Production: normal Google login
     try {
       setLoading(true);
       const { data, error } = await supabase.auth.signInWithOAuth({

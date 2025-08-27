@@ -1,24 +1,23 @@
+"use client";
 import Layout from '@/components/Layout';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
+import { supabase } from '@/lib/supabase';
 
-export default function ReviewPage({ searchParams }: { searchParams: any }) {
+export default function CheckoutReviewPage() {
   const router = useRouter();
   const { cart, registrationDraft } = useStore();
-  // Use registrationDraft from store
   const formData = registrationDraft;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   // Helper to get event name from cart
   const getEventName = (eventId: string) => {
     const found = (cart || []).find(e => e.event.id === eventId);
     return found ? found.event.name : eventId;
   };
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   if (!formData || !(formData.events && formData.events.length)) {
     return (
@@ -36,7 +35,6 @@ export default function ReviewPage({ searchParams }: { searchParams: any }) {
       </Layout>
     );
   }
-
   const handleFinalSubmit = async () => {
     setLoading(true);
     setError(null);
@@ -45,18 +43,17 @@ export default function ReviewPage({ searchParams }: { searchParams: any }) {
       const { data: reg, error: regErr } = await supabase
         .from('registrations')
         .insert({
-          user_id: formData.userId, // You may need to pass userId in formData
+          user_id: formData.userId,
           total_amount: formData.total || 0,
           status: 'pending',
         })
         .select()
         .single();
       if (regErr || !reg) throw regErr || new Error('Registration failed');
-
       // Insert participants
       let allRows: any[] = [];
       for (const event of formData.events) {
-        for (let i = 0; i < event.participants.length; i++) {
+        for (let i = 0; i < (event.participants || []).length; i++) {
           const p = event.participants[i];
           allRows.push({
             registration_id: reg.id,
@@ -86,7 +83,6 @@ export default function ReviewPage({ searchParams }: { searchParams: any }) {
       setLoading(false);
     }
   };
-
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-8">
@@ -96,10 +92,10 @@ export default function ReviewPage({ searchParams }: { searchParams: any }) {
           className="text-center"
         >
           <h1 className="text-5xl font-bold text-yellow-400 mb-4 flex items-center justify-center gap-3">
-            Review & Confirm
+            Registration Review
           </h1>
           <p className="text-xl text-gray-300">
-            Please review your registration details before submitting.
+            Please review your registration details before confirming.
           </p>
         </motion.div>
         <div className="space-y-8">
@@ -119,8 +115,11 @@ export default function ReviewPage({ searchParams }: { searchParams: any }) {
             </div>
           ))}
         </div>
-  {error && <div className="text-red-400 text-center mb-4">{error}</div>}
-  <div className="flex justify-end mt-8 gap-4">
+        <div className="mt-8 text-right text-2xl font-bold text-yellow-400">
+          Total: ₹{formData.total || 0}
+        </div>
+        {error && <div className="text-red-400 text-center mb-4">{error}</div>}
+        <div className="flex justify-end mt-8 gap-4">
           <button
             onClick={() => router.push('/checkout')}
             className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors"
