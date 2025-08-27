@@ -110,6 +110,15 @@ export default function CheckoutPage() {
     )
   }
 
+  // Helper to handle 'Same as Leader' logic for college/department/year
+  const handleSameAsLeaderToggle = (eventIdx: number, participantIdx: number, checked: boolean) => {
+    if (!checked) return; // Only auto-fill on toggle ON
+    const leader = form.getValues(`events.${eventIdx}.participants.0`);
+    form.setValue(`events.${eventIdx}.participants.${participantIdx}.college`, leader.college);
+    form.setValue(`events.${eventIdx}.participants.${participantIdx}.department`, leader.department);
+    form.setValue(`events.${eventIdx}.participants.${participantIdx}.year`, leader.year);
+  };
+
   return (
     <Layout>
       <div className="max-w-6xl mx-auto space-y-8">
@@ -208,7 +217,11 @@ export default function CheckoutPage() {
                             <div className="md:col-span-2 flex items-center space-x-2 mt-2">
                               <input
                                 type="checkbox"
-                                {...form.register(`events.${index}.participants.${participantIndex}.sameAsLeader`)}
+                                checked={participant.sameAsLeader}
+                                onChange={e => {
+                                  form.setValue(`events.${index}.participants.${participantIndex}.sameAsLeader`, e.target.checked);
+                                  handleSameAsLeaderToggle(index, participantIndex, e.target.checked);
+                                }}
                                 className="form-checkbox h-4 w-4 text-yellow-400 bg-gray-700 border-gray-600 rounded focus:ring-yellow-400"
                               />
                               <span className="text-sm text-gray-300">Same as Leader (College, Department, Year)</span>

@@ -24,6 +24,13 @@ export default function ProfilePage() {
   });
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [regLoading, setRegLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  // Helper to get event name from cart (fallback to eventId)
+  const { cart } = useStore();
+  const getEventName = (eventId: string) => {
+    const found = cart.find(e => e.event.id === eventId);
+    return found ? found.event.name : eventId;
+  };
 
   // Fetch registration history on mount
   useEffect(() => {
@@ -93,30 +100,44 @@ export default function ProfilePage() {
           <h2 className="text-2xl font-bold text-yellow-400 mb-4 flex items-center gap-2">
             <Calendar className="w-6 h-6" /> Registration History
           </h2>
+          <div className="mb-4 flex justify-end">
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search by team name or event..."
+              className="bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white text-sm w-64"
+            />
+          </div>
           {regLoading ? (
             <div className="text-gray-300">Loading...</div>
           ) : registrations.length === 0 ? (
             <div className="text-gray-400">No registrations found.</div>
           ) : (
             <div className="space-y-6">
-              {registrations.map(reg => (
-                <div key={reg.id} className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-white">{reg.team_name}</span>
-                    <span className={`px-3 py-1 rounded text-xs font-semibold ${reg.status === 'confirmed' ? 'bg-green-700 text-green-300' : 'bg-yellow-700 text-yellow-300'}`}>{reg.status}</span>
+              {registrations
+                .filter(reg =>
+                  reg.team_name.toLowerCase().includes(search.toLowerCase()) ||
+                  getEventName(reg.event_id).toLowerCase().includes(search.toLowerCase())
+                )
+                .map(reg => (
+                  <div key={reg.id} className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-white">{reg.team_name}</span>
+                      <span className={`px-3 py-1 rounded text-xs font-semibold ${reg.status === 'confirmed' ? 'bg-green-700 text-green-300' : 'bg-yellow-700 text-yellow-300'}`}>{reg.status}</span>
+                    </div>
+                    <div className="text-yellow-400 font-semibold mb-1">Event: {getEventName(reg.event_id)}</div>
+                    <div className="text-gray-300 text-sm mb-2">Registered on: {new Date(reg.created_at).toLocaleString()}</div>
+                    <div className="text-white text-sm">Participants:</div>
+                    <ul className="ml-4 mt-1">
+                      {reg.participants?.map((p: any, idx: number) => (
+                        <li key={idx} className="text-gray-200">
+                          {p.is_leader ? <span className="text-yellow-400 font-bold">Leader:</span> : null} {p.name} ({p.email})
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <div className="text-yellow-400 font-semibold mb-1">Event: {reg.event_id}</div>
-                  <div className="text-gray-300 text-sm mb-2">Registered on: {new Date(reg.created_at).toLocaleString()}</div>
-                  <div className="text-white text-sm">Participants:</div>
-                  <ul className="ml-4 mt-1">
-                    {reg.participants?.map((p: any, idx: number) => (
-                      <li key={idx} className="text-gray-200">
-                        {p.is_leader ? <span className="text-yellow-400 font-bold">Leader:</span> : null} {p.name} ({p.email})
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+                ))}
             </div>
           )}
         </motion.div>

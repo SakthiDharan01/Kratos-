@@ -11,8 +11,14 @@ export default function ReviewPage({ searchParams }: { searchParams: any }) {
   const { cart } = useStore();
   // Assume form data is passed via query or state (for demo, use searchParams)
   const formData = searchParams?.formData ? JSON.parse(searchParams.formData) : null;
+  // Helper to get event name from cart
+  const getEventName = (eventId: string) => {
+    const found = cart.find(e => e.event.id === eventId);
+    return found ? found.event.name : eventId;
+  };
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!formData) {
     return (
@@ -33,6 +39,7 @@ export default function ReviewPage({ searchParams }: { searchParams: any }) {
 
   const handleFinalSubmit = async () => {
     setLoading(true);
+    setError(null);
     try {
       // Create registration
       const { data: reg, error: regErr } = await supabase
@@ -73,6 +80,7 @@ export default function ReviewPage({ searchParams }: { searchParams: any }) {
       toast.success('Registration successful!');
       router.push(`/receipt?id=${reg.id}`);
     } catch (error: any) {
+      setError(error.message || 'Registration failed. Please try again.');
       toast.error(error.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
@@ -97,7 +105,7 @@ export default function ReviewPage({ searchParams }: { searchParams: any }) {
         <div className="space-y-8">
           {formData.events.map((event: any, idx: number) => (
             <div key={idx} className="bg-gray-900/50 border border-yellow-400/20 rounded-xl p-6">
-              <h2 className="text-2xl font-bold text-yellow-400 mb-2">{event.eventId}</h2>
+              <h2 className="text-2xl font-bold text-yellow-400 mb-2">{getEventName(event.eventId)}</h2>
               <div className="mb-2 text-white font-semibold">Team Name: {event.teamName}</div>
               <div className="text-white">Participants:</div>
               <ul className="ml-4 mt-1">
@@ -111,7 +119,8 @@ export default function ReviewPage({ searchParams }: { searchParams: any }) {
             </div>
           ))}
         </div>
-        <div className="flex justify-end mt-8 gap-4">
+  {error && <div className="text-red-400 text-center mb-4">{error}</div>}
+  <div className="flex justify-end mt-8 gap-4">
           <button
             onClick={() => router.push('/checkout')}
             className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors"
