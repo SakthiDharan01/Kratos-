@@ -5,7 +5,7 @@ import Layout from '@/components/Layout'
 import { motion } from 'framer-motion'
 import { User, Mail, Building, BookOpen, Calendar, Phone, Edit, ShoppingBag, Loader2 } from 'lucide-react'
 import { useStore } from '@/lib/store'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -22,6 +22,24 @@ export default function ProfilePage() {
     department: user?.department || '',
     year: user?.year || '',
   });
+  const [registrations, setRegistrations] = useState<any[]>([]);
+  const [regLoading, setRegLoading] = useState(true);
+
+  // Fetch registration history on mount
+  useEffect(() => {
+    async function fetchRegistrations() {
+      if (!user) return;
+      setRegLoading(true);
+      const { data, error } = await supabase
+        .from('registrations')
+        .select('id, event_id, team_name, status, created_at, participants:registration_participants(name, email, is_leader)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      if (!error && data) setRegistrations(data);
+      setRegLoading(false);
+    }
+    fetchRegistrations();
+  }, [user]);
 
   if (!isAuthenticated || !user) {
     return (
@@ -66,6 +84,42 @@ export default function ProfilePage() {
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-8">
+        {/* Registration History */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-900/50 border border-yellow-400/20 rounded-xl p-8 mb-8"
+        >
+          <h2 className="text-2xl font-bold text-yellow-400 mb-4 flex items-center gap-2">
+            <Calendar className="w-6 h-6" /> Registration History
+          </h2>
+          {regLoading ? (
+            <div className="text-gray-300">Loading...</div>
+          ) : registrations.length === 0 ? (
+            <div className="text-gray-400">No registrations found.</div>
+          ) : (
+            <div className="space-y-6">
+              {registrations.map(reg => (
+                <div key={reg.id} className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-white">{reg.team_name}</span>
+                    <span className={`px-3 py-1 rounded text-xs font-semibold ${reg.status === 'confirmed' ? 'bg-green-700 text-green-300' : 'bg-yellow-700 text-yellow-300'}`}>{reg.status}</span>
+                  </div>
+                  <div className="text-yellow-400 font-semibold mb-1">Event: {reg.event_id}</div>
+                  <div className="text-gray-300 text-sm mb-2">Registered on: {new Date(reg.created_at).toLocaleString()}</div>
+                  <div className="text-white text-sm">Participants:</div>
+                  <ul className="ml-4 mt-1">
+                    {reg.participants?.map((p: any, idx: number) => (
+                      <li key={idx} className="text-gray-200">
+                        {p.is_leader ? <span className="text-yellow-400 font-bold">Leader:</span> : null} {p.name} ({p.email})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

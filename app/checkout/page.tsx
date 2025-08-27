@@ -15,16 +15,33 @@ const participantSchema = z.object({
   name: z.string().min(1, 'Name required'),
   email: z.string().email('Invalid email'),
   phone: z.string().min(10, 'Phone required'),
-  college: z.string().optional(),
-  department: z.string().optional(),
-  year: z.string().optional(),
+  college: z.string().min(1, 'College required'),
+  department: z.string().min(1, 'Department required'),
+  year: z.string().min(1, 'Year required'),
+  sameAsLeader: z.boolean().optional(),
+});
+
+const eventSchema = z.object({
+  eventId: z.string(),
+  teamName: z.string().min(1, 'Team Name required'),
+  participants: z.array(participantSchema)
+}).refine((data) => {
+  // Unique name/email/phone within team
+  const names = new Set();
+  const emails = new Set();
+  const phones = new Set();
+  for (const p of data.participants) {
+    if (names.has(p.name) || emails.has(p.email) || phones.has(p.phone)) return false;
+    names.add(p.name); emails.add(p.email); phones.add(p.phone);
+  }
+  return true;
+}, {
+  message: 'Names, emails, and phone numbers must be unique within the team',
+  path: ['participants']
 });
 
 const formSchema = z.object({
-  events: z.array(z.object({
-    eventId: z.string(),
-    participants: z.array(participantSchema)
-  }))
+  events: z.array(eventSchema)
 });
 
 export default function CheckoutPage() {
@@ -37,6 +54,7 @@ export default function CheckoutPage() {
   const defaultValues = {
     events: cart.map(item => ({
       eventId: item.event.id,
+      teamName: '',
       participants: Array.from({ length: item.teamSize }, (_, idx) => ({
         name: idx === 0 ? user?.name || '' : '',
         email: idx === 0 ? user?.email || '' : '',
@@ -44,6 +62,7 @@ export default function CheckoutPage() {
         college: idx === 0 ? user?.college || '' : '',
         department: idx === 0 ? user?.department || '' : '',
         year: idx === 0 ? user?.year || '' : '',
+        sameAsLeader: false,
       }))
     }))
   }
@@ -57,44 +76,15 @@ export default function CheckoutPage() {
   const handleCheckout = form.handleSubmit(async (data) => {
     setLoading(true)
     try {
-      // Create registration
-      const { data: reg, error: regErr } = await supabase
-        .from('registrations')
-        .insert({
-          user_id: user?.id,
-          total_amount: total,
-          status: 'pending',
-        })
-        .select()
-        .single()
-      if (regErr || !reg) throw regErr || new Error('Registration failed')
+  // Validate form
+  const valid = await form.trigger();
+  if (!valid) return;
+  // Route to review page with form data
+  const formData = form.getValues();
+  const query = '?formData=' + encodeURIComponent(JSON.stringify(formData));
+  router.push('/checkout/review' + query);
 
-      // Insert participants
-      let allRows: any[] = []
-      for (const event of data.events) {
-        for (let i = 0; i < event.participants.length; i++) {
-          const p = event.participants[i]
-          allRows.push({
-            registration_id: reg.id,
-            event_id: event.eventId,
-            name: p.name,
-            email: p.email,
-            phone: p.phone,
-            college: p.college,
-            department: p.department,
-            year: p.year,
-            is_leader: i === 0,
-          })
-        }
-      }
-      const { error: partErr } = await supabase
-        .from('registration_participants')
-        .insert(allRows)
-      if (partErr) throw partErr
-
-      clearCart()
-      toast.success('Order placed successfully!')
-      router.push(`/receipt?id=${reg.id}`)
+  // Registration logic moved to review page. No DB actions here.
     } catch (error: any) {
       toast.error(error.message || 'Checkout failed. Please try again.')
     } finally {
@@ -153,8 +143,18 @@ export default function CheckoutPage() {
                   <h3 className="text-2xl font-bold text-yellow-400 mb-4">
                     {item.event.name}
                   </h3>
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Team Name *</label>
+                    <input
+                      type="text"
+                      {...form.register(`events.${index}.teamName`)}
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-red-500 focus:outline-none text-sm"
+                      required
+                    />
+                    <span className="text-red-400 text-xs">{form.formState.errors?.events?.[index]?.teamName?.message}</span>
+                  </div>
                   <div className="space-y-6">
-                    {eventField.participants.map((_, participantIndex) => (
+                    {eventField.participants.map((participant, participantIndex) => (
                       <div key={participantIndex} className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
                         <h4 className="text-lg font-semibold text-white mb-4">
                           Participant {participantIndex + 1}
@@ -163,9 +163,7 @@ export default function CheckoutPage() {
                         <div className="grid md:grid-cols-2 gap-4">
                           {/* Name */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                              Full Name *
-                            </label>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Full Name *</label>
                             <div className="relative">
                               <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                               <input
@@ -179,9 +177,7 @@ export default function CheckoutPage() {
 
                           {/* Email */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                              Email *
-                            </label>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
                             <div className="relative">
                               <Mail className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                               <input
@@ -195,9 +191,7 @@ export default function CheckoutPage() {
 
                           {/* Phone */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                              Phone *
-                            </label>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Phone *</label>
                             <div className="relative">
                               <Phone className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                               <input
@@ -208,53 +202,62 @@ export default function CheckoutPage() {
                               <span className="text-red-400 text-xs">{form.formState.errors?.events?.[index]?.participants?.[participantIndex]?.phone?.message}</span>
                             </div>
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                              College
-                            </label>
-                            <div className="relative">
-                              <Building className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+
+                          {/* College, Department, Year with Same as Leader toggle */}
+                          {participantIndex !== 0 && (
+                            <div className="md:col-span-2 flex items-center space-x-2 mt-2">
                               <input
-                                type="text"
-                                {...form.register(`events.${index}.participants.${participantIndex}.college`)}
-                                className="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-red-500 focus:outline-none text-sm"
+                                type="checkbox"
+                                {...form.register(`events.${index}.participants.${participantIndex}.sameAsLeader`)}
+                                className="form-checkbox h-4 w-4 text-yellow-400 bg-gray-700 border-gray-600 rounded focus:ring-yellow-400"
                               />
+                              <span className="text-sm text-gray-300">Same as Leader (College, Department, Year)</span>
                             </div>
-                          </div>
+                          )}
+
+                          {/* College */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                              Department
-                            </label>
-                            <div className="relative">
-                              <BookOpen className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                              <input
-                                type="text"
-                                {...form.register(`events.${index}.participants.${participantIndex}.department`)}
-                                className="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-red-500 focus:outline-none text-sm"
-                              />
-                            </div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">College *</label>
+                            <input
+                              type="text"
+                              {...form.register(`events.${index}.participants.${participantIndex}.college`)}
+                              className={`w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-yellow-400 focus:outline-none text-sm ${participantIndex !== 0 && participant.sameAsLeader ? 'bg-gray-700' : ''}`}
+                              disabled={participantIndex !== 0 && participant.sameAsLeader}
+                              required
+                            />
+                            <span className="text-red-400 text-xs">{form.formState.errors?.events?.[index]?.participants?.[participantIndex]?.college?.message}</span>
                           </div>
+                          {/* Department */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                              Year
-                            </label>
-                            <div className="relative">
-                              <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                              <select
-                                {...form.register(`events.${index}.participants.${participantIndex}.year`)}
-                                className="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-red-500 focus:outline-none text-sm"
-                              >
-                                <option value="">Select Year</option>
-                                <option value="1st Year">1st Year</option>
-                                <option value="2nd Year">2nd Year</option>
-                                <option value="3rd Year">3rd Year</option>
-                                <option value="4th Year">4th Year</option>
-                                <option value="Graduate">Graduate</option>
-                              </select>
-                            </div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Department *</label>
+                            <input
+                              type="text"
+                              {...form.register(`events.${index}.participants.${participantIndex}.department`)}
+                              className={`w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-yellow-400 focus:outline-none text-sm ${participantIndex !== 0 && participant.sameAsLeader ? 'bg-gray-700' : ''}`}
+                              disabled={participantIndex !== 0 && participant.sameAsLeader}
+                              required
+                            />
+                            <span className="text-red-400 text-xs">{form.formState.errors?.events?.[index]?.participants?.[participantIndex]?.department?.message}</span>
+                          </div>
+                          {/* Year */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Year *</label>
+                            <select
+                              {...form.register(`events.${index}.participants.${participantIndex}.year`)}
+                              className={`w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-yellow-400 focus:outline-none text-sm ${participantIndex !== 0 && participant.sameAsLeader ? 'bg-gray-700' : ''}`}
+                              disabled={participantIndex !== 0 && participant.sameAsLeader}
+                              required
+                            >
+                              <option value="">Select Year</option>
+                              <option value="1st Year">1st Year</option>
+                              <option value="2nd Year">2nd Year</option>
+                              <option value="3rd Year">3rd Year</option>
+                              <option value="4th Year">4th Year</option>
+                              <option value="Graduate">Graduate</option>
+                            </select>
+                            <span className="text-red-400 text-xs">{form.formState.errors?.events?.[index]?.participants?.[participantIndex]?.year?.message}</span>
                           </div>
                         </div>
-
                       </div>
                     ))}
                   </div>
