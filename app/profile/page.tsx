@@ -33,20 +33,26 @@ export default function ProfilePage() {
   };
 
   // Fetch registration history on mount
+  // Add a refresh function for registration history
+  const refreshRegistrations = async () => {
+    if (!user) return;
+    setRegLoading(true);
+    const { data, error } = await supabase
+      .from('registrations')
+      .select('id, event_id, team_name, status, created_at, participants:registration_participants(name, email, is_leader)')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    if (!error && data) setRegistrations(data);
+    setRegLoading(false);
+  };
   useEffect(() => {
-    async function fetchRegistrations() {
-      if (!user) return;
-      setRegLoading(true);
-      const { data, error } = await supabase
-        .from('registrations')
-        .select('id, event_id, team_name, status, created_at, participants:registration_participants(name, email, is_leader)')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      if (!error && data) setRegistrations(data);
-      setRegLoading(false);
-    }
-    fetchRegistrations();
+    refreshRegistrations();
   }, [user]);
+
+  // Listen for receipt page navigation and refresh registrations
+  if (typeof window !== 'undefined') {
+    window.addEventListener('focus', refreshRegistrations);
+  }
 
   if (!isAuthenticated || !user) {
     return (

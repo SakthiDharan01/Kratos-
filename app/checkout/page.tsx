@@ -76,15 +76,18 @@ export default function CheckoutPage() {
   const handleCheckout = form.handleSubmit(async (data) => {
     setLoading(true)
     try {
-  // Validate form
-  const valid = await form.trigger();
-  if (!valid) return;
-  // Route to review page with form data
-  const formData = form.getValues();
-  const query = '?formData=' + encodeURIComponent(JSON.stringify(formData));
-  router.push('/checkout/review' + query);
-
-  // Registration logic moved to review page. No DB actions here.
+      // Validate form
+      const valid = await form.trigger();
+      if (!valid) return;
+      // Route to review page with form data, including userId and total
+      const formData = form.getValues();
+      const reviewData = {
+        ...formData,
+        userId: user?.id,
+        total: total,
+      };
+      const query = '?formData=' + encodeURIComponent(JSON.stringify(reviewData));
+      router.push('/checkout/review' + query);
     } catch (error: any) {
       toast.error(error.message || 'Checkout failed. Please try again.')
     } finally {
