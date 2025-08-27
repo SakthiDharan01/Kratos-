@@ -54,24 +54,6 @@ export default function CheckoutPage() {
     mode: 'onBlur',
   })
 
-  // Handler to copy leader's details to a participant
-  const handleSameAsLeaderChange = (e, eventIndex, participantIndex) => {
-    const isChecked = e.target.checked;
-    const leader = form.getValues(`events.${eventIndex}.participants.0`);
-
-    if (isChecked) {
-      form.setValue(`events.${eventIndex}.participants.${participantIndex}.college`, leader.college || '');
-      form.setValue(`events.${eventIndex}.participants.${participantIndex}.department`, leader.department || '');
-      form.setValue(`events.${eventIndex}.participants.${participantIndex}.year`, leader.year || '');
-    } else {
-      // Clear the fields if the user unchecks the box
-      form.setValue(`events.${eventIndex}.participants.${participantIndex}.college`, '');
-      form.setValue(`events.${eventIndex}.participants.${participantIndex}.department`, '');
-      form.setValue(`events.${eventIndex}.participants.${participantIndex}.year`, '');
-    }
-  };
-
-
   const handleCheckout = form.handleSubmit(async (data) => {
     setLoading(true)
     try {
@@ -88,7 +70,7 @@ export default function CheckoutPage() {
       if (regErr || !reg) throw regErr || new Error('Registration failed')
 
       // Insert participants
-      let allRows = []
+      let allRows: any[] = []
       for (const event of data.events) {
         for (let i = 0; i < event.participants.length; i++) {
           const p = event.participants[i]
@@ -113,7 +95,7 @@ export default function CheckoutPage() {
       clearCart()
       toast.success('Order placed successfully!')
       router.push(`/receipt?id=${reg.id}`)
-    } catch (error) {
+    } catch (error: any) {
       toast.error(error.message || 'Checkout failed. Please try again.')
     } finally {
       setLoading(false)
@@ -178,22 +160,6 @@ export default function CheckoutPage() {
                           Participant {participantIndex + 1}
                           {participantIndex === 0 && ' (Team Leader)'}
                         </h4>
-
-                        {/* "Same as Leader" Checkbox for other participants */}
-                        {participantIndex > 0 && (
-                            <div className="flex items-center mb-4">
-                                <input
-                                    type="checkbox"
-                                    id={`same-as-leader-${index}-${participantIndex}`}
-                                    onChange={(e) => handleSameAsLeaderChange(e, index, participantIndex)}
-                                    className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-red-600 focus:ring-red-500 focus:ring-offset-gray-900"
-                                />
-                                <label htmlFor={`same-as-leader-${index}-${participantIndex}`} className="ml-3 block text-sm font-medium text-gray-300">
-                                    Use same College/Dept/Year as Team Leader
-                                </label>
-                            </div>
-                        )}
-
                         <div className="grid md:grid-cols-2 gap-4">
                           {/* Name */}
                           <div>
