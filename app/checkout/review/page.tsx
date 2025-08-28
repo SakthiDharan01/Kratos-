@@ -39,30 +39,44 @@ export default function CheckoutReviewPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/registrations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formData }),
-      });
-
-      const text = await res.text();
-      let json: any = null;
-      try {
-        json = text ? JSON.parse(text) : null;
-      } catch (e) {
-        // If parsing fails, treat raw text as error message
-        throw new Error(text || 'Invalid server response');
+      const results: { eventId: string; id?: string; error?: string }[] = [];
+      for (const ev of formData.events) {
+        if (!ev.participants?.length) {
+          results.push({ eventId: ev.eventId, error: 'No participants' });
+          continue;
+        }
+        const payload = {
+          event_id: ev.eventId,
+            team_name: ev.teamName,
+          leader_phone: ev.participants[0].phone,
+          registrants: ev.participants.map((p: any, idx: number) => ({
+            name: p.name,
+            email: p.email,
+            phone: p.phone,
+            college: p.college,
+            department: p.department,
+            year: p.year,
+            is_leader: idx === 0,
+          }))
+        };
+        const { data, error } = await supabase.functions.invoke('register', { body: payload });
+        if (error) {
+          results.push({ eventId: ev.eventId, error: error.message });
+        } else {
+          results.push({ eventId: ev.eventId, id: (data as any)?.registration_id });
+        }
       }
-
-      if (!res.ok) throw new Error(json?.error || 'Registration failed');
-
-      toast.success('Registration successful!');
-      // If multiple created, redirect to receipt of first
-      const first = json.registrations?.[0];
-      router.push(first ? `/receipt?id=${first.id}` : '/receipt');
-    } catch (error: any) {
-      setError(error.message || 'Registration failed. Please try again.');
-      toast.error(error.message || 'Registration failed. Please try again.');
+      const failed = results.filter(r => r.error);
+      if (failed.length) {
+        setError(`Some events failed: ${failed.map(f => getEventName(f.eventId) + ' (' + f.error + ')').join('; ')}`);
+        toast.error('Some registrations failed');
+      } else {
+        toast.success('All registrations submitted');
+      }
+      router.push('/profile');
+    } catch (e: any) {
+      setError(e.message || 'Registration failed');
+      toast.error(e.message || 'Registration failed');
     } finally {
       setLoading(false);
     }

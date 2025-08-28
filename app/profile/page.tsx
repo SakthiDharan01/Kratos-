@@ -39,8 +39,8 @@ export default function ProfilePage() {
     setRegLoading(true);
     const { data, error } = await supabase
       .from('registrations')
-      .select('id, event_id, team_name, status, created_at, participants:registration_participants(name, email, is_leader)')
-      .eq('user_id', user.id)
+      .select('id, event_id, team_name, status, created_at, leader_id, leader_name, leader_email, leader_phone, members:registrants(name, email, is_leader)')
+      .eq('leader_id', user.id)
       .order('created_at', { ascending: false });
     if (!error && data) setRegistrations(data);
     setRegLoading(false);
@@ -136,7 +136,7 @@ export default function ProfilePage() {
                     <div className="text-gray-300 text-sm mb-2">Registered on: {new Date(reg.created_at).toLocaleString()}</div>
                     <div className="text-white text-sm">Participants:</div>
                     <ul className="ml-4 mt-1">
-                      {reg.participants?.map((p: any, idx: number) => (
+                      {reg.members?.map((p: any, idx: number) => (
                         <li key={idx} className="text-gray-200">
                           {p.is_leader ? <span className="text-yellow-400 font-bold">Leader:</span> : null} {p.name} ({p.email})
                         </li>
