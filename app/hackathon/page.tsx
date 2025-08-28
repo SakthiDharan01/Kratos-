@@ -2,29 +2,29 @@
 
 import Layout from '@/components/Layout'
 import { motion } from 'framer-motion'
-import { Calendar, Clock, Trophy, Users, Rocket, Gamepad2, Sprout, Heart, Monitor, Star, Gift } from 'lucide-react'
+import { Calendar, Clock, Trophy, Users, Rocket, Gamepad2, Sprout, Heart, Monitor, Star, Gift, Target, Code, Award } from 'lucide-react'
 import Link from 'next/link'
 
 export default function HackathonPage() {
   const tracks = [
     {
       icon: <Rocket className="w-8 h-8" />,
-      title: '🌌 Space Technology',
+      title: 'Space Technology',
       description: 'Push the boundaries beyond Earth.'
     },
     {
       icon: <Gamepad2 className="w-8 h-8" />,
-      title: '🎮 Gamified Solutions', 
+      title: 'Gamified Solutions', 
       description: 'Make learning, work, and life more fun through gamification.'
     },
     {
       icon: <Sprout className="w-8 h-8" />,
-      title: '🌱 Agriculture',
+      title: 'Agriculture',
       description: 'Tech for smarter and sustainable farming.'
     },
     {
       icon: <Heart className="w-8 h-8" />,
-      title: '🏥 Healthcare',
+      title: 'Healthcare',
       description: 'Innovate to save lives and enhance well-being.'
     }
   ]
@@ -63,7 +63,8 @@ export default function HackathonPage() {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-6xl md:text-8xl font-bold text-yellow-400 mb-6">
-              🚀 Hack to the Future
+              <Rocket className="inline-block w-16 h-16 mr-4" />
+              Hack to the Future
             </h1>
             <p className="text-2xl md:text-3xl text-gray-300 font-medium mb-8">
               "Code today, change tomorrow."
@@ -89,7 +90,10 @@ export default function HackathonPage() {
             className="text-center p-8 bg-gradient-to-r from-red-600 to-purple-600 rounded-2xl"
           >
             <Clock className="w-16 h-16 mx-auto mb-4 text-white" />
-            <h2 className="text-4xl font-bold text-white mb-2">🕒 Duration</h2>
+            <h2 className="text-4xl font-bold text-white mb-2">
+              <Clock className="inline-block w-8 h-8 mr-2" />
+              Duration
+            </h2>
             <p className="text-3xl font-bold text-yellow-300 mb-2">12 Hours</p>
             <p className="text-lg text-white">Non-stop coding, building, and problem-solving.</p>
           </motion.div>
@@ -102,7 +106,8 @@ export default function HackathonPage() {
             animate={{ opacity: 1 }}
             className="text-4xl font-bold text-yellow-400 text-center mb-12"
           >
-            🎯 Problem Statement Tracks
+            <Target className="inline-block w-10 h-10 mr-2" />
+            Problem Statement Tracks
           </motion.h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {tracks.map((track, index) => (
@@ -130,12 +135,14 @@ export default function HackathonPage() {
             animate={{ opacity: 1 }}
             className="text-4xl font-bold text-yellow-400 text-center mb-12"
           >
-            🖥 How It Works
+            <Code className="inline-block w-10 h-10 mr-2" />
+            How It Works
           </motion.h2>
           <div className="text-center p-8 bg-gray-900/30 border border-red-500/20 rounded-xl backdrop-blur-sm">
             <Monitor className="w-16 h-16 mx-auto mb-4 text-red-500" />
             <p className="text-xl text-white">
-              💻 Hackathon powered by <span className="font-bold text-yellow-400">Devfolio</span> for seamless participation and submissions.
+              <Monitor className="inline-block w-6 h-6 mr-2" />
+              Hackathon powered by <span className="font-bold text-yellow-400">Devfolio</span> for seamless participation and submissions.
             </p>
           </div>
         </section>
@@ -147,7 +154,8 @@ export default function HackathonPage() {
             animate={{ opacity: 1 }}
             className="text-4xl font-bold text-yellow-400 text-center mb-12"
           >
-            🏆 Prizes & Perks
+            <Trophy className="inline-block w-10 h-10 mr-2" />
+            Prizes & Perks
           </motion.h2>
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             <motion.div
@@ -158,7 +166,10 @@ export default function HackathonPage() {
               className="bg-gradient-to-br from-yellow-500 to-orange-600 p-6 rounded-xl text-center"
             >
               <Trophy className="w-16 h-16 mx-auto mb-4 text-white" />
-              <h3 className="text-2xl font-bold text-white mb-2">🥇 First Prize</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                <Award className="inline-block w-6 h-6 mr-2" />
+                First Prize
+              </h3>
               <p className="text-yellow-100">[Add Actual Amount/Details Soon]</p>
             </motion.div>
             
@@ -170,7 +181,10 @@ export default function HackathonPage() {
               className="bg-gradient-to-br from-gray-500 to-gray-600 p-6 rounded-xl text-center"
             >
               <Trophy className="w-16 h-16 mx-auto mb-4 text-white" />
-              <h3 className="text-2xl font-bold text-white mb-2">🥈 Second Prize</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                <Award className="inline-block w-6 h-6 mr-2" />
+                Second Prize
+              </h3>
               <p className="text-gray-200">[Add Amount/Details]</p>
             </motion.div>
             
@@ -182,7 +196,10 @@ export default function HackathonPage() {
               className="bg-gradient-to-br from-red-500 to-orange-600 p-6 rounded-xl text-center"
             >
               <Trophy className="w-16 h-16 mx-auto mb-4 text-white" />
-              <h3 className="text-2xl font-bold text-white mb-2">🥉 Third Prize</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                <Award className="inline-block w-6 h-6 mr-2" />
+                Third Prize
+              </h3>
               <p className="text-orange-200">[Add Amount/Details]</p>
             </motion.div>
           </div>
@@ -193,7 +210,10 @@ export default function HackathonPage() {
             className="text-center p-6 bg-gray-900/30 border border-red-500/20 rounded-xl backdrop-blur-sm"
           >
             <Gift className="w-12 h-12 mx-auto mb-4 text-red-500" />
-            <h3 className="text-2xl font-bold text-white mb-2">🎁 Special Tracks & Goodies</h3>
+            <h3 className="text-2xl font-bold text-white mb-2">
+              <Gift className="inline-block w-6 h-6 mr-2" />
+              Special Tracks & Goodies
+            </h3>
             <p className="text-lg text-gray-300">Swags, exclusive certificates, and unique opportunities await!</p>
           </motion.div>
         </section>
@@ -205,7 +225,8 @@ export default function HackathonPage() {
             animate={{ opacity: 1 }}
             className="text-4xl font-bold text-yellow-400 text-center mb-12"
           >
-            🌟 Why Participate?
+            <Star className="inline-block w-10 h-10 mr-2" />
+            Why Participate?
           </motion.h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {whyParticipate.map((reason, index) => (
@@ -233,7 +254,8 @@ export default function HackathonPage() {
             animate={{ opacity: 1 }}
             className="text-4xl font-bold text-yellow-400 text-center mb-12"
           >
-            📅 Event Details
+            <Calendar className="inline-block w-10 h-10 mr-2" />
+            Event Details
           </motion.h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="text-center p-6 bg-gray-900/30 border border-red-500/20 rounded-xl backdrop-blur-sm">
@@ -269,7 +291,10 @@ export default function HackathonPage() {
             animate={{ opacity: 1, y: 0 }}
             className="bg-gradient-to-r from-red-600 to-purple-600 p-8 rounded-2xl"
           >
-            <h2 className="text-4xl font-bold text-white mb-6">🎉 Special Note</h2>
+            <h2 className="text-4xl font-bold text-white mb-6">
+              <Star className="inline-block w-10 h-10 mr-2" />
+              Special Note
+            </h2>
             <p className="text-xl text-white mb-8">
               This is the <span className="font-bold text-yellow-300">first ever hackathon</span> hosted by the Kratos Symposium. 
               Don't miss your chance to make history!
@@ -282,7 +307,8 @@ export default function HackathonPage() {
                 alert('Registration link coming soon!')
               }}
             >
-              👉 Register Now & Make History!
+              <Rocket className="inline-block w-6 h-6 mr-2" />
+              Register Now & Make History!
             </motion.button>
           </motion.div>
         </section>
