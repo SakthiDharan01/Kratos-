@@ -4,6 +4,22 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+}
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders() });
+}
+
+export async function GET() {
+  return new Response(JSON.stringify({ ok: true, route: 'registrations' }), { headers: { 'Content-Type': 'application/json', ...corsHeaders() } });
+}
+
 export async function POST(req: Request) {
   if (!serviceRoleKey) {
     return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 });
