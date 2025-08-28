@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Layout from "@/components/Layout";
 import { motion } from "framer-motion";
 import {
@@ -27,7 +27,7 @@ interface ReceiptData {
   status: string;
 }
 
-export default function ReceiptPage() {
+function ReceiptContent() {
   const searchParams = useSearchParams();
   const receiptId = searchParams.get("id");
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
@@ -301,5 +301,19 @@ Total Amount: ₹${receipt?.totalAmount}
         </div>
       </div>
     </Layout>
+  );
+}
+
+export default function ReceiptPage() {
+  return (
+    <Suspense fallback={
+      <Layout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-yellow-400">Loading receipt...</div>
+        </div>
+      </Layout>
+    }>
+      <ReceiptContent />
+    </Suspense>
   );
 }
