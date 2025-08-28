@@ -78,8 +78,8 @@ export default function AdminPage() {
   const [events, setEvents] = useState<{ id: string; name: string }[]>([])
 
   // Filters
-  const [filterEvent, setFilterEvent] = useState<string>('')
-  const [filterStatus, setFilterStatus] = useState<string>('')
+  const [filterEvent, setFilterEvent] = useState<string>('all')
+  const [filterStatus, setFilterStatus] = useState<string>('all')
   const [dateFrom, setDateFrom] = useState<string>('')
   const [dateTo, setDateTo] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState<string>('')
@@ -163,8 +163,8 @@ export default function AdminPage() {
         `)
         .order('created_at', { ascending: false })
 
-      if (filterEvent) query = query.eq('event_id', filterEvent)
-      if (filterStatus) query = query.eq('status', filterStatus)
+      if (filterEvent && filterEvent !== 'all') query = query.eq('event_id', filterEvent)
+      if (filterStatus && filterStatus !== 'all') query = query.eq('status', filterStatus)
       if (dateFrom) query = query.gte('created_at', dateFrom)
       if (dateTo) query = query.lte('created_at', dateTo)
 
@@ -197,8 +197,8 @@ export default function AdminPage() {
     return registrations.filter((r) => {
       const term = searchTerm.toLowerCase()
       return (
-        (!filterEvent || r.event_id === filterEvent) &&
-        (!filterStatus || r.status === filterStatus) &&
+        (filterEvent === 'all' || r.event_id === filterEvent) &&
+        (filterStatus === 'all' || r.status === filterStatus) &&
         (!dateFrom || r.registration_date >= dateFrom) &&
         (!dateTo || r.registration_date <= dateTo) &&
         (r.team_name.toLowerCase().includes(term) || r.leader_email.toLowerCase().includes(term))
@@ -284,7 +284,7 @@ export default function AdminPage() {
                   <SelectValue placeholder="All Events" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Events</SelectItem>
+                  <SelectItem value="all">All Events</SelectItem>
                   {events.map((e) => (
                     <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
                   ))}
@@ -296,7 +296,7 @@ export default function AdminPage() {
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="paid">Paid</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
