@@ -29,6 +29,7 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
     { name: 'Non-Technical', href: '/non-technical' },
     { name: 'Grounds', href: '/grounds' },
     { name: 'Hackathon', href: '/hackathon' },
+    { name: 'Online', href: '/online' },
   ]
 
   // Auto-hide navbar logic - only when enableAutoHide is true
