@@ -44,8 +44,18 @@ export default function CheckoutReviewPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ formData }),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Registration failed');
+
+      const text = await res.text();
+      let json: any = null;
+      try {
+        json = text ? JSON.parse(text) : null;
+      } catch (e) {
+        // If parsing fails, treat raw text as error message
+        throw new Error(text || 'Invalid server response');
+      }
+
+      if (!res.ok) throw new Error(json?.error || 'Registration failed');
+
       toast.success('Registration successful!');
       // If multiple created, redirect to receipt of first
       const first = json.registrations?.[0];
