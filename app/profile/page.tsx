@@ -37,14 +37,36 @@ export default function ProfilePage() {
   const refreshRegistrations = async () => {
     if (!user) return;
     setRegLoading(true);
-    const { data, error } = await supabase
-      .from('registrations')
-      .select('id, event_id, team_name, status, created_at, leader_id, leader_name, leader_email, leader_phone, members:registrants(name, email, is_leader)')
-      .eq('leader_id', user.id)
-      .order('created_at', { ascending: false });
-    if (!error && data) setRegistrations(data);
-    setRegLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from('registrations')
+        .select(`
+          id, 
+          event_id, 
+          team_name, 
+          status, 
+          created_at,
+          registrants (
+            name, 
+            email, 
+            is_leader,
+            college,
+            department,
+            year
+          )
+        `)
+        .eq('leader_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setRegistrations(data || []);
+    } catch (error: any) {
+      toast.error('Failed to load registrations');
+    } finally {
+      setRegLoading(false);
+    }
   };
+  
   useEffect(() => {
     refreshRegistrations();
   }, [user]);

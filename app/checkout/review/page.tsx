@@ -39,44 +39,68 @@ export default function CheckoutReviewPage() {
     setLoading(true);
     setError(null);
     try {
-      const results: { eventId: string; id?: string; error?: string }[] = [];
-      for (const ev of formData.events) {
-        if (!ev.participants?.length) {
-          results.push({ eventId: ev.eventId, error: 'No participants' });
-          continue;
-        }
-        const payload = {
-          event_id: ev.eventId,
-            team_name: ev.teamName,
-          leader_phone: ev.participants[0].phone,
-          registrants: ev.participants.map((p: any, idx: number) => ({
-            name: p.name,
-            email: p.email,
-            phone: p.phone,
-            college: p.college,
-            department: p.department,
-            year: p.year,
-            is_leader: idx === 0,
-          }))
-        };
-        const { data, error } = await supabase.functions.invoke('register', { body: payload });
-        if (error) {
-          results.push({ eventId: ev.eventId, error: error.message });
-        } else {
-          results.push({ eventId: ev.eventId, id: (data as any)?.registration_id });
-        }
-      }
-      const failed = results.filter(r => r.error);
-      if (failed.length) {
-        setError(`Some events failed: ${failed.map(f => getEventName(f.eventId) + ' (' + f.error + ')').join('; ')}`);
-        toast.error('Some registrations failed');
+      // Get user info (either authenticated user or test user)
+      let leaderId: string;
+      let leaderName: string;
+      let leaderEmail: string;
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        leaderId = user.id;
+        leaderName = user.user_metadata?.name || user.email || 'Unknown';
+        leaderEmail = user.email || '';
       } else {
-        toast.success('All registrations submitted');
+        // Test user fallback for localhost
+        leaderId = 'test-user';
+        leaderName = 'Test User';
+        leaderEmail = 'test@localhost.com';
       }
-      router.push('/profile');
-    } catch (e: any) {
-      setError(e.message || 'Registration failed');
-      toast.error(e.message || 'Registration failed');
+
+      // Create registrations for each event
+      for (const eventData of formData.events) {
+        const leader = eventData.participants[0]; // First participant is leader
+        
+        // Create registration
+        const { data: registration, error: regErr } = await supabase
+          .from('registrations')
+          .insert({
+            event_id: eventData.eventId,
+            team_name: eventData.teamName,
+            leader_id: leaderId,
+            leader_name: leaderName,
+            leader_email: leaderEmail,
+            leader_phone: leader.phone,
+            status: 'pending',
+          })
+          .select()
+          .single();
+        
+        if (regErr || !registration) throw regErr || new Error('Registration failed');
+
+        // Create registrants for all team members
+        const registrantsData = eventData.participants.map((p: any, index: number) => ({
+          registration_id: registration.id,
+          name: p.name,
+          email: p.email,
+          phone: p.phone,
+          college: p.college,
+          department: p.department,
+          year: p.year,
+          is_leader: index === 0, // First participant is leader
+        }));
+
+        const { error: registrantsErr } = await supabase
+          .from('registrants')
+          .insert(registrantsData);
+        
+        if (registrantsErr) throw registrantsErr;
+      }
+
+      toast.success('Registration successful!');
+      router.push('/profile'); // Redirect to profile to see registrations
+    } catch (error: any) {
+      setError(error.message || 'Registration failed. Please try again.');
+      toast.error(error.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
