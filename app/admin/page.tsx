@@ -40,14 +40,6 @@ interface Participant {
   is_leader: boolean
 }
 
-const ADMIN_EMAILS = [
-  'sakthi@example.com',
-  'admin@kratos.com',
-  'test@localhost.com',
-  // Add your email here
-  'officialsakthidharan@gmail.com',
-]
-
 export default function AdminPage() {
   const router = useRouter()
   const { user, isAuthenticated } = useStore()
@@ -57,19 +49,37 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   
   useEffect(() => {
-    if (!isAuthenticated || !user) {
-      router.push('/login')
-      return
+    const checkAdminAccess = async () => {
+      if (!isAuthenticated || !user) {
+        router.push('/login')
+        return
+      }
+      
+      try {
+        // Check if user is in the admins table
+        const { data: adminRecord, error } = await supabase
+          .from('admins')
+          .select('id, role, is_active')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .single()
+        
+        if (error || !adminRecord) {
+          console.error('Admin access denied:', error)
+          router.push('/')
+          return
+        }
+        
+        setAuthorized(true)
+      } catch (error) {
+        console.error('Error checking admin access:', error)
+        router.push('/')
+      } finally {
+        setLoading(false)
+      }
     }
-    
-    // Temporarily disable admin check for testing
-    // if (!ADMIN_EMAILS.includes(user.email || '')) {
-    //   router.push('/')
-    //   return
-    // }
-    
-    setAuthorized(true)
-    setLoading(false)
+
+    checkAdminAccess()
   }, [user, isAuthenticated, router])
 
   // Data state
