@@ -9,6 +9,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 });
   }
 
+  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false }
+  });
+
   try {
     const body = await req.json();
     const { formData } = body;
@@ -16,16 +20,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false }
-    });
-
     const created: any[] = [];
+    const errors: any[] = [];
 
     for (const event of formData.events) {
-      // leader info assumed to be first participant
-      const leader = (event.participants || [])[0] || {};
+      // Basic validation per event
+      if (!event || !event.eventId || !event.teamName) {
+        errors.push({ eventId: event?.eventId || null, error: 'Missing eventId or teamName' });
+        continue;
+      }
+      if (!Array.isArray(event.participants) || event.participants.length === 0) {
+        errors.push({ eventId: event.eventId, error: 'No participants provided' });
+        continue;
+      }
 
+      // leader info assumed to be first participant
+      const leader = event.participants[0] || {};
+      if (!leader.name || !leader.email || !leader.phone) {
+        errors.push({ eventId: event.eventId, error: 'Leader missing required fields (name/email/phone)' });
+        continue;
+      }
+
+      // Create registration row
       const { data: reg, error: regErr } = await supabase
         .from('registrations')
         .insert({
@@ -40,7 +56,10 @@ export async function POST(req: Request) {
         .select()
         .single();
 
-      if (regErr || !reg) throw regErr || new Error('Failed to create registration');
+      if (regErr || !reg) {
+        errors.push({ eventId: event.eventId, error: regErr?.message || 'Failed to create registration' });
+        continue;
+      }
 
       const registrants = (event.participants || []).map((p: any, i: number) => ({
         registration_id: reg.id,
@@ -54,12 +73,22 @@ export async function POST(req: Request) {
       }));
 
       const { error: partErr } = await supabase.from('registrants').insert(registrants);
-      if (partErr) throw partErr;
+
+      if (partErr) {
+        // Compensating delete: remove registration if registrants insertion failed
+        try {
+          await supabase.from('registrations').delete().eq('id', reg.id);
+        } catch (delErr) {
+          // ignore deletion error, report both
+        }
+        errors.push({ eventId: event.eventId, error: partErr.message || 'Failed to insert registrants' });
+        continue;
+      }
 
       created.push(reg);
     }
 
-    return NextResponse.json({ success: true, registrations: created });
+    return NextResponse.json({ success: true, registrations: created, errors }, { status: 200 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || String(err) }, { status: 500 });
   }
