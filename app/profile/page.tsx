@@ -27,9 +27,9 @@ export default function ProfilePage() {
   const [search, setSearch] = useState('');
   // Helper to get event name from cart (fallback to eventId)
   const { cart } = useStore();
-  const getEventName = (eventId: string) => {
+  const getEventName = (eventId: string | number) => {
     const found = cart.find(e => e.event.id === eventId);
-    return found ? found.event.name : eventId;
+    return found ? found.event.name : String(eventId);
   };
 
   // Fetch registration history on mount
@@ -106,7 +106,7 @@ export default function ProfilePage() {
         year: form.year,
       }).eq('id', user.id);
       if (error) throw error;
-      setUser({ ...user, ...form });
+      setUser({ ...user, ...form, year: form.year as '1st' | '2nd' | '3rd' | '4th' | '5th' | 'Graduate' });
       toast.success('Profile updated!');
       setEditing(false);
     } catch (err: any) {

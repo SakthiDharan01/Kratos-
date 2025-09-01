@@ -29,7 +29,7 @@ export default function CartPage() {
     )
   }
 
-  const handleRemoveFromCart = (eventId: string) => {
+  const handleRemoveFromCart = (eventId: string | number) => {
     removeFromCart(eventId)
     toast.success('Item removed from cart')
   }
@@ -118,8 +118,8 @@ export default function CartPage() {
                           className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-red-500 focus:outline-none"
                         >
                           {Array.from(
-                            { length: item.event.max_team_size - item.event.min_team_size + 1 },
-                            (_, i) => item.event.min_team_size + i
+                            { length: 10 },
+                            (_, i) => i + 1
                           ).map((size) => (
                             <option key={size} value={size}>
                               {size}

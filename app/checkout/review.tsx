@@ -14,9 +14,9 @@ export default function CheckoutReviewPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Helper to get event name from cart
-  const getEventName = (eventId: string) => {
+  const getEventName = (eventId: string | number) => {
     const found = (cart || []).find(e => e.event.id === eventId);
-    return found ? found.event.name : eventId;
+    return found ? found.event.name : String(eventId);
   };
 
   if (!formData || !(formData.events && formData.events.length)) {

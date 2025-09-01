@@ -12,7 +12,7 @@ interface EventCardProps {
 }
 
 export default function EventCard({ event }: EventCardProps) {
-  const [teamSize, setTeamSize] = useState(event.min_team_size)
+  const [teamSize, setTeamSize] = useState(event.event_type === 'solo' ? 1 : 2)
   const { addToCart, isAuthenticated } = useStore()
 
   const handleAddToCart = () => {
@@ -26,6 +26,7 @@ export default function EventCard({ event }: EventCardProps) {
   }
 
   const totalPrice = event.price * teamSize
+  const maxTeamSize = event.event_type === 'solo' ? 1 : event.participant_limit
 
   return (
     <motion.div
@@ -47,30 +48,31 @@ export default function EventCard({ event }: EventCardProps) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center text-sm text-gray-400">
           <Users className="w-4 h-4 mr-1" />
-          <span>Team: {event.min_team_size}-{event.max_team_size} members</span>
+          <span>
+            {event.event_type === 'solo' ? 'Individual Event' : `Team Event (Max: ${event.participant_limit} teams)`}
+          </span>
         </div>
       </div>
 
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Team Size
-          </label>
-          <select
-            value={teamSize}
-            onChange={(e) => setTeamSize(Number(e.target.value))}
-            className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-red-500 focus:outline-none"
-          >
-            {Array.from(
-              { length: event.max_team_size - event.min_team_size + 1 },
-              (_, i) => event.min_team_size + i
-            ).map((size) => (
-              <option key={size} value={size}>
-                {size} member{size > 1 ? 's' : ''}
-              </option>
-            ))}
-          </select>
-        </div>
+        {event.event_type === 'team' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Team Size
+            </label>
+            <select
+              value={teamSize}
+              onChange={(e) => setTeamSize(Number(e.target.value))}
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-red-500 focus:outline-none"
+            >
+              {Array.from({ length: 8 }, (_, i) => i + 1).map((size) => (
+                <option key={size} value={size}>
+                  {size} member{size > 1 ? 's' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="flex justify-between items-center pt-2">
           <div className="text-sm text-gray-400">

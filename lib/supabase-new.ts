@@ -22,7 +22,7 @@ export type Database = {
           slot_duration: 'single' | 'double'
           start_time: string
           end_time: string
-          category: 'technical' | 'no_code' | 'playground' | 'online'
+          category: 'technical' | 'non-technical' | 'grounds' | 'online' | 'hackathon' | 'pre-events'
           incharge_name1: string
           incharge_phone1: string
           incharge_name2: string
@@ -47,7 +47,7 @@ export type Database = {
           slot_duration?: 'single' | 'double'
           start_time?: string
           end_time?: string
-          category: 'technical' | 'no_code' | 'playground' | 'online'
+          category: 'technical' | 'non-technical' | 'grounds' | 'online' | 'hackathon' | 'pre-events'
           incharge_name1: string
           incharge_phone1: string
           incharge_name2: string
@@ -72,7 +72,7 @@ export type Database = {
           slot_duration?: 'single' | 'double'
           start_time?: string
           end_time?: string
-          category?: 'technical' | 'no_code' | 'playground' | 'online'
+          category?: 'technical' | 'non-technical' | 'grounds' | 'online' | 'hackathon' | 'pre-events'
           incharge_name1?: string
           incharge_phone1?: string
           incharge_name2?: string
@@ -136,6 +136,12 @@ export type Database = {
           registration_date: string
           payment_status: 'paid' | 'failed' | 'refunded' | 'pending'
           transaction_id: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          paid_amount: number | null
+          payment_method: string | null
+          payment_time: string | null
           is_active: boolean
           created_at: string
           updated_at: string
@@ -148,6 +154,12 @@ export type Database = {
           registration_date?: string
           payment_status?: 'paid' | 'failed' | 'refunded' | 'pending'
           transaction_id?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          paid_amount?: number | null
+          payment_method?: string | null
+          payment_time?: string | null
           is_active?: boolean
           created_at?: string
           updated_at?: string
@@ -160,6 +172,12 @@ export type Database = {
           registration_date?: string
           payment_status?: 'paid' | 'failed' | 'refunded' | 'pending'
           transaction_id?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          paid_amount?: number | null
+          payment_method?: string | null
+          payment_time?: string | null
           is_active?: boolean
           created_at?: string
           updated_at?: string

@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -11,39 +12,82 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     async function handleAuth() {
-      // Get the current session/user from Supabase
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-      if (error || !user) {
-        toast.error("Login failed. Please try again.");
+      try {
+        // Get the current session/user from Supabase
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+        
+        if (error || !user) {
+          toast.error("Login failed. Please try again.");
+          router.push("/login");
+          return;
+        }
+        
+        // Find or create user in our users table
+        let userData = null;
+        
+        // First check if user exists in our users table
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("*")
+          .eq("email", user.email)
+          .single();
+
+        if (existingUser) {
+          userData = existingUser;
+        } else {
+          // Create new user record
+          const { data: newUser, error: createError } = await supabase
+            .from("users")
+            .insert([{
+              name: user.user_metadata?.name || user.email?.split('@')[0] || "",
+              email: user.email || "",
+              phone: user.phone || "",
+              department: user.user_metadata?.department || "",
+              year: user.user_metadata?.year || "1st",
+              college: user.user_metadata?.college || "",
+              role: "user"
+            }])
+            .select("*")
+            .single();
+
+          if (createError) {
+            console.error("Error creating user:", createError);
+            toast.error("Failed to create user profile");
+            router.push("/login");
+            return;
+          }
+          userData = newUser;
+        }
+
+        // Set Zustand state with our users table data
+        setUser({
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          role: userData.role,
+          phone: userData.phone,
+          department: userData.department,
+          year: userData.year,
+          college: userData.college,
+          is_active: userData.is_active,
+          created_at: userData.created_at,
+          updated_at: userData.updated_at
+        });
+        setAuthenticated(true);
+        
+        toast.success("Login successful!");
+        router.push("/profile");
+        
+      } catch (error) {
+        console.error("Auth error:", error);
+        toast.error("Authentication failed");
         router.push("/login");
-        return;
       }
-      // Set Zustand state
-      setUser({
-        id: user.id,
-        phone: user.phone ?? "",
-        name: user.user_metadata?.name || "",
-        email: user.email || "",
-        college: user.user_metadata?.college || "",
-        department: user.user_metadata?.department || "",
-        year: user.user_metadata?.year || ""
-      });
-      setAuthenticated(true);
-      // Optionally, insert/update user in your custom users table
-      await supabase.from("users").upsert({
-        id: user.id,
-        phone: user.phone ?? "",
-        name: user.user_metadata?.name || "",
-        email: user.email || "",
-        college: user.user_metadata?.college || "",
-        department: user.user_metadata?.department || "",
-        year: user.user_metadata?.year || ""
-      });
-      router.push("/profile");
     }
+    
     handleAuth();
   }, [router, setUser, setAuthenticated]);
 
@@ -53,5 +97,3 @@ export default function AuthCallbackPage() {
     </div>
   );
 }
-//hello
-

@@ -24,11 +24,9 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
   
   const navigation = [
     { name: 'Home', href: '/' },
-    { name: 'Pre-Events', href: '/pre-events' },
     { name: 'Technical', href: '/technical' },
-    { name: 'Non-Technical', href: '/non-technical' },
-    { name: 'Grounds', href: '/grounds' },
-    { name: 'Hackathon', href: '/hackathon' },
+    { name: 'No-Code', href: '/no-code' },
+    { name: 'PlayGround', href: '/playground' },
     { name: 'Online', href: '/online' },
   ]
 
