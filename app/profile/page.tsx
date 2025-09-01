@@ -38,30 +38,40 @@ export default function ProfilePage() {
     if (!user) return;
     setRegLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('registrations')
+      // First get all teams where user is the leader (from registrants table)
+      const { data: teams, error: teamsError } = await supabase
+        .from('registrants')
         .select(`
-          id, 
-          event_id, 
-          team_name, 
-          status, 
+          id,
+          event_id,
+          team_name,
           created_at,
-          registrants (
-            name, 
-            email, 
-            is_leader,
-            college,
-            department,
-            year
-          )
+          payment_status
         `)
-        .eq('leader_id', user.id)
-        .order('created_at', { ascending: false });
+        .eq('user_id', user.id);
       
-      if (error) throw error;
-      setRegistrations(data || []);
+      if (teamsError) throw teamsError;
+      
+      // For each team, get all members
+      const teamsWithMembers = await Promise.all((teams || []).map(async (team) => {
+        const { data: members, error: membersError } = await supabase
+          .from('registrations')
+          .select('*')
+          .eq('leader_id', team.id)
+          .eq('event_id', team.event_id);
+        
+        if (membersError) throw membersError;
+        
+        return {
+          ...team,
+          members: members || []
+        };
+      }));
+      
+      setRegistrations(teamsWithMembers);
     } catch (error: any) {
       toast.error('Failed to load registrations');
+      console.error('Registration fetch error:', error);
     } finally {
       setRegLoading(false);
     }
@@ -144,23 +154,30 @@ export default function ProfilePage() {
           ) : (
             <div className="space-y-6">
               {registrations
-                .filter(reg =>
-                  reg.team_name.toLowerCase().includes(search.toLowerCase()) ||
-                  getEventName(reg.event_id).toLowerCase().includes(search.toLowerCase())
+                .filter(team =>
+                  team.team_name.toLowerCase().includes(search.toLowerCase()) ||
+                  getEventName(team.event_id).toLowerCase().includes(search.toLowerCase())
                 )
-                .map(reg => (
-                  <div key={reg.id} className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
+                .map(team => (
+                  <div key={team.id} className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-bold text-white">{reg.team_name}</span>
-                      <span className={`px-3 py-1 rounded text-xs font-semibold ${reg.status === 'confirmed' ? 'bg-green-700 text-green-300' : 'bg-yellow-700 text-yellow-300'}`}>{reg.status}</span>
+                      <span className="font-bold text-white">{team.team_name}</span>
+                      <span className={`px-3 py-1 rounded text-xs font-semibold ${
+                        team.payment_status === 'paid' ? 'bg-green-700 text-green-300' : 
+                        team.payment_status === 'failed' ? 'bg-red-700 text-red-300' :
+                        'bg-yellow-700 text-yellow-300'
+                      }`}>
+                        {team.payment_status}
+                      </span>
                     </div>
-                    <div className="text-yellow-400 font-semibold mb-1">Event: {getEventName(reg.event_id)}</div>
-                    <div className="text-gray-300 text-sm mb-2">Registered on: {new Date(reg.created_at).toLocaleString()}</div>
-                    <div className="text-white text-sm">Participants:</div>
+                    <div className="text-yellow-400 font-semibold mb-1">Event: {getEventName(team.event_id)}</div>
+                    <div className="text-gray-300 text-sm mb-2">Registered on: {new Date(team.created_at).toLocaleString()}</div>
+                    <div className="text-white text-sm">Team Members:</div>
                     <ul className="ml-4 mt-1">
-                      {reg.members?.map((p: any, idx: number) => (
+                      {team.members?.map((member: any, idx: number) => (
                         <li key={idx} className="text-gray-200">
-                          {p.is_leader ? <span className="text-yellow-400 font-bold">Leader:</span> : null} {p.name} ({p.email})
+                          {member.is_leader && <span className="text-yellow-400 font-bold">Leader: </span>}
+                          {member.name} ({member.email}) - {member.college}, {member.department}, {member.year}
                         </li>
                       ))}
                     </ul>
@@ -365,7 +382,7 @@ export default function ProfilePage() {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => router.push('/pre-events')}
+                    onClick={() => router.push('/technical')}
                     className="w-full bg-white/20 hover:bg-white/30 text-white py-3 px-4 rounded-lg transition-colors"
                   >
                     Browse Events
