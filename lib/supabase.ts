@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js'
-
 // supabase config
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
@@ -11,211 +10,116 @@ export type Database = {
     Tables: {
       events: {
         Row: {
-          id: number
+          id: string
           name: string
           description: string
-          event_type: 'team' | 'solo'
-          rules: string
+          rules: string | null
           price: number
-          event_date: string
-          time_slot: 'slot1' | 'slot2' | 'both'
-          slot_duration: 'single' | 'double'
-          start_time: string
-          end_time: string
-          category: 'technical' | 'no_code' | 'playground' | 'online'
-          incharge_name1: string
-          incharge_phone1: string
-          incharge_name2: string
-          incharge_phone2: string
-          participant_limit: number
-          current_registrations: number
-          registration_start: string
-          registration_end: string
-          status: 'open' | 'closed' | 'completed'
+          min_team_size: number
+          max_team_size: number
+          category: string
           created_at: string
-          updated_at: string
         }
         Insert: {
-          id?: number
+          id?: string
           name: string
           description: string
-          event_type?: 'team' | 'solo'
-          rules: string
-          price?: number
-          event_date: string
-          time_slot?: 'slot1' | 'slot2' | 'both'
-          slot_duration?: 'single' | 'double'
-          start_time?: string
-          end_time?: string
-          category: 'technical' | 'no_code' | 'playground' | 'online'
-          incharge_name1: string
-          incharge_phone1: string
-          incharge_name2: string
-          incharge_phone2: string
-          participant_limit?: number
-          current_registrations?: number
-          registration_start: string
-          registration_end: string
-          status?: 'open' | 'closed' | 'completed'
+          rules?: string | null
+          price: number
+          min_team_size: number
+          max_team_size: number
+          category: string
           created_at?: string
-          updated_at?: string
         }
         Update: {
-          id?: number
+          id?: string
           name?: string
           description?: string
-          event_type?: 'team' | 'solo'
-          rules?: string
+          rules?: string | null
           price?: number
-          event_date?: string
-          time_slot?: 'slot1' | 'slot2' | 'both'
-          slot_duration?: 'single' | 'double'
-          start_time?: string
-          end_time?: string
-          category?: 'technical' | 'no_code' | 'playground' | 'online'
-          incharge_name1?: string
-          incharge_phone1?: string
-          incharge_name2?: string
-          incharge_phone2?: string
-          participant_limit?: number
-          current_registrations?: number
-          registration_start?: string
-          registration_end?: string
-          status?: 'open' | 'closed' | 'completed'
+          min_team_size?: number
+          max_team_size?: number
+          category?: string
           created_at?: string
-          updated_at?: string
-        }
-      }
-      users: {
-        Row: {
-          id: number
-          name: string
-          email: string
-          role: 'user' | 'admin'
-          phone: string
-          department: string
-          year: '1st' | '2nd' | '3rd' | '4th' | '5th' | 'Graduate'
-          college: string
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: number
-          name: string
-          email: string
-          role?: 'user' | 'admin'
-          phone: string
-          department: string
-          year: '1st' | '2nd' | '3rd' | '4th' | '5th' | 'Graduate'
-          college: string
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: number
-          name?: string
-          email?: string
-          role?: 'user' | 'admin'
-          phone?: string
-          department?: string
-          year?: '1st' | '2nd' | '3rd' | '4th' | '5th' | 'Graduate'
-          college?: string
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      registrants: {
-        Row: {
-          id: number
-          event_id: number
-          user_id: number
-          team_name: string
-          registration_date: string
-          payment_status: 'paid' | 'failed' | 'refunded' | 'pending'
-          transaction_id: string | null
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: number
-          event_id: number
-          user_id: number
-          team_name: string
-          registration_date?: string
-          payment_status?: 'paid' | 'failed' | 'refunded' | 'pending'
-          transaction_id?: string | null
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: number
-          event_id?: number
-          user_id?: number
-          team_name?: string
-          registration_date?: string
-          payment_status?: 'paid' | 'failed' | 'refunded' | 'pending'
-          transaction_id?: string | null
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
         }
       }
       registrations: {
         Row: {
-          id: number
-          name: string
-          email: string
-          phone: string
-          college: string
-          department: string
-          year: '1st' | '2nd' | '3rd' | '4th' | '5th' | 'Graduate'
-          leader_id: number
+          id: string
+          event_id: string
           team_name: string
-          event_id: number
-          is_leader: boolean
-          registration_date: string
-          is_active: boolean
+          leader_id: string
+          leader_name: string
+          leader_email: string
+          leader_phone: string
+          status: string
+          order_id: string | null
+          email_sent: boolean
           created_at: string
-          updated_at: string
         }
         Insert: {
-          id?: number
+          id?: string
+          event_id: string
+          team_name: string
+          leader_id: string
+          leader_name: string
+          leader_email: string
+          leader_phone: string
+          status?: string
+          order_id?: string | null
+          email_sent?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          team_name?: string
+          leader_id?: string
+          leader_name?: string
+          leader_email?: string
+          leader_phone?: string
+          status?: string
+          order_id?: string | null
+          email_sent?: boolean
+          created_at?: string
+        }
+      }
+      registrants: {
+        Row: {
+          id: string
+          registration_id: string
           name: string
           email: string
           phone: string
           college: string
           department: string
-          year: '1st' | '2nd' | '3rd' | '4th' | '5th' | 'Graduate'
-          leader_id: number
-          team_name: string
-          event_id: number
+          year: string
+          is_leader: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          registration_id: string
+          name: string
+          email: string
+          phone: string
+          college: string
+          department: string
+          year: string
           is_leader?: boolean
-          registration_date?: string
-          is_active?: boolean
           created_at?: string
-          updated_at?: string
         }
         Update: {
-          id?: number
+          id?: string
+          registration_id?: string
           name?: string
           email?: string
           phone?: string
           college?: string
           department?: string
-          year?: '1st' | '2nd' | '3rd' | '4th' | '5th' | 'Graduate'
-          leader_id?: number
-          team_name?: string
-          event_id?: number
+          year?: string
           is_leader?: boolean
-          registration_date?: string
-          is_active?: boolean
           created_at?: string
-          updated_at?: string
         }
       }
     }

@@ -16,17 +16,13 @@ export default function GoogleLoginButton() {
       setLoading(true);
       setTimeout(() => {
         setUser({
-          id: 999999,
+          id: 'test-user',
           name: 'Test User',
           email: 'test@localhost.com',
           phone: '9999999999',
           college: 'Test College',
           department: 'Testing',
-          year: '4th',
-          role: 'user',
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          year: '4th Year',
         });
         setAuthenticated(true);
         setLoading(false);

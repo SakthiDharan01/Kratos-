@@ -29,7 +29,7 @@ export default function CartPage() {
     )
   }
 
-  const handleRemoveFromCart = (eventId: string | number) => {
+  const handleRemoveFromCart = (eventId: string) => {
     removeFromCart(eventId)
     toast.success('Item removed from cart')
   }
@@ -71,7 +71,7 @@ export default function CartPage() {
             <h2 className="text-2xl font-bold text-gray-400 mb-4">Your cart is empty</h2>
             <p className="text-gray-500 mb-8">Start adding events to your cart to get started!</p>
             <button
-              onClick={() => router.push('/technical')}
+              onClick={() => router.push('/pre-events')}
               className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors"
             >
               Browse Events
@@ -118,8 +118,8 @@ export default function CartPage() {
                           className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-red-500 focus:outline-none"
                         >
                           {Array.from(
-                            { length: 10 },
-                            (_, i) => i + 1
+                            { length: item.event.max_team_size - item.event.min_team_size + 1 },
+                            (_, i) => item.event.min_team_size + i
                           ).map((size) => (
                             <option key={size} value={size}>
                               {size}

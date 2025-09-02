@@ -15,7 +15,7 @@ interface EventModalProps {
 
 export function EventModal({ open, onOpenChange, event }: EventModalProps) {
   const { addToCart, isAuthenticated } = useStore();
-  const [teamSize, setTeamSize] = useState<number>(1);
+  const [teamSize, setTeamSize] = useState<number>(event?.min_team_size || 1);
 
   if (!event) return null;
 
@@ -35,7 +35,7 @@ export function EventModal({ open, onOpenChange, event }: EventModalProps) {
         <DialogHeader>
           <DialogTitle className="text-2xl text-yellow-400">{event.name}</DialogTitle>
           <DialogDescription className="text-gray-300">
-            {event.category.toUpperCase()} • Limit: {event.participant_limit} participants
+            {event.category.toUpperCase()} • Min {event.min_team_size} / Max {event.max_team_size}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
@@ -57,7 +57,7 @@ export function EventModal({ open, onOpenChange, event }: EventModalProps) {
                 onChange={(e) => setTeamSize(Number(e.target.value))}
                 className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 focus:border-red-500 outline-none"
               >
-                {Array.from({ length: 10 }, (_, i) => i + 1).map(s => (
+                {Array.from({ length: event.max_team_size - event.min_team_size + 1 }, (_, i) => event.min_team_size + i).map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>

@@ -2,29 +2,14 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export interface Event {
-  id: number
+  id: string
   name: string
   description: string
-  event_type: 'team' | 'solo'
-  rules: string
+  rules?: string | null
   price: number
-  event_date: string
-  time_slot: 'slot1' | 'slot2' | 'both'
-  slot_duration: 'single' | 'double'
-  start_time: string
-  end_time: string
-  category: 'technical' | 'no_code' | 'playground' | 'online'
-  incharge_name1: string
-  incharge_phone1: string
-  incharge_name2: string
-  incharge_phone2: string
-  participant_limit: number
-  current_registrations: number
-  registration_start: string
-  registration_end: string
-  status: 'open' | 'closed' | 'completed'
-  created_at: string
-  updated_at: string
+  min_team_size: number
+  max_team_size: number
+  category: string
 }
 
 export interface CartItem {
@@ -34,17 +19,13 @@ export interface CartItem {
 }
 
 export interface User {
-  id: number
+  id: string
+  phone: string
   name: string
   email: string
-  role: 'user' | 'admin'
-  phone: string
-  department: string
-  year: '1st' | '2nd' | '3rd' | '4th' | '5th' | 'Graduate'
   college: string
-  is_active: boolean
-  created_at: string
-  updated_at: string
+  department: string
+  year: string
 }
 
 interface StoreState {
@@ -54,8 +35,8 @@ interface StoreState {
   setUser: (user: User | null) => void
   setAuthenticated: (status: boolean) => void
   addToCart: (event: Event, teamSize: number) => void
-  removeFromCart: (eventId: string | number) => void
-  updateCartItem: (eventId: string | number, teamSize: number) => void
+  removeFromCart: (eventId: string) => void
+  updateCartItem: (eventId: string, teamSize: number) => void
   clearCart: () => void
   getCartTotal: () => number
   registrationDraft: any
@@ -88,15 +69,15 @@ export const useStore = create<StoreState>()(
           })
         }
       },
-      removeFromCart: (eventId: string | number) => {
+      removeFromCart: (eventId) => {
         set({
-          cart: get().cart.filter(item => item.event.id.toString() !== eventId.toString())
+          cart: get().cart.filter(item => item.event.id !== eventId)
         })
       },
-      updateCartItem: (eventId: string | number, teamSize: number) => {
+      updateCartItem: (eventId, teamSize) => {
         set({
           cart: get().cart.map(item =>
-            item.event.id.toString() === eventId.toString()
+            item.event.id === eventId
               ? { ...item, teamSize }
               : item
           )

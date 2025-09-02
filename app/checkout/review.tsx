@@ -39,65 +39,43 @@ export default function CheckoutReviewPage() {
     setLoading(true);
     setError(null);
     try {
-      // Get user info (either authenticated user or test user)
-      let leaderId: string;
-      let leaderName: string;
-      let leaderEmail: string;
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        leaderId = user.id;
-        leaderName = user.user_metadata?.name || user.email || 'Unknown';
-        leaderEmail = user.email || '';
-      } else {
-        // Test user fallback for localhost
-        leaderId = 'test-user';
-        leaderName = 'Test User';
-        leaderEmail = 'test@localhost.com';
+      // Create registration
+      const { data: reg, error: regErr } = await supabase
+        .from('registrations')
+        .insert({
+          user_id: formData.userId,
+          total_amount: formData.total || 0,
+          status: 'pending',
+        })
+        .select()
+        .single();
+      if (regErr || !reg) throw regErr || new Error('Registration failed');
+  // Insert participants
+  let allRows: any[] = [];
+  for (const event of formData.events) {
+        for (let i = 0; i < (event.participants || []).length; i++) {
+          const p = event.participants[i];
+          allRows.push({
+            registration_id: reg.id,
+            event_id: event.eventId,
+            name: p.name,
+            email: p.email,
+            phone: p.phone,
+            college: p.college,
+            department: p.department,
+            year: p.year,
+            is_leader: i === 0,
+            team_name: event.teamName,
+          });
+        }
       }
-
-      // Create registrations for each event
-      for (const eventData of formData.events) {
-        const leader = eventData.participants[0]; // First participant is leader
-        
-        // Create registration
-        const { data: registration, error: regErr } = await supabase
-          .from('registrations')
-          .insert({
-            event_id: eventData.eventId,
-            team_name: eventData.teamName,
-            leader_id: leaderId,
-            leader_name: leaderName,
-            leader_email: leaderEmail,
-            leader_phone: leader.phone,
-            status: 'pending',
-          })
-          .select()
-          .single();
-        
-        if (regErr || !registration) throw regErr || new Error('Registration failed');
-
-        // Create registrants for all team members
-        const registrantsData = eventData.participants.map((p: any, index: number) => ({
-          registration_id: registration.id,
-          name: p.name,
-          email: p.email,
-          phone: p.phone,
-          college: p.college,
-          department: p.department,
-          year: p.year,
-          is_leader: index === 0, // First participant is leader
-        }));
-
-        const { error: registrantsErr } = await supabase
-          .from('registrants')
-          .insert(registrantsData);
-        
-        if (registrantsErr) throw registrantsErr;
-      }
+      const { error: partErr } = await supabase
+        .from('registration_participants')
+        .insert(allRows);
+      if (partErr) throw partErr;
 
       toast.success('Registration successful!');
-      router.push('/profile'); // Redirect to profile to see registrations
+      router.push(`/receipt?id=${reg.id}`);
     } catch (error: any) {
       setError(error.message || 'Registration failed. Please try again.');
       toast.error(error.message || 'Registration failed. Please try again.');

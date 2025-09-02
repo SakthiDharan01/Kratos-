@@ -27,9 +27,9 @@ export default function ProfilePage() {
   const [search, setSearch] = useState('');
   // Helper to get event name from cart (fallback to eventId)
   const { cart } = useStore();
-  const getEventName = (eventId: string | number) => {
+  const getEventName = (eventId: string) => {
     const found = cart.find(e => e.event.id === eventId);
-    return found ? found.event.name : String(eventId);
+    return found ? found.event.name : eventId;
   };
 
   // Fetch registration history on mount
@@ -38,40 +38,30 @@ export default function ProfilePage() {
     if (!user) return;
     setRegLoading(true);
     try {
-      // First get all teams where user is the leader (from registrants table)
-      const { data: teams, error: teamsError } = await supabase
-        .from('registrants')
+      const { data, error } = await supabase
+        .from('registrations')
         .select(`
-          id,
-          event_id,
-          team_name,
+          id, 
+          event_id, 
+          team_name, 
+          status, 
           created_at,
-          payment_status
+          registrants (
+            name, 
+            email, 
+            is_leader,
+            college,
+            department,
+            year
+          )
         `)
-        .eq('user_id', user.id);
+        .eq('leader_id', user.id)
+        .order('created_at', { ascending: false });
       
-      if (teamsError) throw teamsError;
-      
-      // For each team, get all members
-      const teamsWithMembers = await Promise.all((teams || []).map(async (team) => {
-        const { data: members, error: membersError } = await supabase
-          .from('registrations')
-          .select('*')
-          .eq('leader_id', team.id)
-          .eq('event_id', team.event_id);
-        
-        if (membersError) throw membersError;
-        
-        return {
-          ...team,
-          members: members || []
-        };
-      }));
-      
-      setRegistrations(teamsWithMembers);
+      if (error) throw error;
+      setRegistrations(data || []);
     } catch (error: any) {
       toast.error('Failed to load registrations');
-      console.error('Registration fetch error:', error);
     } finally {
       setRegLoading(false);
     }
@@ -116,7 +106,7 @@ export default function ProfilePage() {
         year: form.year,
       }).eq('id', user.id);
       if (error) throw error;
-      setUser({ ...user, ...form, year: form.year as '1st' | '2nd' | '3rd' | '4th' | '5th' | 'Graduate' });
+      setUser({ ...user, ...form });
       toast.success('Profile updated!');
       setEditing(false);
     } catch (err: any) {
@@ -154,30 +144,23 @@ export default function ProfilePage() {
           ) : (
             <div className="space-y-6">
               {registrations
-                .filter(team =>
-                  team.team_name.toLowerCase().includes(search.toLowerCase()) ||
-                  getEventName(team.event_id).toLowerCase().includes(search.toLowerCase())
+                .filter(reg =>
+                  reg.team_name.toLowerCase().includes(search.toLowerCase()) ||
+                  getEventName(reg.event_id).toLowerCase().includes(search.toLowerCase())
                 )
-                .map(team => (
-                  <div key={team.id} className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
+                .map(reg => (
+                  <div key={reg.id} className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-bold text-white">{team.team_name}</span>
-                      <span className={`px-3 py-1 rounded text-xs font-semibold ${
-                        team.payment_status === 'paid' ? 'bg-green-700 text-green-300' : 
-                        team.payment_status === 'failed' ? 'bg-red-700 text-red-300' :
-                        'bg-yellow-700 text-yellow-300'
-                      }`}>
-                        {team.payment_status}
-                      </span>
+                      <span className="font-bold text-white">{reg.team_name}</span>
+                      <span className={`px-3 py-1 rounded text-xs font-semibold ${reg.status === 'confirmed' ? 'bg-green-700 text-green-300' : 'bg-yellow-700 text-yellow-300'}`}>{reg.status}</span>
                     </div>
-                    <div className="text-yellow-400 font-semibold mb-1">Event: {getEventName(team.event_id)}</div>
-                    <div className="text-gray-300 text-sm mb-2">Registered on: {new Date(team.created_at).toLocaleString()}</div>
-                    <div className="text-white text-sm">Team Members:</div>
+                    <div className="text-yellow-400 font-semibold mb-1">Event: {getEventName(reg.event_id)}</div>
+                    <div className="text-gray-300 text-sm mb-2">Registered on: {new Date(reg.created_at).toLocaleString()}</div>
+                    <div className="text-white text-sm">Participants:</div>
                     <ul className="ml-4 mt-1">
-                      {team.members?.map((member: any, idx: number) => (
+                      {reg.members?.map((p: any, idx: number) => (
                         <li key={idx} className="text-gray-200">
-                          {member.is_leader && <span className="text-yellow-400 font-bold">Leader: </span>}
-                          {member.name} ({member.email}) - {member.college}, {member.department}, {member.year}
+                          {p.is_leader ? <span className="text-yellow-400 font-bold">Leader:</span> : null} {p.name} ({p.email})
                         </li>
                       ))}
                     </ul>
@@ -382,7 +365,7 @@ export default function ProfilePage() {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => router.push('/technical')}
+                    onClick={() => router.push('/pre-events')}
                     className="w-full bg-white/20 hover:bg-white/30 text-white py-3 px-4 rounded-lg transition-colors"
                   >
                     Browse Events
