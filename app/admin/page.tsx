@@ -42,6 +42,14 @@ interface Participant {
   is_leader: boolean
 }
 
+const ADMIN_EMAILS = [
+  'sakthi@example.com',
+  'admin@kratos.com',
+  'test@localhost.com',
+  // Add your email here
+  'officialsakthidharan@gmail.com',
+]
+
 export default function AdminPage() {
   const router = useRouter()
   const { user, isAuthenticated } = useStore()
@@ -58,26 +66,20 @@ export default function AdminPage() {
       }
       
       try {
-        // Check if user is in admin table
-        const { data: adminData, error } = await supabase
+        // Check if user is in the admins table
+        const { data: adminRecord, error } = await supabase
           .from('admins')
-          .select('id, role, is_active, last_login')
+          .select('id, role, is_active')
           .eq('user_id', user.id)
           .eq('is_active', true)
           .single()
-
-        if (error || !adminData) {
-          console.log('Access denied: User not found in admin table')
+        
+        if (error || !adminRecord) {
+          console.error('Admin access denied:', error)
           router.push('/')
           return
         }
-
-        // Update last login
-        await supabase
-          .from('admins')
-          .update({ last_login: new Date().toISOString() })
-          .eq('user_id', user.id)
-
+        
         setAuthorized(true)
       } catch (error) {
         console.error('Error checking admin access:', error)
