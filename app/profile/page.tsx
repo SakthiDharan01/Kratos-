@@ -39,26 +39,27 @@ export default function ProfilePage() {
     if (!user) return;
     setRegLoading(true);
     try {
+      // New schema: 'registrants' holds team registration/payment; 'registrations' holds participants
       const { data, error } = await supabase
-        .from('registrations')
+        .from('registrants')
         .select(`
-          id, 
-          event_id, 
-          team_name, 
-          status, 
-          created_at,
-          registrants (
-            name, 
-            email, 
+          id,
+          event_id,
+          team_name,
+          payment_status,
+          registration_date,
+          paid_amount,
+          registrations (
+            name,
+            email,
             is_leader,
             college,
             department,
             year
           )
         `)
-        .eq('leader_id', user.id)
-        .order('created_at', { ascending: false });
-      
+        .eq('user_id', user.id)
+        .order('registration_date', { ascending: false });
       if (error) throw error;
       setRegistrations(data || []);
     } catch (error: any) {
@@ -146,27 +147,33 @@ export default function ProfilePage() {
             <div className="space-y-6">
               {registrations
                 .filter(reg =>
-                  reg.team_name.toLowerCase().includes(search.toLowerCase()) ||
+                  reg.team_name?.toLowerCase().includes(search.toLowerCase()) ||
                   getEventName(reg.event_id).toLowerCase().includes(search.toLowerCase())
                 )
-                .map(reg => (
-                  <div key={reg.id} className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-bold text-white">{reg.team_name}</span>
-                      <span className={`px-3 py-1 rounded text-xs font-semibold ${reg.status === 'confirmed' ? 'bg-green-700 text-green-300' : 'bg-yellow-700 text-yellow-300'}`}>{reg.status}</span>
+                .map(reg => {
+                  const status = reg.payment_status === 'paid' ? 'confirmed' : reg.payment_status;
+                  return (
+                    <div key={reg.id} className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-bold text-white">{reg.team_name || '—'}</span>
+                        <span className={`px-3 py-1 rounded text-xs font-semibold ${status === 'confirmed' ? 'bg-green-700 text-green-300' : 'bg-yellow-700 text-yellow-300'}`}>{status}</span>
+                      </div>
+                      <div className="text-yellow-400 font-semibold mb-1">Event: {getEventName(reg.event_id)}</div>
+                      <div className="text-gray-300 text-sm mb-2">Registered on: {new Date(reg.registration_date).toLocaleString()}</div>
+                      <div className="text-white text-sm">Participants:</div>
+                      <ul className="ml-4 mt-1">
+                        {reg.registrations?.map((p: any, idx: number) => (
+                          <li key={idx} className="text-gray-200">
+                            {p.is_leader ? <span className="text-yellow-400 font-bold">Leader:</span> : null} {p.name} ({p.email})
+                          </li>
+                        ))}
+                      </ul>
+                      {typeof reg.paid_amount === 'number' && reg.paid_amount > 0 && (
+                        <div className="text-sm text-green-400 mt-2">Paid: ₹{reg.paid_amount}</div>
+                      )}
                     </div>
-                    <div className="text-yellow-400 font-semibold mb-1">Event: {getEventName(reg.event_id)}</div>
-                    <div className="text-gray-300 text-sm mb-2">Registered on: {new Date(reg.created_at).toLocaleString()}</div>
-                    <div className="text-white text-sm">Participants:</div>
-                    <ul className="ml-4 mt-1">
-                      {reg.members?.map((p: any, idx: number) => (
-                        <li key={idx} className="text-gray-200">
-                          {p.is_leader ? <span className="text-yellow-400 font-bold">Leader:</span> : null} {p.name} ({p.email})
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
           )}
         </motion.div>
