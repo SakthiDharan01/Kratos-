@@ -13,10 +13,10 @@ export default function CheckoutReviewPage() {
   const formData = registrationDraft;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Helper to get event name from cart
-  const getEventName = (eventId: string) => {
+  // Helper to get event name from cart (numeric event ids)
+  const getEventName = (eventId: number) => {
     const found = (cart || []).find(e => e.event.id === eventId);
-    return found ? found.event.name : eventId;
+    return found ? found.event.name : String(eventId);
   };
 
   if (!formData || !(formData.events && formData.events.length)) {
@@ -39,65 +39,77 @@ export default function CheckoutReviewPage() {
     setLoading(true);
     setError(null);
     try {
-      // Get user info (either authenticated user or test user)
-      let leaderId: string;
-      let leaderName: string;
-      let leaderEmail: string;
-      
+      // Prefer calling edge function (atomic) – fallback to client inserts if it fails
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        leaderId = user.id;
-        leaderName = user.user_metadata?.name || user.email || 'Unknown';
-        leaderEmail = user.email || '';
-      } else {
-        // Test user fallback for localhost
-        leaderId = 'test-user';
-        leaderName = 'Test User';
-        leaderEmail = 'test@localhost.com';
-      }
+      const authedUserId = user?.id || null;
 
-      // Create registrations for each event
       for (const eventData of formData.events) {
-        const leader = eventData.participants[0]; // First participant is leader
-        
-        // Create registration
-        const { data: registration, error: regErr } = await supabase
-          .from('registrations')
-          .insert({
-            event_id: eventData.eventId,
-            team_name: eventData.teamName,
-            leader_id: leaderId,
-            leader_name: leaderName,
-            leader_email: leaderEmail,
-            leader_phone: leader.phone,
-            status: 'pending',
-          })
-          .select()
-          .single();
-        
-        if (regErr || !registration) throw regErr || new Error('Registration failed');
+        const payload = {
+          event_id: eventData.eventId,
+            // NOTE: Ensure event_id in formData is numeric to match SERIAL id in new schema
+          team_name: eventData.teamName,
+          participants: eventData.participants.map((p: any, idx: number) => ({
+            name: p.name,
+            email: p.email,
+            phone: p.phone,
+            college: p.college,
+            department: p.department,
+            year: p.year,
+            is_leader: idx === 0
+          })),
+          user_id: authedUserId
+        };
 
-        // Create registrants for all team members
-        const registrantsData = eventData.participants.map((p: any, index: number) => ({
-          registration_id: registration.id,
-          name: p.name,
-          email: p.email,
-          phone: p.phone,
-          college: p.college,
-          department: p.department,
-          year: p.year,
-          is_leader: index === 0, // First participant is leader
-        }));
+        // Try edge function first (if deployed)
+        let edgeOk = false;
+        try {
+          const resp = await fetch('/functions/v1/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (resp.ok) {
+            edgeOk = true;
+          }
+        } catch (_) { /* ignore edge failure and fallback */ }
 
-        const { error: registrantsErr } = await supabase
-          .from('registrants')
-          .insert(registrantsData);
-        
-        if (registrantsErr) throw registrantsErr;
+        if (!edgeOk) {
+          // Fallback manual flow: create team (registrants) then participants (registrations)
+            // Insert team registration (registrants table)
+          const { data: team, error: teamErr } = await supabase
+            .from('registrants')
+            .insert({
+              event_id: payload.event_id,
+              user_id: authedUserId,
+              team_name: payload.team_name,
+              payment_status: 'pending'
+            })
+            .select()
+            .single();
+          if (teamErr || !team) throw teamErr || new Error('Team registration failed');
+
+          const participantsRows = payload.participants.map((p: any) => ({
+            name: p.name,
+            email: p.email,
+            phone: p.phone,
+            college: p.college,
+            department: p.department,
+            year: p.year,
+            leader_id: team.id, // FK to registrants
+            team_name: payload.team_name,
+            event_id: payload.event_id,
+            is_leader: p.is_leader
+          }));
+
+          const { error: partErr } = await supabase
+            .from('registrations')
+            .insert(participantsRows);
+          if (partErr) throw partErr;
+        }
       }
 
       toast.success('Registration successful!');
-      router.push('/profile'); // Redirect to profile to see registrations
+      router.push('/profile');
     } catch (error: any) {
       setError(error.message || 'Registration failed. Please try again.');
       toast.error(error.message || 'Registration failed. Please try again.');
@@ -123,7 +135,7 @@ export default function CheckoutReviewPage() {
         <div className="space-y-8">
           {(formData.events || []).map((event: any, idx: number) => (
             <div key={idx} className="bg-gray-900/50 border border-yellow-400/20 rounded-xl p-6">
-              <h2 className="text-2xl font-bold text-yellow-400 mb-2">{getEventName(event.eventId)}</h2>
+              <h2 className="text-2xl font-bold text-yellow-400 mb-2">{getEventName(event.eventId as number)}</h2>
               <div className="mb-2 text-white font-semibold">Team Name: {event.teamName}</div>
               <div className="text-white">Participants:</div>
               <ul className="ml-4 mt-1">

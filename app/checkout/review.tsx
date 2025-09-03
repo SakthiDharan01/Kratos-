@@ -13,10 +13,10 @@ export default function CheckoutReviewPage() {
   const formData = registrationDraft;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Helper to get event name from cart
-  const getEventName = (eventId: string) => {
+  // Helper to get event name from cart (event ids are numbers)
+  const getEventName = (eventId: number) => {
     const found = (cart || []).find(e => e.event.id === eventId);
-    return found ? found.event.name : eventId;
+    return found ? found.event.name : String(eventId);
   };
 
   if (!formData || !(formData.events && formData.events.length)) {
@@ -99,9 +99,9 @@ export default function CheckoutReviewPage() {
           </p>
         </motion.div>
         <div className="space-y-8">
-          {(formData.events || []).map((event: any, idx: number) => (
+      {(formData.events || []).map((event: any, idx: number) => (
             <div key={idx} className="bg-gray-900/50 border border-yellow-400/20 rounded-xl p-6">
-              <h2 className="text-2xl font-bold text-yellow-400 mb-2">{getEventName(event.eventId)}</h2>
+        <h2 className="text-2xl font-bold text-yellow-400 mb-2">{getEventName(event.eventId as number)}</h2>
               <div className="mb-2 text-white font-semibold">Team Name: {event.teamName}</div>
               <div className="text-white">Participants:</div>
               <ul className="ml-4 mt-1">

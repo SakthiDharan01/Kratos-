@@ -29,7 +29,7 @@ export default function CartPage() {
     )
   }
 
-  const handleRemoveFromCart = (eventId: string) => {
+  const handleRemoveFromCart = (eventId: number) => {
     removeFromCart(eventId)
     toast.success('Item removed from cart')
   }
@@ -71,10 +71,10 @@ export default function CartPage() {
             <h2 className="text-2xl font-bold text-gray-400 mb-4">Your cart is empty</h2>
             <p className="text-gray-500 mb-8">Start adding events to your cart to get started!</p>
             <button
-              onClick={() => router.push('/pre-events')}
+              onClick={() => router.push('/technical')}
               className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors"
             >
-              Browse Events
+              Browse Technical Events
             </button>
           </motion.div>
         ) : (

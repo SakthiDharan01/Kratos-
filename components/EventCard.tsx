@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Plus, Users, IndianRupee } from 'lucide-react'
+import { Plus, Users, IndianRupee, Lock } from 'lucide-react'
 import { Event } from '@/lib/store'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
@@ -15,12 +15,20 @@ export default function EventCard({ event }: EventCardProps) {
   const [teamSize, setTeamSize] = useState(event.min_team_size)
   const { addToCart, isAuthenticated } = useStore()
 
+  const now = new Date()
+  const regStart = event.registration_start ? new Date(event.registration_start) : null
+  const regEnd = event.registration_end ? new Date(event.registration_end) : null
+  const isWindowOpen = (
+    (!regStart || now >= regStart) && (!regEnd || now <= regEnd)
+  )
+  const isDisabled = event.status !== 'open' || !isWindowOpen
+
   const handleAddToCart = () => {
+    if (isDisabled) return
     if (!isAuthenticated) {
       toast.error('Please login to add events to cart')
       return
     }
-    
     addToCart(event, teamSize)
     toast.success(`${event.name} added to cart!`)
   }
@@ -35,7 +43,17 @@ export default function EventCard({ event }: EventCardProps) {
       className="bg-gray-900/50 border border-red-500/20 rounded-xl p-6 backdrop-blur-sm hover:border-red-500/40 transition-all duration-300"
     >
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-xl font-bold text-yellow-400">{event.name}</h3>
+        <div>
+          <h3 className="text-xl font-bold text-yellow-400 flex items-center gap-2">
+            {event.name}
+            {isDisabled && (
+              <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-gray-700 text-gray-300 flex items-center gap-1">
+                <Lock className="w-3 h-3" /> Closed
+              </span>
+            )}
+          </h3>
+          <p className="text-xs text-gray-400 mt-1 uppercase">{event.event_type === 'team' ? 'Team Event' : 'Solo Event'}</p>
+        </div>
         <div className="flex items-center text-green-400 font-bold">
           <IndianRupee className="w-4 h-4" />
           <span>{event.price}</span>
@@ -44,32 +62,39 @@ export default function EventCard({ event }: EventCardProps) {
       
       <p className="text-gray-300 mb-4 leading-relaxed">{event.description}</p>
       
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center text-sm text-gray-400">
-          <Users className="w-4 h-4 mr-1" />
-          <span>Team: {event.min_team_size}-{event.max_team_size} members</span>
+      {event.event_type === 'team' && (
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center text-sm text-gray-400">
+            <Users className="w-4 h-4 mr-1" />
+            <span>Team: {event.min_team_size}-{event.max_team_size} members</span>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Team Size
           </label>
-          <select
-            value={teamSize}
-            onChange={(e) => setTeamSize(Number(e.target.value))}
-            className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-red-500 focus:outline-none"
-          >
-            {Array.from(
-              { length: event.max_team_size - event.min_team_size + 1 },
-              (_, i) => event.min_team_size + i
-            ).map((size) => (
-              <option key={size} value={size}>
-                {size} member{size > 1 ? 's' : ''}
-              </option>
-            ))}
-          </select>
+          {event.event_type === 'team' ? (
+            <select
+              value={teamSize}
+              disabled={isDisabled}
+              onChange={(e) => setTeamSize(Number(e.target.value))}
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-red-500 focus:outline-none disabled:opacity-50"
+            >
+              {Array.from(
+                { length: event.max_team_size - event.min_team_size + 1 },
+                (_, i) => event.min_team_size + i
+              ).map((size) => (
+                <option key={size} value={size}>
+                  {size} member{size > 1 ? 's' : ''}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="text-sm text-gray-400">Solo participation</div>
+          )}
         </div>
 
         <div className="flex justify-between items-center pt-2">
@@ -77,13 +102,14 @@ export default function EventCard({ event }: EventCardProps) {
             Total: <span className="text-green-400 font-bold">₹{totalPrice}</span>
           </div>
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={!isDisabled ? { scale: 1.05 } : undefined}
+            whileTap={!isDisabled ? { scale: 0.95 } : undefined}
             onClick={handleAddToCart}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            disabled={isDisabled}
+            className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${isDisabled ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white'}`}
           >
             <Plus className="w-4 h-4" />
-            <span>Add to Cart</span>
+            <span>{isDisabled ? 'Closed' : 'Add to Cart'}</span>
           </motion.button>
         </div>
       </div>

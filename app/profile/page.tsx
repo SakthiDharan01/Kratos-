@@ -27,9 +27,10 @@ export default function ProfilePage() {
   const [search, setSearch] = useState('');
   // Helper to get event name from cart (fallback to eventId)
   const { cart } = useStore();
-  const getEventName = (eventId: string) => {
-    const found = cart.find(e => e.event.id === eventId);
-    return found ? found.event.name : eventId;
+  const getEventName = (eventId: number | string) => {
+    const numericId = typeof eventId === 'string' ? Number(eventId) : eventId;
+    const found = cart.find(e => e.event.id === numericId);
+    return found ? found.event.name : String(eventId);
   };
 
   // Fetch registration history on mount
@@ -365,10 +366,10 @@ export default function ProfilePage() {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => router.push('/pre-events')}
+                    onClick={() => router.push('/technical')}
                     className="w-full bg-white/20 hover:bg-white/30 text-white py-3 px-4 rounded-lg transition-colors"
                   >
-                    Browse Events
+                    Browse Technical Events
                   </motion.button>
                 </div>
               </motion.div>

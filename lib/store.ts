@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export interface Event {
-  id: string
+  id: number
   name: string
   description: string
   rules?: string | null
@@ -10,6 +10,21 @@ export interface Event {
   min_team_size: number
   max_team_size: number
   category: string
+  event_type: 'team' | 'solo'
+  status: 'open' | 'closed' | 'completed'
+  participant_limit?: number | null
+  current_registrations?: number | null
+  registration_start?: string | null
+  registration_end?: string | null
+  event_date?: string | null
+  time_slot?: 'slot1' | 'slot2' | 'both' | null
+  slot_duration?: 'single' | 'double' | null
+  start_time?: string | null
+  end_time?: string | null
+  incharge_name1?: string | null
+  incharge_phone1?: string | null
+  incharge_name2?: string | null
+  incharge_phone2?: string | null
 }
 
 export interface CartItem {
@@ -35,8 +50,8 @@ interface StoreState {
   setUser: (user: User | null) => void
   setAuthenticated: (status: boolean) => void
   addToCart: (event: Event, teamSize: number) => void
-  removeFromCart: (eventId: string) => void
-  updateCartItem: (eventId: string, teamSize: number) => void
+  removeFromCart: (eventId: number) => void
+  updateCartItem: (eventId: number, teamSize: number) => void
   clearCart: () => void
   getCartTotal: () => number
   registrationDraft: any
@@ -69,12 +84,12 @@ export const useStore = create<StoreState>()(
           })
         }
       },
-      removeFromCart: (eventId) => {
+  removeFromCart: (eventId) => {
         set({
           cart: get().cart.filter(item => item.event.id !== eventId)
         })
       },
-      updateCartItem: (eventId, teamSize) => {
+  updateCartItem: (eventId, teamSize) => {
         set({
           cart: get().cart.map(item =>
             item.event.id === eventId

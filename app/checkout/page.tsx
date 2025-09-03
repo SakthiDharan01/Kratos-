@@ -102,7 +102,7 @@ export default function CheckoutPage() {
           <h1 className="text-3xl font-bold text-yellow-400 mb-4">No Items to Checkout</h1>
           <p className="text-gray-300 mb-8">Your cart is empty. Add some events first!</p>
           <button
-            onClick={() => router.push('/pre-events')}
+            onClick={() => router.push('/technical')}
             className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors"
           >
             Browse Events

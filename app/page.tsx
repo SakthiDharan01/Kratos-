@@ -9,8 +9,8 @@ export default function Home() {
   const features = [
     {
       icon: <Calendar className="w-8 h-8" />,
-      title: 'Multiple Events',
-      description: 'Choose from technical, non-technical, and ground events'
+      title: 'Focused Tracks',
+      description: 'Technical • No-Code • PlayGround • Online'
     },
     {
       icon: <Users className="w-8 h-8" />,
@@ -31,27 +31,27 @@ export default function Home() {
 
   const eventCategories = [
     {
-      title: 'Pre-Events',
-      description: 'Warm-up events to kick off the fest',
-      href: '/pre-events',
-      color: 'from-blue-500 to-purple-600'
-    },
-    {
-      title: 'Technical Events',
-      description: 'Programming, hackathons, and tech challenges',
+      title: 'Technical',
+      description: 'Core engineering & coding challenges',
       href: '/technical',
       color: 'from-red-500 to-orange-600'
     },
     {
-      title: 'Non-Technical',
-      description: 'Creative and fun events for everyone',
-      href: '/non-technical',
+      title: 'No-Code',
+      description: 'Build without writing code',
+      href: '/no-code',
+      color: 'from-indigo-500 to-purple-600'
+    },
+    {
+      title: 'PlayGround',
+      description: 'Fun experimental & casual contests',
+      href: '/playground',
       color: 'from-green-500 to-teal-600'
     },
     {
-      title: 'Ground Events',
-      description: 'Sports and outdoor activities',
-      href: '/grounds',
+      title: 'Online Events',
+      description: 'Remote participation challenges',
+      href: '/online',
       color: 'from-yellow-500 to-red-600'
     }
   ]
@@ -87,7 +87,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             className="text-4xl font-bold text-yellow-400 text-center mb-12"
           >
-            Why Join Kratos 2k24?
+            Why Join Kratos 2k25?
           </motion.h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
@@ -155,10 +155,10 @@ export default function Home() {
               Register now and be part of the most exciting technical festival!
             </p>
             <Link
-              href="/pre-events"
+              href="/technical"
               className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-8 py-3 rounded-lg transition-colors inline-block"
             >
-              Browse Events
+              Explore Technical Events
             </Link>
           </motion.div>
         </section>
