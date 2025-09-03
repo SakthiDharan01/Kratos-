@@ -42,27 +42,13 @@ export default function ProfilePage() {
       // New schema: 'registrants' holds team registration/payment; 'registrations' holds participants
       const { data, error } = await supabase
         .from('registrants')
-        .select(`
-          id,
-          event_id,
-          team_name,
-          payment_status,
-          registration_date,
-          paid_amount,
-          registrations (
-            name,
-            email,
-            is_leader,
-            college,
-            department,
-            year
-          )
-        `)
+        .select(`id,event_id,team_name,payment_status,registration_date,paid_amount,registrations(name,email,is_leader,college,department,year)`) // flattened select string
         .eq('user_id', user.id)
         .order('registration_date', { ascending: false });
       if (error) throw error;
       setRegistrations(data || []);
     } catch (error: any) {
+      console.error('Registration fetch error', error.message || error);
       toast.error('Failed to load registrations');
     } finally {
       setRegLoading(false);
@@ -71,6 +57,16 @@ export default function ProfilePage() {
   
   useEffect(() => {
     refreshRegistrations();
+    // Debug: verify users table accessible under RLS
+    (async () => {
+      if (!user) return;
+      const { data: userRow, error: userErr } = await supabase.from('users').select('id').eq('id', user.id).single();
+      if (userErr) {
+        console.error('User fetch error', userErr.message || userErr);
+      } else {
+        console.log('User row ok', userRow?.id);
+      }
+    })();
   }, [user]);
 
   // Listen for receipt page navigation and refresh registrations
