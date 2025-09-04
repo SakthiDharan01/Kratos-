@@ -40,9 +40,18 @@ export default function ProfilePage() {
     setRegLoading(true);
     try {
       // New schema: 'registrants' holds team registration/payment; 'registrations' holds participants
+      // Based on your schema: registrations.leader_id -> registrants.id
       const { data, error } = await supabase
         .from('registrants')
-        .select(`id,event_id,team_name,payment_status,registration_date,paid_amount,registrations(name,email,is_leader,college,department,year)`) // flattened select string
+        .select(`
+          id,
+          event_id,
+          team_name,
+          payment_status,
+          registration_date,
+          paid_amount,
+          registrations!leader_id(name,email,is_leader,college,department,year)
+        `)
         .eq('user_id', user.id)
         .order('registration_date', { ascending: false });
       if (error) throw error;
