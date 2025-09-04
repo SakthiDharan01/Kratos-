@@ -13,9 +13,10 @@ export default function CheckoutReviewPage() {
   const formData = registrationDraft;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Helper to get event name from cart (numeric event ids)
-  const getEventName = (eventId: number) => {
-    const found = (cart || []).find(e => e.event.id === eventId);
+  // Helper to get event name from cart (handle both string and numeric event ids)
+  const getEventName = (eventId: string | number) => {
+    const numericId = typeof eventId === 'string' ? Number(eventId) : eventId;
+    const found = (cart || []).find(e => e.event.id === numericId);
     return found ? found.event.name : String(eventId);
   };
 
@@ -45,8 +46,7 @@ export default function CheckoutReviewPage() {
 
       for (const eventData of formData.events) {
         const payload = {
-          event_id: eventData.eventId,
-            // NOTE: Ensure event_id in formData is numeric to match SERIAL id in new schema
+          event_id: Number(eventData.eventId), // Convert string to number to match SERIAL id
           team_name: eventData.teamName,
           participants: eventData.participants.map((p: any, idx: number) => ({
             name: p.name,

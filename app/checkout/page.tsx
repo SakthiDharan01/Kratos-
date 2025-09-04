@@ -53,7 +53,7 @@ export default function CheckoutPage() {
   // Build initial form values
   const defaultValues = {
     events: cart.map(item => ({
-      eventId: item.event.id,
+      eventId: String(item.event.id), // Ensure string type for form
       teamName: '',
       participants: Array.from({ length: item.teamSize }, (_, idx) => ({
         name: idx === 0 ? user?.name || '' : '',
@@ -76,18 +76,33 @@ export default function CheckoutPage() {
   const handleCheckout = form.handleSubmit(async (data) => {
     setLoading(true)
     try {
+      console.log('Checkout data:', data);
+      
       // Validate form
       const valid = await form.trigger();
-      if (!valid) return;
+      console.log('Form validation result:', valid);
+      console.log('Form errors:', form.formState.errors);
+      
+      if (!valid) {
+        console.error('Form validation failed:', form.formState.errors);
+        toast.error('Please fix validation errors before continuing');
+        return;
+      }
+      
       // Pass registration data to global state
       const formData = form.getValues();
+      console.log('Setting registration draft:', formData);
+      
       setRegistrationDraft({
         ...formData,
         userId: user?.id,
         total: total,
       });
+      
+      console.log('Navigating to review page...');
       router.push('/checkout/review');
     } catch (error: any) {
+      console.error('Checkout error:', error);
       toast.error(error.message || 'Checkout failed. Please try again.')
     } finally {
       setLoading(false)
