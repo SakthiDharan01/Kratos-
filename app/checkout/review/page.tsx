@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 
 export default function CheckoutReviewPage() {
   const router = useRouter();
-  const { cart, registrationDraft } = useStore();
+  const { cart, registrationDraft, setUser } = useStore();
   const formData = registrationDraft;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,9 +40,41 @@ export default function CheckoutReviewPage() {
     setLoading(true);
     setError(null);
     try {
-      // Prefer calling edge function (atomic) – fallback to client inserts if it fails
+      // Get authenticated user
       const { data: { user } } = await supabase.auth.getUser();
       const authedUserId = user?.id || null;
+      
+      if (!authedUserId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Ensure user exists in users table (upsert from auth.users + store data)
+      const userFromStore = formData.events?.[0]?.participants?.[0]; // Get leader info from first event
+      if (userFromStore) {
+        const userData = {
+          id: authedUserId,
+          name: userFromStore.name,
+          email: userFromStore.email,
+          phone: userFromStore.phone,
+          college: userFromStore.college,
+          department: userFromStore.department,
+          year: userFromStore.year,
+        };
+        
+        const { error: userUpsertError } = await supabase
+          .from('users')
+          .upsert(userData, {
+            onConflict: 'id'
+          });
+        
+        if (userUpsertError) {
+          console.error('User upsert error:', userUpsertError);
+          throw new Error('Failed to create/update user record');
+        }
+        
+        // Update store with latest user data
+        setUser(userData);
+      }
 
       for (const eventData of formData.events) {
         const payload = {
