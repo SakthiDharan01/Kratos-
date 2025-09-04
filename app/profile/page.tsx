@@ -57,22 +57,36 @@ export default function ProfilePage() {
   
   useEffect(() => {
     refreshRegistrations();
-    // Debug: verify users table accessible under RLS
+    // Debug: verify users table accessible under RLS (adds status/code if available)
     (async () => {
       if (!user) return;
-      const { data: userRow, error: userErr } = await supabase.from('users').select('id').eq('id', user.id).single();
+      const { data: userRow, error: userErr } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', user.id)
+        .single();
       if (userErr) {
-        console.error('User fetch error', userErr.message || userErr);
+        console.error('User fetch error', {
+          message: (userErr as any).message,
+          details: (userErr as any).details,
+          hint: (userErr as any).hint,
+          code: (userErr as any).code
+        });
       } else {
         console.log('User row ok', userRow?.id);
       }
     })();
-  }, [user]);
 
-  // Listen for receipt page navigation and refresh registrations
-  if (typeof window !== 'undefined') {
-    window.addEventListener('focus', refreshRegistrations);
-  }
+    const onFocus = () => refreshRegistrations();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', onFocus);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', onFocus);
+      }
+    };
+  }, [user]);
 
   if (!isAuthenticated || !user) {
     return (
