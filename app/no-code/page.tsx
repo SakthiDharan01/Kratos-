@@ -16,7 +16,7 @@ export default function NoCodePage() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await fetchEvents('no-code')
+        const data = await fetchEvents('No-Code')
         setEvents(data)
       } catch (e) {
         console.error(e)

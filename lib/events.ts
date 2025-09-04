@@ -34,7 +34,7 @@ export async function fetchEvents(category?: string): Promise<Event[]> {
     )
     .order('created_at', { ascending: true })
 
-  if (category) query = query.eq('category', category)
+  if (category) query = query.ilike('category', category)
   const { data, error } = await query
   if (error) throw error
   return (data as unknown as Event[]) || []

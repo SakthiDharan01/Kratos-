@@ -16,7 +16,7 @@ export default function TechnicalPage() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await fetchEvents('technical')
+        const data = await fetchEvents('Technical')
         setEvents(data)
       } catch (e) {
         console.error(e)

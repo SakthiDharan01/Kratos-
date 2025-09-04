@@ -16,7 +16,7 @@ export default function PlaygroundPage() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await fetchEvents('playground')
+        const data = await fetchEvents('PlayGround')
         setEvents(data)
       } catch (e) {
         console.error(e)

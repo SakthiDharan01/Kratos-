@@ -16,7 +16,7 @@ export default function OnlinePage() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await fetchEvents('online')
+        const data = await fetchEvents('Online Events')
         setEvents(data)
       } catch (e) {
         console.error(e)
