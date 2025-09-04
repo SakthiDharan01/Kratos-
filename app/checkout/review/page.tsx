@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
+import { loadRazorpayScript, RazorpayOptions, RazorpayResponse } from '@/lib/razorpay';
 
 export default function CheckoutReviewPage() {
   const router = useRouter();
@@ -76,9 +77,12 @@ export default function CheckoutReviewPage() {
         setUser(userData);
       }
 
+      // Create registrations and collect registrant IDs
+      const registrantIds: number[] = [];
+
       for (const eventData of formData.events) {
         const payload = {
-          event_id: Number(eventData.eventId), // Convert string to number to match SERIAL id
+          event_id: Number(eventData.eventId),
           team_name: eventData.teamName,
           participants: eventData.participants.map((p: any, idx: number) => ({
             name: p.name,
@@ -92,59 +96,151 @@ export default function CheckoutReviewPage() {
           user_id: authedUserId
         };
 
-        // Try edge function first (if deployed)
-        let edgeOk = false;
-        try {
-          const resp = await fetch('/functions/v1/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if (resp.ok) {
-            edgeOk = true;
-          }
-        } catch (_) { /* ignore edge failure and fallback */ }
-
-        if (!edgeOk) {
-          // Fallback manual flow: create team (registrants) then participants (registrations)
-            // Insert team registration (registrants table)
-          const { data: team, error: teamErr } = await supabase
-            .from('registrants')
-            .insert({
-              event_id: payload.event_id,
-              user_id: authedUserId,
-              team_name: payload.team_name,
-              payment_status: 'pending'
-            })
-            .select()
-            .single();
-          if (teamErr || !team) throw teamErr || new Error('Team registration failed');
-
-          const participantsRows = payload.participants.map((p: any) => ({
-            name: p.name,
-            email: p.email,
-            phone: p.phone,
-            college: p.college,
-            department: p.department,
-            year: p.year,
-            leader_id: team.id, // FK to registrants
-            team_name: payload.team_name,
+        // Create team registration (registrants table) with pending payment
+        const { data: team, error: teamErr } = await supabase
+          .from('registrants')
+          .insert({
             event_id: payload.event_id,
-            is_leader: p.is_leader
-          }));
+            user_id: authedUserId,
+            team_name: payload.team_name,
+            payment_status: 'pending'
+          })
+          .select()
+          .single();
 
-          const { error: partErr } = await supabase
-            .from('registrations')
-            .insert(participantsRows);
-          if (partErr) throw partErr;
-        }
+        if (teamErr || !team) throw teamErr || new Error('Team registration failed');
+        registrantIds.push(team.id);
+
+        // Create participant records
+        const participantsRows = payload.participants.map((p: any) => ({
+          name: p.name,
+          email: p.email,
+          phone: p.phone,
+          college: p.college,
+          department: p.department,
+          year: p.year,
+          leader_id: team.id,
+          team_name: payload.team_name,
+          event_id: payload.event_id,
+          is_leader: p.is_leader
+        }));
+
+        const { error: partErr } = await supabase
+          .from('registrations')
+          .insert(participantsRows);
+        if (partErr) throw partErr;
       }
 
-      toast.success('Registration successful!');
-      router.push('/profile');
+      // If total is 0, mark as paid and redirect
+      if (formData.total === 0) {
+        for (const registrantId of registrantIds) {
+          await supabase
+            .from('registrants')
+            .update({ payment_status: 'paid' })
+            .eq('id', registrantId);
+        }
+        
+        toast.success('Registration successful!');
+        router.push('/profile');
+        return;
+      }
+
+      // Initialize Razorpay payment
+      await initiateRazorpayPayment(registrantIds);
+
     } catch (error: any) {
       setError(error.message || 'Registration failed. Please try again.');
       toast.error(error.message || 'Registration failed. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const initiateRazorpayPayment = async (registrantIds: number[]) => {
+    try {
+      // Load Razorpay script
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error('Failed to load Razorpay SDK');
+      }
+
+      // Create Razorpay order
+      const orderResponse = await fetch('/api/razorpay/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: formData.total }),
+      });
+
+      if (!orderResponse.ok) {
+        throw new Error('Failed to create payment order');
+      }
+
+      const orderData = await orderResponse.json();
+      const userFromStore = formData.events?.[0]?.participants?.[0];
+
+      // Configure Razorpay options
+      const options: RazorpayOptions = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+        amount: Number(orderData.amount),
+        currency: orderData.currency,
+        name: 'Kratos 2k25',
+        description: 'Event Registration Payment',
+        order_id: orderData.orderId,
+        handler: async (response: RazorpayResponse) => {
+          await handlePaymentSuccess(response, registrantIds);
+        },
+        prefill: {
+          name: userFromStore?.name || '',
+          email: userFromStore?.email || '',
+          contact: userFromStore?.phone || '',
+        },
+        theme: {
+          color: '#FBBF24', // Yellow theme color
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+            toast.error('Payment cancelled');
+          },
+        },
+      };
+
+      // Open Razorpay checkout
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+
+    } catch (error: any) {
+      console.error('Payment initiation error:', error);
+      toast.error(error.message || 'Failed to initiate payment');
+      setLoading(false);
+    }
+  };
+
+  const handlePaymentSuccess = async (response: RazorpayResponse, registrantIds: number[]) => {
+    try {
+      // Verify payment for each registrant
+      for (const registrantId of registrantIds) {
+        const verifyResponse = await fetch('/api/razorpay/verify-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            registrant_id: registrantId,
+          }),
+        });
+
+        if (!verifyResponse.ok) {
+          throw new Error('Payment verification failed');
+        }
+      }
+
+      toast.success('Payment successful! Registration completed.');
+      router.push('/receipt?payment_id=' + response.razorpay_payment_id);
+
+    } catch (error: any) {
+      console.error('Payment verification error:', error);
+      toast.error(error.message || 'Payment verification failed');
     } finally {
       setLoading(false);
     }
@@ -198,7 +294,8 @@ export default function CheckoutReviewPage() {
             className="bg-yellow-400 hover:bg-yellow-500 text-black px-6 py-3 rounded-lg font-bold transition-colors disabled:opacity-50"
             disabled={loading}
           >
-            {loading ? 'Submitting...' : 'Confirm & Submit'}
+            {loading ? 'Processing...' : 
+             formData.total > 0 ? `Pay ₹${formData.total}` : 'Confirm Registration'}
           </button>
         </div>
       </div>
