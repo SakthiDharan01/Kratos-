@@ -96,22 +96,63 @@ export default function CheckoutReviewPage() {
           user_id: authedUserId
         };
 
-        // Create team registration (registrants table) with pending payment
-        const { data: team, error: teamErr } = await supabase
+        // Check if team already exists for this event
+        const { data: existingTeam } = await supabase
           .from('registrants')
-          .insert({
-            event_id: payload.event_id,
-            user_id: authedUserId,
-            team_name: payload.team_name,
-            payment_status: 'pending'
-          })
-          .select()
+          .select('id, payment_status')
+          .eq('event_id', payload.event_id)
+          .eq('team_name', payload.team_name)
           .single();
 
-        if (teamErr || !team) throw teamErr || new Error('Team registration failed');
+        let team: any = null;
+        if (existingTeam) {
+          // If team exists and payment is pending/failed, update it
+          if (existingTeam.payment_status === 'pending' || existingTeam.payment_status === 'failed') {
+            const { data: updatedTeam, error: updateErr } = await supabase
+              .from('registrants')
+              .update({
+                user_id: authedUserId,
+                payment_status: 'pending',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingTeam.id)
+              .select()
+              .single();
+            
+            if (updateErr) throw updateErr;
+            team = updatedTeam;
+          } else if (existingTeam.payment_status === 'paid') {
+            throw new Error(`Team "${payload.team_name}" is already registered and paid for this event. Please use a different team name.`);
+          }
+        } else {
+          // Create new team registration
+          const { data: newTeam, error: teamErr } = await supabase
+            .from('registrants')
+            .insert({
+              event_id: payload.event_id,
+              user_id: authedUserId,
+              team_name: payload.team_name,
+              payment_status: 'pending'
+            })
+            .select()
+            .single();
+
+          if (teamErr) throw teamErr;
+          team = newTeam;
+        }
+
+        if (!team) throw new Error('Team registration failed');
         registrantIds.push(team.id);
 
-        // Create participant records
+        // Handle participant records - delete existing and create new ones
+        // First, delete existing participants for this team/event to avoid duplicates
+        await supabase
+          .from('registrations')
+          .delete()
+          .eq('leader_id', team.id)
+          .eq('event_id', payload.event_id);
+
+        // Create new participant records
         const participantsRows = payload.participants.map((p: any) => ({
           name: p.name,
           email: p.email,
@@ -149,8 +190,21 @@ export default function CheckoutReviewPage() {
       await initiateRazorpayPayment(registrantIds);
 
     } catch (error: any) {
-      setError(error.message || 'Registration failed. Please try again.');
-      toast.error(error.message || 'Registration failed. Please try again.');
+      console.error('Registration error:', error);
+      
+      // Handle specific database constraint errors
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error.message?.includes('registrants_event_id_team_name_key')) {
+        errorMessage = 'A team with this name is already registered for this event. Please choose a different team name.';
+      } else if (error.message?.includes('already registered and paid')) {
+        errorMessage = error.message; // Use the custom message we set above
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
       setLoading(false);
     }
   };
@@ -217,23 +271,26 @@ export default function CheckoutReviewPage() {
 
   const handlePaymentSuccess = async (response: RazorpayResponse, registrantIds: number[]) => {
     try {
-      // Verify payment for each registrant
-      for (const registrantId of registrantIds) {
-        const verifyResponse = await fetch('/api/razorpay/verify-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
-            registrant_id: registrantId,
-          }),
-        });
+      // Verify payment with all registrant IDs at once
+      const verifyResponse = await fetch('/api/razorpay/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+          registrant_ids: registrantIds, // Send all IDs at once
+          amount: formData.total, // Send the total amount
+        }),
+      });
 
-        if (!verifyResponse.ok) {
-          throw new Error('Payment verification failed');
-        }
+      if (!verifyResponse.ok) {
+        const errorData = await verifyResponse.json();
+        throw new Error(errorData.error || 'Payment verification failed');
       }
+
+      const verifyData = await verifyResponse.json();
+      console.log('Payment verification successful:', verifyData);
 
       toast.success('Payment successful! Registration completed.');
       router.push('/receipt?payment_id=' + response.razorpay_payment_id);

@@ -25,6 +25,11 @@ export default function ProfilePage() {
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [regLoading, setRegLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [stats, setStats] = useState({
+    registeredEvents: 0,
+    totalSpent: 0,
+    pendingPayments: 0,
+  });
   // Helper to get event name from cart (fallback to eventId)
   const { cart } = useStore();
   const getEventName = (eventId: number | string) => {
@@ -50,12 +55,32 @@ export default function ProfilePage() {
           payment_status,
           registration_date,
           paid_amount,
+          events(name, price),
           registrations!leader_id(name,email,is_leader,college,department,year)
         `)
         .eq('user_id', user.id)
         .order('registration_date', { ascending: false });
+      
       if (error) throw error;
-      setRegistrations(data || []);
+      
+      const registrationsData = data || [];
+      setRegistrations(registrationsData);
+      
+      // Calculate stats
+      const paidRegistrations = registrationsData.filter(reg => reg.payment_status === 'paid');
+      const pendingRegistrations = registrationsData.filter(reg => reg.payment_status === 'pending');
+      
+      const totalSpent = paidRegistrations.reduce((sum, reg) => {
+        const eventPrice = (reg.events as any)?.price || 0;
+        return sum + (reg.paid_amount || eventPrice);
+      }, 0);
+      
+      setStats({
+        registeredEvents: paidRegistrations.length,
+        totalSpent: totalSpent,
+        pendingPayments: pendingRegistrations.length,
+      });
+      
     } catch (error: any) {
       console.error('Registration fetch error', error.message || error);
       toast.error('Failed to load registrations');
@@ -171,13 +196,14 @@ export default function ProfilePage() {
                 )
                 .map(reg => {
                   const status = reg.payment_status === 'paid' ? 'confirmed' : reg.payment_status;
+                  const eventName = reg.events?.name || getEventName(reg.event_id);
                   return (
                     <div key={reg.id} className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-bold text-white">{reg.team_name || '—'}</span>
-                        <span className={`px-3 py-1 rounded text-xs font-semibold ${status === 'confirmed' ? 'bg-green-700 text-green-300' : 'bg-yellow-700 text-yellow-300'}`}>{status}</span>
+                        <span className={`px-3 py-1 rounded text-xs font-semibold ${status === 'confirmed' ? 'bg-green-700 text-green-300' : status === 'pending' ? 'bg-yellow-700 text-yellow-300' : 'bg-red-700 text-red-300'}`}>{status}</span>
                       </div>
-                      <div className="text-yellow-400 font-semibold mb-1">Event: {getEventName(reg.event_id)}</div>
+                      <div className="text-yellow-400 font-semibold mb-1">Event: {eventName}</div>
                       <div className="text-gray-300 text-sm mb-2">Registered on: {new Date(reg.registration_date).toLocaleString()}</div>
                       <div className="text-white text-sm">Participants:</div>
                       <ul className="ml-4 mt-1">
@@ -410,11 +436,15 @@ export default function ProfilePage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300">Registered Events</span>
-                    <span className="text-yellow-400 font-bold">0</span>
+                    <span className="text-yellow-400 font-bold">{stats.registeredEvents}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300">Total Spent</span>
-                    <span className="text-green-400 font-bold">₹0</span>
+                    <span className="text-green-400 font-bold">₹{stats.totalSpent}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Pending Payments</span>
+                    <span className="text-orange-400 font-bold">{stats.pendingPayments}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300">Account Status</span>

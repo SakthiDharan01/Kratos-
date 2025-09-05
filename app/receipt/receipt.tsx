@@ -46,7 +46,7 @@ function ReceiptContent() {
         setLoading(true);
         
         // Fetch user's registrants with payment info and related events
-        let query = supabase
+        const { data: registrants, error } = await supabase
           .from('registrants')
           .select(`
             id,
@@ -61,30 +61,24 @@ function ReceiptContent() {
             registrations(name, email)
           `)
           .eq('user_id', user.id)
-          .eq('payment_status', 'paid');
-
-        // If specific payment_id is requested, filter by it
-        if (paymentId) {
-          query = query.eq('razorpay_payment_id', paymentId);
-        }
-
-        const { data: registrants, error } = await query.order('payment_time', { ascending: false });
+          .eq('payment_status', 'paid')
+          .order('payment_time', { ascending: false });
 
         if (error) throw error;
 
         if (!registrants || registrants.length === 0) {
-          if (paymentId) {
-            toast.error('Receipt not found for this payment ID');
-          } else {
-            toast.error('No paid registrations found');
-          }
+          toast.error('No paid registrations found');
           return;
         }
 
-        // Use first registrant (or the specific one if payment_id was provided)
-        const selectedRegistrant = registrants[0];
+        // If payment_id is provided, filter by it, otherwise show latest
+        let selectedRegistrant = registrants[0];
+        if (paymentId) {
+          const found = registrants.find((r: any) => r.razorpay_payment_id === paymentId);
+          if (found) selectedRegistrant = found;
+        }
 
-        // Transform data for receipt display - only show registrations from this payment
+        // Transform data for receipt display
         const receiptData: ReceiptData = {
           id: selectedRegistrant.razorpay_payment_id || selectedRegistrant.id,
           payment_id: selectedRegistrant.razorpay_payment_id,
@@ -95,7 +89,7 @@ function ReceiptContent() {
             participants: reg.registrations?.length || 0,
             amount: reg.paid_amount || reg.events?.price || 0,
           })),
-          totalAmount: registrants.reduce((sum: number, reg: any) => sum + (reg.paid_amount || reg.events?.price || 0), 0),
+          totalAmount: registrants.reduce((sum: number, reg: any) => sum + (reg.paid_amount || 0), 0),
           date: selectedRegistrant.payment_time 
             ? new Date(selectedRegistrant.payment_time).toLocaleDateString()
             : new Date(selectedRegistrant.registration_date).toLocaleDateString(),
