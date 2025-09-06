@@ -247,7 +247,18 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Check if current user is already registered for any event
+      // Check if current user is already registered for any specific events in cart
+      console.log('Checking user registration status for events in cart...');
+      for (const event of data.events) {
+        const eventRegistrationStatus = await useStore.getState().checkEventRegistrationStatus(parseInt(event.eventId));
+        if (eventRegistrationStatus.isRegistered) {
+          toast.error(`You are already registered for this event. Cannot register for the same event twice.`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Check if user has any other registrations
       const userRegistrationStatus = await useStore.getState().checkUserRegistrationStatus();
       if (userRegistrationStatus.hasRegistration) {
         toast.error(`You are already registered for "${userRegistrationStatus.eventName}". Each participant can only register for one event total.`);

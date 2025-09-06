@@ -81,6 +81,7 @@ interface StoreState {
   clearFormDraft: () => void
   isProfileComplete: () => boolean
   checkUserRegistrationStatus: () => Promise<{hasRegistration: boolean, eventName?: string}>
+  checkEventRegistrationStatus: (eventId: number) => Promise<{isRegistered: boolean, eventName?: string}>
 }
 
 export const useStore = create<StoreState>()(
@@ -188,6 +189,48 @@ export const useStore = create<StoreState>()(
         } catch (error) {
           console.error('Error in checkUserRegistrationStatus:', error)
           return { hasRegistration: false }
+        }
+      },
+      checkEventRegistrationStatus: async (eventId: number) => {
+        const user = get().user
+        if (!user) return { isRegistered: false }
+        
+        try {
+          // Import supabase dynamically to avoid circular dependency
+          const { supabase } = await import('@/lib/supabase')
+          
+          // Check if user is registered for this specific event
+          const { data: registrations, error } = await supabase
+            .from('registrations')
+            .select(`
+              id,
+              event_id,
+              leader_id,
+              registrants!inner(payment_status),
+              events(name)
+            `)
+            .or(`email.eq.${user.email},phone.eq.${user.phone}`)
+            .eq('event_id', eventId)
+            .in('registrants.payment_status', ['pending', 'paid'])
+            .limit(1)
+
+          if (error) {
+            console.error('Error checking event registration status:', error)
+            return { isRegistered: false }
+          }
+
+          if (registrations && registrations.length > 0) {
+            const registration = registrations[0]
+            return { 
+              isRegistered: true, 
+              eventName: (registration.events as any)?.name || 'Unknown Event'
+            }
+          }
+
+          return { isRegistered: false }
+        } catch (error) {
+          console.error('Error in checkEventRegistrationStatus:', error)
+          return { isRegistered: false }
         }
       }
     }),
