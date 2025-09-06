@@ -79,6 +79,7 @@ export default function CheckoutReviewPage() {
 
       // Create registrations and collect registrant IDs
       const registrantIds: number[] = [];
+      console.log('Starting registration creation for events:', formData.events);
 
       for (const eventData of formData.events) {
         const payload = {
@@ -95,6 +96,7 @@ export default function CheckoutReviewPage() {
           })),
           user_id: authedUserId
         };
+        console.log('Processing event registration:', payload);
 
         // Check if team already exists for this event
         const { data: existingTeam } = await supabase
@@ -104,8 +106,11 @@ export default function CheckoutReviewPage() {
           .eq('team_name', payload.team_name)
           .single();
 
+        console.log('Existing team check result:', existingTeam);
+
         let team: any = null;
         if (existingTeam) {
+          console.log('Found existing team:', existingTeam);
           // If team exists and payment is pending/failed, update it
           if (existingTeam.payment_status === 'pending' || existingTeam.payment_status === 'failed') {
             const { data: updatedTeam, error: updateErr } = await supabase
@@ -119,12 +124,17 @@ export default function CheckoutReviewPage() {
               .select()
               .single();
             
-            if (updateErr) throw updateErr;
+            if (updateErr) {
+              console.error('Error updating existing team:', updateErr);
+              throw updateErr;
+            }
             team = updatedTeam;
+            console.log('Updated existing team:', team);
           } else if (existingTeam.payment_status === 'paid') {
             throw new Error(`Team "${payload.team_name}" is already registered and paid for this event. Please use a different team name.`);
           }
         } else {
+          console.log('Creating new team registration...');
           // Create new team registration
           const { data: newTeam, error: teamErr } = await supabase
             .from('registrants')
@@ -137,11 +147,19 @@ export default function CheckoutReviewPage() {
             .select()
             .single();
 
-          if (teamErr) throw teamErr;
+          if (teamErr) {
+            console.error('Error creating new team:', teamErr);
+            throw teamErr;
+          }
           team = newTeam;
+          console.log('Created new team:', team);
         }
 
-        if (!team) throw new Error('Team registration failed');
+        if (!team) {
+          console.error('Team registration failed - no team object');
+          throw new Error('Team registration failed');
+        }
+        console.log('Adding registrant ID to list:', team.id);
         registrantIds.push(team.id);
 
         // Handle participant records - delete existing and create new ones

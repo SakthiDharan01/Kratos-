@@ -55,6 +55,11 @@ export async function POST(request: NextRequest) {
 
       if (fetchError) {
         console.error('Error fetching registrant:', registrantId, fetchError);
+        if (fetchError.code === 'PGRST116') {
+          // Registrant doesn't exist
+          console.error('Registrant not found:', registrantId);
+          throw new Error(`Registrant ${registrantId} not found`);
+        }
         throw fetchError;
       }
 
