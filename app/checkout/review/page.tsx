@@ -271,6 +271,9 @@ export default function CheckoutReviewPage() {
 
   const handlePaymentSuccess = async (response: RazorpayResponse, registrantIds: number[]) => {
     try {
+      console.log('Payment success response:', response);
+      console.log('Registrant IDs to verify:', registrantIds);
+      
       // Verify payment with all registrant IDs at once
       const verifyResponse = await fetch('/api/razorpay/verify-payment', {
         method: 'POST',
@@ -284,8 +287,11 @@ export default function CheckoutReviewPage() {
         }),
       });
 
+      console.log('Verify response status:', verifyResponse.status);
+
       if (!verifyResponse.ok) {
         const errorData = await verifyResponse.json();
+        console.error('Verification failed:', errorData);
         throw new Error(errorData.error || 'Payment verification failed');
       }
 
@@ -293,7 +299,11 @@ export default function CheckoutReviewPage() {
       console.log('Payment verification successful:', verifyData);
 
       toast.success('Payment successful! Registration completed.');
-      router.push('/receipt?payment_id=' + response.razorpay_payment_id);
+      
+      // Add a small delay to ensure database is updated before redirect
+      setTimeout(() => {
+        router.push('/receipt?payment_id=' + response.razorpay_payment_id);
+      }, 1000);
 
     } catch (error: any) {
       console.error('Payment verification error:', error);

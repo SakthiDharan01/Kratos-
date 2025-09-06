@@ -38,9 +38,13 @@ function ReceiptContent() {
   useEffect(() => {
     const fetchReceiptData = async () => {
       if (!user?.id) {
+        console.log('No user ID available');
         toast.error('User not authenticated');
         return;
       }
+
+      console.log('Fetching receipt data for user:', user.id);
+      console.log('Payment ID from URL:', paymentId);
 
       try {
         setLoading(true);
@@ -66,13 +70,26 @@ function ReceiptContent() {
         // If specific payment_id is requested, filter by it
         if (paymentId) {
           query = query.eq('razorpay_payment_id', paymentId);
+          console.log('Filtering by payment_id:', paymentId);
         }
 
         const { data: registrants, error } = await query.order('payment_time', { ascending: false });
 
+        console.log('Query result:', { registrants, error });
+
         if (error) throw error;
 
         if (!registrants || registrants.length === 0) {
+          console.log('No registrants found for user:', user.id, 'payment_id:', paymentId);
+          
+          // Debug: Check all registrants for this user
+          const { data: allRegistrants } = await supabase
+            .from('registrants')
+            .select('id, payment_status, razorpay_payment_id, team_name')
+            .eq('user_id', user.id);
+          
+          console.log('All registrants for user:', allRegistrants);
+          
           if (paymentId) {
             toast.error('Receipt not found for this payment ID');
           } else {
@@ -81,8 +98,11 @@ function ReceiptContent() {
           return;
         }
 
+        console.log('Found registrants:', registrants);
+
         // Use first registrant (or the specific one if payment_id was provided)
         const selectedRegistrant = registrants[0];
+        console.log('Selected registrant:', selectedRegistrant);
 
         // Transform data for receipt display - only show registrations from this payment
         const receiptData: ReceiptData = {

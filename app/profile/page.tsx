@@ -66,20 +66,30 @@ export default function ProfilePage() {
       const registrationsData = data || [];
       setRegistrations(registrationsData);
       
+      console.log('Registration data fetched:', registrationsData);
+      
       // Calculate stats
       const paidRegistrations = registrationsData.filter(reg => reg.payment_status === 'paid');
       const pendingRegistrations = registrationsData.filter(reg => reg.payment_status === 'pending');
       
+      console.log('Paid registrations:', paidRegistrations);
+      console.log('Pending registrations:', pendingRegistrations);
+      
       const totalSpent = paidRegistrations.reduce((sum, reg) => {
         const eventPrice = (reg.events as any)?.price || 0;
-        return sum + (reg.paid_amount || eventPrice);
+        const amount = reg.paid_amount || eventPrice;
+        console.log(`Registration ${reg.id}: paid_amount=${reg.paid_amount}, event_price=${eventPrice}, using=${amount}`);
+        return sum + amount;
       }, 0);
       
-      setStats({
+      const newStats = {
         registeredEvents: paidRegistrations.length,
         totalSpent: totalSpent,
         pendingPayments: pendingRegistrations.length,
-      });
+      };
+      
+      console.log('Calculated stats:', newStats);
+      setStats(newStats);
       
     } catch (error: any) {
       console.error('Registration fetch error', error.message || error);
