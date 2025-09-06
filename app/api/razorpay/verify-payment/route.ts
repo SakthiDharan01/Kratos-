@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyPaymentSignature } from '@/lib/razorpay';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+// Create a service role client for payment verification (bypasses RLS)
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,7 +50,7 @@ export async function POST(request: NextRequest) {
       console.log('Processing registrant ID:', registrantId);
       
       // First get the event price for this registrant
-      const { data: registrant, error: fetchError } = await supabase
+      const { data: registrant, error: fetchError } = await supabaseAdmin
         .from('registrants')
         .select(`
           event_id,
@@ -67,7 +73,7 @@ export async function POST(request: NextRequest) {
       console.log('Event price for registrant', registrantId, ':', eventPrice);
 
       // Update the registrant with payment info and correct paid_amount
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseAdmin
         .from('registrants')
         .update({
           payment_status: 'paid',
@@ -93,7 +99,7 @@ export async function POST(request: NextRequest) {
 
     // Create payment records for each registrant
     for (const result of updateResults) {
-      const { error: paymentError } = await supabase
+      const { error: paymentError } = await supabaseAdmin
         .from('payments')
         .insert({
           registrant_id: result.registrantId,
