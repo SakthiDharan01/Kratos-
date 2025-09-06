@@ -46,19 +46,38 @@ const formSchema = z.object({
 });
 
 // Function to check if participant already registered in any event
-const checkParticipantRegistration = async (email: string, phone: string) => {
-  const { data, error } = await supabase
-    .from('registrations')
-    .select('id, event_id, events(name)')
-    .or(`email.eq.${email},phone.eq.${phone}`)
-    .limit(1);
+const checkParticipantRegistration = async (email: string, phone: string, excludeEventId?: string) => {
+  try {
+    // Check registrations table for existing participants
+    const { data: registrationData, error: regError } = await supabase
+      .from('registrations')
+      .select(`
+        id, 
+        event_id, 
+        email, 
+        phone,
+        leader_id,
+        registrants!inner(payment_status),
+        events(name)
+      `)
+      .or(`email.eq.${email},phone.eq.${phone}`)
+      .in('registrants.payment_status', ['pending', 'paid']);
 
-  if (error) {
-    console.error('Error checking participant registration:', error);
+    if (regError) {
+      console.error('Error checking registration:', regError);
+      return null;
+    }
+
+    // Filter out current event if provided
+    const filteredData = registrationData?.filter(reg => 
+      excludeEventId ? reg.event_id !== parseInt(excludeEventId) : true
+    ) || [];
+
+    return filteredData.length > 0 ? filteredData[0] : null;
+  } catch (error) {
+    console.error('Error in checkParticipantRegistration:', error);
     return null;
   }
-
-  return data && data.length > 0 ? data[0] : null;
 };
 
 export default function CheckoutPage() {
@@ -98,6 +117,12 @@ export default function CheckoutPage() {
     mode: 'onBlur',
   })
 
+  // Update form when draft data is available
+  useEffect(() => {
+    const initialValues = getInitialValues();
+    form.reset(initialValues);
+  }, [formDraft, cart, user]);
+
   // Auto-save form data on changes
   useEffect(() => {
     const subscription = form.watch((data) => {
@@ -112,70 +137,110 @@ export default function CheckoutPage() {
     return () => subscription.unsubscribe();
   }, [form, saveFormDraft, total, user?.id]);
 
-  // Validate participant uniqueness
-  const validateParticipant = async (email: string, phone: string, participantKey: string) => {
+  // Real-time participant validation with debouncing
+  const [validationDebounce, setValidationDebounce] = useState<{[key: string]: NodeJS.Timeout}>({});
+
+  const validateParticipantRealTime = async (email: string, phone: string, participantKey: string, eventId: string) => {
     if (!email || !phone) return;
     
-    try {
-      const existingRegistration = await checkParticipantRegistration(email, phone);
-      
-      setParticipantValidation(prev => ({
-        ...prev,
-        [participantKey]: !existingRegistration
-      }));
-
-      if (existingRegistration) {
-        toast.error(`Participant with email/phone already registered in another event. Each participant can only register once.`);
-        return false;
-      }
-      return true;
-    } catch (error) {
-      console.error('Error validating participant:', error);
-      return true; // Allow if validation fails
+    // Clear existing timeout
+    if (validationDebounce[participantKey]) {
+      clearTimeout(validationDebounce[participantKey]);
     }
+
+    // Set new timeout for debounced validation
+    const timeoutId = setTimeout(async () => {
+      try {
+        const existingRegistration = await checkParticipantRegistration(email, phone, eventId);
+        
+        setParticipantValidation(prev => ({
+          ...prev,
+          [participantKey]: !existingRegistration
+        }));
+
+        if (existingRegistration) {
+          toast.error(`This participant is already registered in another event`, {
+            id: participantKey, // Prevent duplicate toasts
+            duration: 3000
+          });
+        }
+      } catch (error) {
+        console.error('Error validating participant:', error);
+      }
+    }, 1000); // 1 second debounce
+
+    setValidationDebounce(prev => ({
+      ...prev,
+      [participantKey]: timeoutId
+    }));
   };
 
   const handleCheckout = form.handleSubmit(async (data) => {
     setLoading(true)
     try {
-      // Validate all participants against database
-      const allParticipants: Array<{email: string, phone: string, eventId: string}> = [];
-      
-      for (const event of data.events) {
-        for (const participant of event.participants) {
-          allParticipants.push({
-            email: participant.email,
-            phone: participant.phone,
-            eventId: event.eventId
-          });
-        }
-      }
-
-      // Check for existing registrations
-      for (const participant of allParticipants) {
-        const isValid = await validateParticipant(
-          participant.email, 
-          participant.phone, 
-          `${participant.eventId}-${participant.email}`
-        );
-        if (!isValid) {
-          setLoading(false);
-          return;
-        }
-      }
-
-      console.log('Checkout data:', data);
-      
-      // Validate form
+      // First validate form structure
       const valid = await form.trigger();
-      console.log('Form validation result:', valid);
-      console.log('Form errors:', form.formState.errors);
-      
       if (!valid) {
         console.error('Form validation failed:', form.formState.errors);
         toast.error('Please fix validation errors before continuing');
+        setLoading(false);
         return;
       }
+
+      // Comprehensive participant uniqueness validation
+      console.log('Validating participant uniqueness across all events...');
+      
+      for (let eventIndex = 0; eventIndex < data.events.length; eventIndex++) {
+        const event = data.events[eventIndex];
+        for (let participantIndex = 0; participantIndex < event.participants.length; participantIndex++) {
+          const participant = event.participants[participantIndex];
+          
+          if (!participant.email || !participant.phone) {
+            toast.error(`Please fill in all participant details for ${event.teamName || `Event ${eventIndex + 1}`}`);
+            setLoading(false);
+            return;
+          }
+
+          // Check if this participant is already registered in ANY other event
+          const existingRegistration = await checkParticipantRegistration(
+            participant.email, 
+            participant.phone, 
+            event.eventId
+          );
+
+          if (existingRegistration) {
+            toast.error(
+              `${participant.name || 'Participant'} (${participant.email}) is already registered in another event. Each participant can only register for one event total.`
+            );
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
+      // Check for duplicates within current registration
+      const allEmails = new Set();
+      const allPhones = new Set();
+      
+      for (const event of data.events) {
+        for (const participant of event.participants) {
+          if (allEmails.has(participant.email)) {
+            toast.error(`Email ${participant.email} is used multiple times. Each participant must have a unique email.`);
+            setLoading(false);
+            return;
+          }
+          if (allPhones.has(participant.phone)) {
+            toast.error(`Phone ${participant.phone} is used multiple times. Each participant must have a unique phone number.`);
+            setLoading(false);
+            return;
+          }
+          allEmails.add(participant.email);
+          allPhones.add(participant.phone);
+        }
+      }
+
+      console.log('All validation passed, proceeding with checkout...');
+      console.log('Checkout data:', data);
       
       // Pass registration data to global state
       const formData = form.getValues();
@@ -298,9 +363,21 @@ export default function CheckoutPage() {
                               <input
                                 type="email"
                                 {...form.register(`events.${index}.participants.${participantIndex}.email`)}
-                                className="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-red-500 focus:outline-none text-sm"
+                                onBlur={(e) => {
+                                  const participantKey = `${item.event.id}-${participantIndex}-${e.target.value}`;
+                                  const currentParticipant = form.getValues(`events.${index}.participants.${participantIndex}`);
+                                  validateParticipantRealTime(e.target.value, currentParticipant.phone, participantKey, String(item.event.id));
+                                }}
+                                className={`w-full bg-gray-800 border rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none text-sm ${
+                                  participantValidation[`${item.event.id}-${participantIndex}-${participant.email}`] === false 
+                                    ? 'border-red-500 focus:border-red-500' 
+                                    : 'border-gray-600 focus:border-red-500'
+                                }`}
                               />
                               <span className="text-red-400 text-xs">{form.formState.errors?.events?.[index]?.participants?.[participantIndex]?.email?.message}</span>
+                              {participantValidation[`${item.event.id}-${participantIndex}-${participant.email}`] === false && (
+                                <span className="text-red-400 text-xs">This participant is already registered in another event</span>
+                              )}
                             </div>
                           </div>
 
@@ -312,7 +389,16 @@ export default function CheckoutPage() {
                               <input
                                 type="tel"
                                 {...form.register(`events.${index}.participants.${participantIndex}.phone`)}
-                                className="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-red-500 focus:outline-none text-sm"
+                                onBlur={(e) => {
+                                  const participantKey = `${item.event.id}-${participantIndex}-${participant.email}`;
+                                  const currentParticipant = form.getValues(`events.${index}.participants.${participantIndex}`);
+                                  validateParticipantRealTime(currentParticipant.email, e.target.value, participantKey, String(item.event.id));
+                                }}
+                                className={`w-full bg-gray-800 border rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none text-sm ${
+                                  participantValidation[`${item.event.id}-${participantIndex}-${participant.email}`] === false 
+                                    ? 'border-red-500 focus:border-red-500' 
+                                    : 'border-gray-600 focus:border-red-500'
+                                }`}
                               />
                               <span className="text-red-400 text-xs">{form.formState.errors?.events?.[index]?.participants?.[participantIndex]?.phone?.message}</span>
                             </div>
