@@ -1,10 +1,11 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/lib/supabase';
 import Layout from '@/components/Layout'
+import ProfileGuard from '@/components/ProfileGuard'
 import { motion } from 'framer-motion'
 import { User, Mail, Building, BookOpen, Calendar, Phone, IndianRupee, CreditCard } from 'lucide-react'
 import { useStore } from '@/lib/store'
@@ -44,38 +45,125 @@ const formSchema = z.object({
   events: z.array(eventSchema)
 });
 
+// Function to check if participant already registered in any event
+const checkParticipantRegistration = async (email: string, phone: string) => {
+  const { data, error } = await supabase
+    .from('registrations')
+    .select('id, event_id, events(name)')
+    .or(`email.eq.${email},phone.eq.${phone}`)
+    .limit(1);
+
+  if (error) {
+    console.error('Error checking participant registration:', error);
+    return null;
+  }
+
+  return data && data.length > 0 ? data[0] : null;
+};
+
 export default function CheckoutPage() {
-  const { cart, user, getCartTotal, clearCart, setRegistrationDraft } = useStore()
+  const { cart, user, getCartTotal, clearCart, setRegistrationDraft, formDraft, saveFormDraft } = useStore()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [participantValidation, setParticipantValidation] = useState<{[key: string]: boolean}>({})
   const total = getCartTotal()
 
-  // Build initial form values
-  const defaultValues = {
-    events: cart.map(item => ({
-      eventId: String(item.event.id), // Ensure string type for form
-      teamName: '',
-      participants: Array.from({ length: item.teamSize }, (_, idx) => ({
-        name: idx === 0 ? user?.name || '' : '',
-        email: idx === 0 ? user?.email || '' : '',
-        phone: idx === 0 ? user?.phone || '' : '',
-        college: idx === 0 ? user?.college || '' : '',
-        department: idx === 0 ? user?.department || '' : '',
-        year: idx === 0 ? user?.year || '' : '',
-        sameAsLeader: false,
+  // Build initial form values from draft or defaults
+  const getInitialValues = () => {
+    // Check if we have a recent draft (within 24 hours)
+    if (formDraft && formDraft.timestamp && (Date.now() - formDraft.timestamp) < 24 * 60 * 60 * 1000) {
+      return formDraft;
+    }
+    
+    return {
+      events: cart.map(item => ({
+        eventId: String(item.event.id),
+        teamName: '',
+        participants: Array.from({ length: item.teamSize }, (_, idx) => ({
+          name: idx === 0 ? user?.name || '' : '',
+          email: idx === 0 ? user?.email || '' : '',
+          phone: idx === 0 ? user?.phone || '' : '',
+          college: idx === 0 ? user?.college || '' : '',
+          department: idx === 0 ? user?.department || '' : '',
+          year: idx === 0 ? user?.year || '' : '',
+          sameAsLeader: false,
+        }))
       }))
-    }))
+    }
   }
 
   const form = useForm({
     resolver: zodResolver(formSchema),
-    defaultValues,
+    defaultValues: getInitialValues(),
     mode: 'onBlur',
   })
+
+  // Auto-save form data on changes
+  useEffect(() => {
+    const subscription = form.watch((data) => {
+      if (data && Object.keys(data).length > 0) {
+        saveFormDraft({
+          ...data as any,
+          total,
+          userId: user?.id
+        });
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, saveFormDraft, total, user?.id]);
+
+  // Validate participant uniqueness
+  const validateParticipant = async (email: string, phone: string, participantKey: string) => {
+    if (!email || !phone) return;
+    
+    try {
+      const existingRegistration = await checkParticipantRegistration(email, phone);
+      
+      setParticipantValidation(prev => ({
+        ...prev,
+        [participantKey]: !existingRegistration
+      }));
+
+      if (existingRegistration) {
+        toast.error(`Participant with email/phone already registered in another event. Each participant can only register once.`);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Error validating participant:', error);
+      return true; // Allow if validation fails
+    }
+  };
 
   const handleCheckout = form.handleSubmit(async (data) => {
     setLoading(true)
     try {
+      // Validate all participants against database
+      const allParticipants: Array<{email: string, phone: string, eventId: string}> = [];
+      
+      for (const event of data.events) {
+        for (const participant of event.participants) {
+          allParticipants.push({
+            email: participant.email,
+            phone: participant.phone,
+            eventId: event.eventId
+          });
+        }
+      }
+
+      // Check for existing registrations
+      for (const participant of allParticipants) {
+        const isValid = await validateParticipant(
+          participant.email, 
+          participant.phone, 
+          `${participant.eventId}-${participant.email}`
+        );
+        if (!isValid) {
+          setLoading(false);
+          return;
+        }
+      }
+
       console.log('Checkout data:', data);
       
       // Validate form
@@ -137,21 +225,22 @@ export default function CheckoutPage() {
   };
 
   return (
-    <Layout>
-      <div className="max-w-6xl mx-auto space-y-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center"
-        >
-          <h1 className="text-5xl font-bold text-yellow-400 mb-4 flex items-center justify-center gap-3">
-            <CreditCard className="w-12 h-12" />
-            Checkout
-          </h1>
-          <p className="text-xl text-gray-300">
-            Fill in participant details for all events
-          </p>
-        </motion.div>
+    <ProfileGuard requiresCompleteProfile={true}>
+      <Layout>
+        <div className="max-w-6xl mx-auto space-y-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center"
+          >
+            <h1 className="text-5xl font-bold text-yellow-400 mb-4 flex items-center justify-center gap-3">
+              <CreditCard className="w-12 h-12" />
+              Checkout
+            </h1>
+            <p className="text-xl text-gray-300">
+              Fill in participant details for all events
+            </p>
+          </motion.div>
 
         <form onSubmit={handleCheckout} className="grid lg:grid-cols-3 gap-8">
           {/* Participant Details */}
@@ -344,5 +433,6 @@ export default function CheckoutPage() {
         </form>
       </div>
     </Layout>
+    </ProfileGuard>
   )
 }

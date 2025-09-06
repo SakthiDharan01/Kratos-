@@ -10,7 +10,7 @@ import { loadRazorpayScript, RazorpayOptions, RazorpayResponse } from '@/lib/raz
 
 export default function CheckoutReviewPage() {
   const router = useRouter();
-  const { cart, registrationDraft, setUser } = useStore();
+  const { cart, registrationDraft, setUser, clearPaidItemsFromCart, clearFormDraft, setRegistrationDraft } = useStore();
   const formData = registrationDraft;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -199,6 +199,12 @@ export default function CheckoutReviewPage() {
             .eq('id', registrantId);
         }
         
+        // Clear cart and form data for free events too
+        const paidEventIds = formData.events.map((e: any) => parseInt(e.eventId));
+        clearPaidItemsFromCart(paidEventIds);
+        clearFormDraft();
+        setRegistrationDraft(null);
+        
         toast.success('Registration successful!');
         router.push('/profile');
         return;
@@ -315,6 +321,12 @@ export default function CheckoutReviewPage() {
 
       const verifyData = await verifyResponse.json();
       console.log('Payment verification successful:', verifyData);
+
+      // Clear paid items from cart and reset form data
+      const paidEventIds = formData.events.map((e: any) => parseInt(e.eventId));
+      clearPaidItemsFromCart(paidEventIds);
+      clearFormDraft();
+      setRegistrationDraft(null);
 
       toast.success('Payment successful! Registration completed.');
       

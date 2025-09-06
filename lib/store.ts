@@ -43,19 +43,43 @@ export interface User {
   year: string
 }
 
+export interface FormDraftData {
+  events: Array<{
+    eventId: string
+    teamName: string
+    participants: Array<{
+      name: string
+      email: string
+      phone: string
+      college: string
+      department: string
+      year: string
+      sameAsLeader?: boolean
+    }>
+  }>
+  total: number
+  userId?: string
+  timestamp: number
+}
+
 interface StoreState {
   user: User | null
   cart: CartItem[]
   isAuthenticated: boolean
+  formDraft: FormDraftData | null
   setUser: (user: User | null) => void
   setAuthenticated: (status: boolean) => void
   addToCart: (event: Event, teamSize: number) => void
   removeFromCart: (eventId: number) => void
   updateCartItem: (eventId: number, teamSize: number) => void
   clearCart: () => void
+  clearPaidItemsFromCart: (paidEventIds: number[]) => void
   getCartTotal: () => number
   registrationDraft: any
   setRegistrationDraft: (data: any) => void
+  saveFormDraft: (data: FormDraftData) => void
+  clearFormDraft: () => void
+  isProfileComplete: () => boolean
 }
 
 export const useStore = create<StoreState>()(
@@ -64,6 +88,7 @@ export const useStore = create<StoreState>()(
       user: null,
       cart: [],
       isAuthenticated: false,
+      formDraft: null,
       setUser: (user) => set({ user }),
       setAuthenticated: (status) => set({ isAuthenticated: status }),
       addToCart: (event, teamSize) => {
@@ -84,12 +109,12 @@ export const useStore = create<StoreState>()(
           })
         }
       },
-  removeFromCart: (eventId) => {
+      removeFromCart: (eventId) => {
         set({
           cart: get().cart.filter(item => item.event.id !== eventId)
         })
       },
-  updateCartItem: (eventId, teamSize) => {
+      updateCartItem: (eventId, teamSize) => {
         set({
           cart: get().cart.map(item =>
             item.event.id === eventId
@@ -99,13 +124,30 @@ export const useStore = create<StoreState>()(
         })
       },
       clearCart: () => set({ cart: [] }),
+      clearPaidItemsFromCart: (paidEventIds) => {
+        set({
+          cart: get().cart.filter(item => !paidEventIds.includes(item.event.id))
+        })
+      },
       getCartTotal: () => {
         return get().cart.reduce((total, item) => {
           return total + (item.event.price * item.teamSize)
         }, 0)
       },
-  registrationDraft: null,
-  setRegistrationDraft: (data) => set({ registrationDraft: data }),
+      registrationDraft: null,
+      setRegistrationDraft: (data) => set({ registrationDraft: data }),
+      saveFormDraft: (data) => set({ 
+        formDraft: { 
+          ...data, 
+          timestamp: Date.now() 
+        } 
+      }),
+      clearFormDraft: () => set({ formDraft: null }),
+      isProfileComplete: () => {
+        const user = get().user
+        if (!user) return false
+        return !!(user.name && user.email && user.phone && user.college && user.department && user.year)
+      }
     }),
     {
       name: 'event-store',

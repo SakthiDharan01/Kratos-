@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Layout from '@/components/Layout'
+import ProfileGuard from '@/components/ProfileGuard'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, Users, IndianRupee, ShoppingCart } from 'lucide-react'
 import { useStore } from '@/lib/store'
@@ -9,25 +10,8 @@ import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateCartItem, getCartTotal, isAuthenticated } = useStore()
+  const { cart, removeFromCart, updateCartItem, getCartTotal } = useStore()
   const router = useRouter()
-
-  if (!isAuthenticated) {
-    return (
-      <Layout>
-        <div className="text-center py-20">
-          <h1 className="text-3xl font-bold text-yellow-400 mb-4">Please Login</h1>
-          <p className="text-gray-300 mb-8">You need to be logged in to view your cart.</p>
-          <button
-            onClick={() => router.push('/login')}
-            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors"
-          >
-            Go to Login
-          </button>
-        </div>
-      </Layout>
-    )
-  }
 
   const handleRemoveFromCart = (eventId: number) => {
     removeFromCart(eventId)
@@ -45,7 +29,8 @@ export default function CartPage() {
   const total = getCartTotal()
 
   return (
-    <Layout>
+    <ProfileGuard requiresCompleteProfile={true}>
+      <Layout>
       <div className="max-w-4xl mx-auto space-y-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -181,5 +166,6 @@ export default function CartPage() {
         )}
       </div>
     </Layout>
+    </ProfileGuard>
   )
 }
