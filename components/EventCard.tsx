@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import { Plus, Users, IndianRupee, Lock } from 'lucide-react'
 import { Event } from '@/lib/store'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { useStore } from '@/lib/store'
 
@@ -13,7 +13,22 @@ interface EventCardProps {
 
 export default function EventCard({ event }: EventCardProps) {
   const [teamSize, setTeamSize] = useState(event.min_team_size)
-  const { addToCart, isAuthenticated } = useStore()
+  const [userHasRegistration, setUserHasRegistration] = useState(false)
+  const [registeredEventName, setRegisteredEventName] = useState('')
+  const [checkingRegistration, setCheckingRegistration] = useState(false)
+  const { addToCart, isAuthenticated, checkUserRegistrationStatus } = useStore()
+
+  // Check if user already has a registration when component mounts
+  useEffect(() => {
+    if (isAuthenticated) {
+      setCheckingRegistration(true)
+      checkUserRegistrationStatus().then((result) => {
+        setUserHasRegistration(result.hasRegistration)
+        setRegisteredEventName(result.eventName || '')
+        setCheckingRegistration(false)
+      })
+    }
+  }, [isAuthenticated, checkUserRegistrationStatus])
 
   const now = new Date()
   const regStart = event.registration_start ? new Date(event.registration_start) : null
@@ -21,14 +36,24 @@ export default function EventCard({ event }: EventCardProps) {
   const isWindowOpen = (
     (!regStart || now >= regStart) && (!regEnd || now <= regEnd)
   )
-  const isDisabled = event.status !== 'open' || !isWindowOpen
+  const isDisabled = event.status !== 'open' || !isWindowOpen || userHasRegistration
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (isDisabled) return
     if (!isAuthenticated) {
       toast.error('Please login to add events to cart')
       return
     }
+
+    // Double-check registration status before adding to cart
+    const registrationStatus = await checkUserRegistrationStatus()
+    if (registrationStatus.hasRegistration) {
+      toast.error(`You are already registered for "${registrationStatus.eventName}". Each participant can only register for one event.`)
+      setUserHasRegistration(true)
+      setRegisteredEventName(registrationStatus.eventName || '')
+      return
+    }
+
     addToCart(event, teamSize)
     toast.success(`${event.name} added to cart!`)
   }
@@ -46,13 +71,23 @@ export default function EventCard({ event }: EventCardProps) {
         <div>
           <h3 className="text-xl font-bold text-yellow-400 flex items-center gap-2">
             {event.name}
-            {isDisabled && (
+            {isDisabled && userHasRegistration && (
+              <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-orange-700 text-orange-300 flex items-center gap-1">
+                <Lock className="w-3 h-3" /> Already Registered
+              </span>
+            )}
+            {isDisabled && !userHasRegistration && (
               <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-gray-700 text-gray-300 flex items-center gap-1">
                 <Lock className="w-3 h-3" /> Closed
               </span>
             )}
           </h3>
           <p className="text-xs text-gray-400 mt-1 uppercase">{event.event_type === 'team' ? 'Team Event' : 'Solo Event'}</p>
+          {userHasRegistration && (
+            <p className="text-xs text-orange-400 mt-1">
+              You're registered for: {registeredEventName}
+            </p>
+          )}
         </div>
         <div className="flex items-center text-green-400 font-bold">
           <IndianRupee className="w-4 h-4" />
@@ -105,11 +140,24 @@ export default function EventCard({ event }: EventCardProps) {
             whileHover={!isDisabled ? { scale: 1.05 } : undefined}
             whileTap={!isDisabled ? { scale: 0.95 } : undefined}
             onClick={handleAddToCart}
-            disabled={isDisabled}
-            className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${isDisabled ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white'}`}
+            disabled={isDisabled || checkingRegistration}
+            className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
+              isDisabled || checkingRegistration
+                ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                : 'bg-red-600 hover:bg-red-700 text-white'
+            }`}
           >
             <Plus className="w-4 h-4" />
-            <span>{isDisabled ? 'Closed' : 'Add to Cart'}</span>
+            <span>
+              {checkingRegistration 
+                ? 'Checking...' 
+                : userHasRegistration 
+                  ? 'Already Registered' 
+                  : isDisabled 
+                    ? 'Closed' 
+                    : 'Add to Cart'
+              }
+            </span>
           </motion.button>
         </div>
       </div>

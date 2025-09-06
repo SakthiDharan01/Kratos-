@@ -80,6 +80,7 @@ interface StoreState {
   saveFormDraft: (data: FormDraftData) => void
   clearFormDraft: () => void
   isProfileComplete: () => boolean
+  checkUserRegistrationStatus: () => Promise<{hasRegistration: boolean, eventName?: string}>
 }
 
 export const useStore = create<StoreState>()(
@@ -147,6 +148,47 @@ export const useStore = create<StoreState>()(
         const user = get().user
         if (!user) return false
         return !!(user.name && user.email && user.phone && user.college && user.department && user.year)
+      },
+      checkUserRegistrationStatus: async () => {
+        const user = get().user
+        if (!user) return { hasRegistration: false }
+        
+        try {
+          // Import supabase dynamically to avoid circular dependency
+          const { supabase } = await import('@/lib/supabase')
+          
+          // Check if user has any existing registrations (as leader or participant)
+          const { data: registrations, error } = await supabase
+            .from('registrations')
+            .select(`
+              id,
+              event_id,
+              leader_id,
+              registrants!inner(payment_status),
+              events(name)
+            `)
+            .or(`email.eq.${user.email},phone.eq.${user.phone}`)
+            .in('registrants.payment_status', ['pending', 'paid'])
+            .limit(1)
+
+          if (error) {
+            console.error('Error checking registration status:', error)
+            return { hasRegistration: false }
+          }
+
+          if (registrations && registrations.length > 0) {
+            const registration = registrations[0]
+            return { 
+              hasRegistration: true, 
+              eventName: (registration.events as any)?.name || 'Unknown Event'
+            }
+          }
+
+          return { hasRegistration: false }
+        } catch (error) {
+          console.error('Error in checkUserRegistrationStatus:', error)
+          return { hasRegistration: false }
+        }
       }
     }),
     {

@@ -205,6 +205,13 @@ export default function CheckoutReviewPage() {
         clearFormDraft();
         setRegistrationDraft(null);
         
+        // Also clear localStorage backup
+        try {
+          localStorage.removeItem('checkout-form-draft');
+        } catch (error) {
+          console.error('Failed to clear localStorage:', error);
+        }
+        
         toast.success('Registration successful!');
         router.push('/profile');
         return;
@@ -327,6 +334,13 @@ export default function CheckoutReviewPage() {
       clearPaidItemsFromCart(paidEventIds);
       clearFormDraft();
       setRegistrationDraft(null);
+      
+      // Also clear localStorage backup
+      try {
+        localStorage.removeItem('checkout-form-draft');
+      } catch (error) {
+        console.error('Failed to clear localStorage:', error);
+      }
 
       toast.success('Payment successful! Registration completed.');
       

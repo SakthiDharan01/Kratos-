@@ -89,11 +89,42 @@ export default function CheckoutPage() {
 
   // Build initial form values from draft or defaults
   const getInitialValues = () => {
-    // Check if we have a recent draft (within 24 hours)
+    // Check if we have a recent draft (within 24 hours) and it matches current cart
     if (formDraft && formDraft.timestamp && (Date.now() - formDraft.timestamp) < 24 * 60 * 60 * 1000) {
-      return formDraft;
+      console.log('Restoring form draft:', formDraft);
+      // Ensure draft matches current cart structure
+      if (formDraft.events && formDraft.events.length === cart.length) {
+        return {
+          events: formDraft.events.map((draftEvent, index) => {
+            const cartItem = cart[index];
+            // Ensure participant count matches cart
+            const adjustedParticipants = Array.from({ length: cartItem.teamSize }, (_, idx) => {
+              if (draftEvent.participants[idx]) {
+                return draftEvent.participants[idx];
+              }
+              // Fill missing participants with default data
+              return {
+                name: idx === 0 ? user?.name || '' : '',
+                email: idx === 0 ? user?.email || '' : '',
+                phone: idx === 0 ? user?.phone || '' : '',
+                college: idx === 0 ? user?.college || '' : '',
+                department: idx === 0 ? user?.department || '' : '',
+                year: idx === 0 ? user?.year || '' : '',
+                sameAsLeader: false,
+              };
+            });
+            
+            return {
+              ...draftEvent,
+              eventId: String(cartItem.event.id),
+              participants: adjustedParticipants
+            };
+          })
+        };
+      }
     }
     
+    console.log('Creating fresh form values');
     return {
       events: cart.map(item => ({
         eventId: String(item.event.id),
@@ -123,19 +154,48 @@ export default function CheckoutPage() {
     form.reset(initialValues);
   }, [formDraft, cart, user]);
 
-  // Auto-save form data on changes
+  // Auto-save form data on changes with better persistence
   useEffect(() => {
     const subscription = form.watch((data) => {
-      if (data && Object.keys(data).length > 0) {
-        saveFormDraft({
+      if (data && data.events && data.events.length > 0) {
+        // Save to both Zustand store and localStorage for better persistence
+        const draftData = {
           ...data as any,
           total,
-          userId: user?.id
-        });
+          userId: user?.id,
+          timestamp: Date.now()
+        };
+        
+        console.log('Auto-saving form draft:', draftData);
+        saveFormDraft(draftData);
+        
+        // Also save to localStorage as backup
+        try {
+          localStorage.setItem('checkout-form-draft', JSON.stringify(draftData));
+        } catch (error) {
+          console.error('Failed to save to localStorage:', error);
+        }
       }
     });
     return () => subscription.unsubscribe();
   }, [form, saveFormDraft, total, user?.id]);
+
+  // Load from localStorage on component mount as fallback
+  useEffect(() => {
+    try {
+      const localDraft = localStorage.getItem('checkout-form-draft');
+      if (localDraft && !formDraft) {
+        const parsedDraft = JSON.parse(localDraft);
+        // Check if it's recent (within 24 hours)
+        if (parsedDraft.timestamp && (Date.now() - parsedDraft.timestamp) < 24 * 60 * 60 * 1000) {
+          console.log('Loading from localStorage backup:', parsedDraft);
+          saveFormDraft(parsedDraft);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load from localStorage:', error);
+    }
+  }, [formDraft, saveFormDraft]);
 
   // Real-time participant validation with debouncing
   const [validationDebounce, setValidationDebounce] = useState<{[key: string]: NodeJS.Timeout}>({});
@@ -183,6 +243,14 @@ export default function CheckoutPage() {
       if (!valid) {
         console.error('Form validation failed:', form.formState.errors);
         toast.error('Please fix validation errors before continuing');
+        setLoading(false);
+        return;
+      }
+
+      // Check if current user is already registered for any event
+      const userRegistrationStatus = await useStore.getState().checkUserRegistrationStatus();
+      if (userRegistrationStatus.hasRegistration) {
+        toast.error(`You are already registered for "${userRegistrationStatus.eventName}". Each participant can only register for one event total.`);
         setLoading(false);
         return;
       }
