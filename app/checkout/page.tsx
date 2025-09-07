@@ -156,24 +156,39 @@ export default function CheckoutPage() {
 
   // Auto-save form data on changes with better persistence
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     const subscription = form.watch((data) => {
       if (data && data.events && data.events.length > 0) {
-        // Save to both Zustand store and localStorage for better persistence
-        const draftData = {
-          ...data as any,
-          total,
-          userId: user?.id,
-          timestamp: Date.now()
-        };
-        
-        console.log('Auto-saving form draft:', draftData);
-        saveFormDraft(draftData);
-        
-        // Also save to localStorage as backup
         try {
-          localStorage.setItem('checkout-form-draft', JSON.stringify(draftData));
+          // Save to both Zustand store and localStorage for better persistence
+          const draftData = {
+            ...data as any,
+            total,
+            userId: user?.id,
+            timestamp: Date.now()
+          };
+          
+          console.log('Auto-saving form draft:', draftData);
+          
+          // Use setTimeout to avoid potential hydration issues
+          setTimeout(() => {
+            try {
+              saveFormDraft(draftData);
+            } catch (error) {
+              console.error('Error saving to store:', error);
+            }
+          }, 0);
+          
+          // Also save to localStorage as backup
+          try {
+            localStorage.setItem('checkout-form-draft', JSON.stringify(draftData));
+          } catch (error) {
+            console.error('Failed to save to localStorage:', error);
+          }
         } catch (error) {
-          console.error('Failed to save to localStorage:', error);
+          console.error('Error in auto-save:', error);
         }
       }
     });
@@ -182,6 +197,9 @@ export default function CheckoutPage() {
 
   // Load from localStorage on component mount as fallback
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     try {
       const localDraft = localStorage.getItem('checkout-form-draft');
       if (localDraft && !formDraft) {
@@ -189,7 +207,14 @@ export default function CheckoutPage() {
         // Check if it's recent (within 24 hours)
         if (parsedDraft.timestamp && (Date.now() - parsedDraft.timestamp) < 24 * 60 * 60 * 1000) {
           console.log('Loading from localStorage backup:', parsedDraft);
-          saveFormDraft(parsedDraft);
+          // Use setTimeout to avoid hydration issues
+          setTimeout(() => {
+            try {
+              saveFormDraft(parsedDraft);
+            } catch (error) {
+              console.error('Error loading from localStorage:', error);
+            }
+          }, 100);
         }
       }
     } catch (error) {

@@ -138,12 +138,18 @@ export const useStore = create<StoreState>()(
       },
       registrationDraft: null,
       setRegistrationDraft: (data) => set({ registrationDraft: data }),
-      saveFormDraft: (data) => set({ 
-        formDraft: { 
-          ...data, 
-          timestamp: Date.now() 
-        } 
-      }),
+      saveFormDraft: (data) => {
+        try {
+          set({ 
+            formDraft: { 
+              ...data, 
+              timestamp: Date.now() 
+            } 
+          });
+        } catch (error) {
+          console.error('Error saving form draft:', error);
+        }
+      },
       clearFormDraft: () => set({ formDraft: null }),
       isProfileComplete: () => {
         const user = get().user
@@ -236,6 +242,18 @@ export const useStore = create<StoreState>()(
     }),
     {
       name: 'event-store',
+      partialize: (state) => ({
+        user: state.user,
+        cart: state.cart,
+        isAuthenticated: state.isAuthenticated,
+        registrationDraft: state.registrationDraft,
+        // Exclude formDraft from persistence to avoid hydration issues
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          console.log('Store rehydrated successfully');
+        }
+      },
     }
   )
 )
