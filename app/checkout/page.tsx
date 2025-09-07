@@ -148,79 +148,88 @@ export default function CheckoutPage() {
     mode: 'onBlur',
   })
 
-  // Update form when draft data is available
+  // Update form when cart or user changes, but avoid loop with formDraft
   useEffect(() => {
     const initialValues = getInitialValues();
     form.reset(initialValues);
-  }, [formDraft, cart, user]);
+  }, [cart, user]);
 
-  // Auto-save form data on changes with better persistence
+  // Auto-save form data on changes with better persistence and debouncing
   useEffect(() => {
     // Only run on client side
     if (typeof window === 'undefined') return;
     
+    let saveTimeout: NodeJS.Timeout;
+    
     const subscription = form.watch((data) => {
       if (data && data.events && data.events.length > 0) {
-        try {
-          // Save to both Zustand store and localStorage for better persistence
-          const draftData = {
-            ...data as any,
-            total,
-            userId: user?.id,
-            timestamp: Date.now()
-          };
-          
-          console.log('Auto-saving form draft:', draftData);
-          
-          // Use setTimeout to avoid potential hydration issues
-          setTimeout(() => {
+        // Clear existing timeout
+        if (saveTimeout) {
+          clearTimeout(saveTimeout);
+        }
+        
+        // Debounce the save operation
+        saveTimeout = setTimeout(() => {
+          try {
+            const draftData = {
+              ...data as any,
+              total,
+              userId: user?.id,
+              timestamp: Date.now()
+            };
+            
+            console.log('Auto-saving form draft (debounced):', draftData);
+            
+            // Save to store
             try {
               saveFormDraft(draftData);
             } catch (error) {
               console.error('Error saving to store:', error);
             }
-          }, 0);
-          
-          // Also save to localStorage as backup
-          try {
-            localStorage.setItem('checkout-form-draft', JSON.stringify(draftData));
+            
+            // Also save to localStorage as backup
+            try {
+              localStorage.setItem('checkout-form-draft', JSON.stringify(draftData));
+            } catch (error) {
+              console.error('Failed to save to localStorage:', error);
+            }
           } catch (error) {
-            console.error('Failed to save to localStorage:', error);
+            console.error('Error in auto-save:', error);
           }
-        } catch (error) {
-          console.error('Error in auto-save:', error);
-        }
+        }, 1000); // 1 second debounce
       }
     });
-    return () => subscription.unsubscribe();
+    
+    return () => {
+      subscription.unsubscribe();
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+      }
+    };
   }, [form, saveFormDraft, total, user?.id]);
 
   // Load from localStorage on component mount as fallback
   useEffect(() => {
-    // Only run on client side
-    if (typeof window === 'undefined') return;
+    // Only run on client side and only once on mount
+    if (typeof window === 'undefined' || formDraft) return;
     
     try {
       const localDraft = localStorage.getItem('checkout-form-draft');
-      if (localDraft && !formDraft) {
+      if (localDraft) {
         const parsedDraft = JSON.parse(localDraft);
         // Check if it's recent (within 24 hours)
         if (parsedDraft.timestamp && (Date.now() - parsedDraft.timestamp) < 24 * 60 * 60 * 1000) {
           console.log('Loading from localStorage backup:', parsedDraft);
-          // Use setTimeout to avoid hydration issues
-          setTimeout(() => {
-            try {
-              saveFormDraft(parsedDraft);
-            } catch (error) {
-              console.error('Error loading from localStorage:', error);
-            }
-          }, 100);
+          // Restore form values directly instead of using saveFormDraft to avoid loop
+          if (parsedDraft.events && parsedDraft.events.length > 0) {
+            form.reset(parsedDraft);
+          }
         }
       }
     } catch (error) {
       console.error('Failed to load from localStorage:', error);
     }
-  }, [formDraft, saveFormDraft]);
+  }, []); // Only run once on mount
 
   // Real-time participant validation with debouncing
   const [validationDebounce, setValidationDebounce] = useState<{[key: string]: NodeJS.Timeout}>({});
@@ -256,7 +265,7 @@ export default function CheckoutPage() {
       } catch (error) {
         console.error('Error validating participant:', error);
       }
-    }, 1000); // 1 second debounce
+    }, 2000); // Increased debounce to 2 seconds
 
     setValidationDebounce(prev => ({
       ...prev,
