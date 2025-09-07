@@ -9,6 +9,10 @@ const supabaseAdmin = createClient(
 
 // QR Code lookup handler
 async function handleQRCodeLookup(qrId: string, type: string | null) {
+  console.log('=== QR Code Lookup ===');
+  console.log('QR ID:', qrId);
+  console.log('Type:', type);
+  
   try {
     if (type === 'individual' || !type) {
       // Look up by individual registration ID
@@ -116,6 +120,7 @@ async function handleQRCodeLookup(qrId: string, type: string | null) {
     }
 
     // Look up by team/registrant ID
+    console.log('Looking up team by registrant ID:', qrId);
     const { data: teamData, error: teamError } = await supabaseAdmin
       .from('registrants')
       .select(`
@@ -151,6 +156,8 @@ async function handleQRCodeLookup(qrId: string, type: string | null) {
       `)
       .eq('id', qrId)
       .single();
+
+    console.log('Team lookup result:', { teamData, teamError });
 
     if (teamError) {
       if (teamError.code === 'PGRST116') {
@@ -215,7 +222,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId');
     const email = searchParams.get('email');
     const registrantId = searchParams.get('registrantId');
-    const qrId = searchParams.get('qrId'); // New QR code ID parameter
+    const qrId = searchParams.get('qrId') || searchParams.get('id'); // Accept both qrId and id parameter
     const type = searchParams.get('type'); // 'team' or 'individual'
 
     if (!userId && !email && !registrantId && !qrId) {
@@ -227,6 +234,7 @@ export async function GET(request: NextRequest) {
 
     // Handle QR code ID lookup
     if (qrId) {
+      console.log('QR lookup requested for ID:', qrId, 'type:', type);
       return await handleQRCodeLookup(qrId, type);
     }
 
