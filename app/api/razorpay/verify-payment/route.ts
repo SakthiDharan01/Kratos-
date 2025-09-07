@@ -132,8 +132,23 @@ export async function POST(request: NextRequest) {
             registrantId: result.registrantId,
             paymentId: razorpay_payment_id
           })
+        }).then(async (response) => {
+          console.log('Email API response status:', response.status);
+          const responseText = await response.text();
+          console.log('Email API response:', responseText);
+          
+          if (!response.ok) {
+            throw new Error(`Email API failed with status ${response.status}: ${responseText}`);
+          }
+          return response;
         }).catch(emailError => {
-          console.error('Error triggering email for registrant', result.registrantId, ':', emailError);
+          console.error('CRITICAL: Email sending failed for registrant', result.registrantId, ':', emailError);
+          console.error('Email error details:', {
+            message: emailError.message,
+            stack: emailError.stack,
+            url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/send-confirmation-email`,
+            payload: { registrantId: result.registrantId, paymentId: razorpay_payment_id }
+          });
           // Don't fail the main request
         })
       );

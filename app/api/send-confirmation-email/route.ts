@@ -27,6 +27,14 @@ interface EmailData {
 
 // Create SMTP transporter
 function createTransporter() {
+  console.log('Creating SMTP transporter...');
+  console.log('SMTP settings:', {
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    user: process.env.SMTP_USER ? 'SET' : 'MISSING',
+    pass: process.env.SMTP_PASS ? 'SET' : 'MISSING'
+  });
+
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     throw new Error('SMTP credentials not configured. Please set SMTP_USER and SMTP_PASS in environment variables.');
   }
@@ -61,10 +69,15 @@ async function sendRegistrationEmail(emailData: EmailData, qrUrl: string) {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('=== EMAIL API CALLED ===');
+  console.log('Timestamp:', new Date().toISOString());
+  
   try {
     const { registrantId, paymentId } = await request.json();
+    console.log('Email API payload:', { registrantId, paymentId });
 
     if (!registrantId) {
+      console.error('Missing registrantId in email API call');
       return NextResponse.json({ error: 'Registrant ID is required' }, { status: 400 });
     }
 
