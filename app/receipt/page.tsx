@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Download, Share2, CheckCircle, Calendar, Hash } from "lucide-react";
+import { Download, Share2, CheckCircle, Calendar, Hash, MapPin, Phone, Mail, Users } from "lucide-react";
 import Layout from "@/components/Layout";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -150,48 +150,194 @@ function ReceiptContent() {
   }, [receipt]);
 
   const downloadReceipt = async () => {
-    if (!receipt || !receiptRef.current) return;
+    if (!receipt) return;
     
     setIsGeneratingPdf(true);
     toast.info("Generating PDF...");
 
     try {
-      // Temporarily modify styles for better PDF rendering
-      const element = receiptRef.current;
-      const originalStyle = element.style.cssText;
-      
-      // Apply PDF-friendly styles
-      element.style.background = 'white';
-      element.style.color = 'black';
-      element.style.padding = '20px';
-      element.style.width = '210mm';
-      element.style.maxWidth = 'none';
-      
-      // Generate canvas from the receipt element
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: 794, // A4 width in pixels at 96 DPI
-        height: 1123, // A4 height in pixels at 96 DPI
-      });
-
-      // Restore original styles
-      element.style.cssText = originalStyle;
-
-      // Create PDF
+      // Create PDF with professional layout
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgData = canvas.toDataURL('image/png');
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 20;
+      const contentWidth = pageWidth - (2 * margin);
       
-      // Calculate dimensions to fit A4
-      const pdfWidth = 210; // A4 width in mm
-      const pdfHeight = 297; // A4 height in mm
-      const imgWidth = pdfWidth - 20; // Leave 10mm margin on each side
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      // Header Background
+      pdf.setFillColor(255, 107, 53); // Orange gradient start
+      pdf.rect(0, 0, pageWidth, 60, 'F');
       
-      // Add the image to PDF
-      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      // Logo placeholder (we'll use text since embedding images requires additional setup)
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(margin, 15, 20, 20, 'F');
+      pdf.setFontSize(8);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('LOGO', margin + 10, 27, { align: 'center' });
+      
+      // Header Text
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(24);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('KRATOS 2K25', margin + 30, 25);
+      
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Technical Symposium', margin + 30, 32);
+      pdf.text('Easwari Engineering College', margin + 30, 39);
+      
+      // Receipt Title
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('REGISTRATION RECEIPT', pageWidth - margin, 25, { align: 'right' });
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Official Receipt', pageWidth - margin, 32, { align: 'right' });
+      
+      // Venue Banner
+      pdf.setFillColor(248, 250, 252);
+      pdf.rect(0, 60, pageWidth, 15, 'F');
+      pdf.setDrawColor(255, 107, 53);
+      pdf.setLineWidth(2);
+      pdf.line(0, 75, pageWidth, 75);
+      
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Easwari Engineering College, Ramapuram, Chennai - 600089, Tamil Nadu', pageWidth / 2, 70, { align: 'center' });
+      
+      // Content area starts
+      let yPos = 90;
+      
+      // Receipt Details
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 107, 53);
+      pdf.text('Receipt Details', margin, yPos);
+      yPos += 10;
+      
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0, 0, 0);
+      
+      // Payment ID
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Payment ID:', margin, yPos);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(receipt.payment_id || receipt.id, margin + 30, yPos);
+      yPos += 8;
+      
+      // Date
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Registration Date:', margin, yPos);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(receipt.date, margin + 40, yPos);
+      yPos += 8;
+      
+      // Status
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Status:', margin, yPos);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(34, 197, 94); // Green
+      pdf.text('✓ ' + receipt.status, margin + 20, yPos);
+      pdf.setTextColor(0, 0, 0);
+      yPos += 15;
+      
+      // Team Details Section
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 107, 53);
+      pdf.text('Team Details', margin, yPos);
+      yPos += 10;
+      
+      // Draw border for team details
+      pdf.setDrawColor(229, 231, 235);
+      pdf.setFillColor(249, 250, 251);
+      const teamSectionHeight = receipt.events.length * 25 + 10;
+      pdf.rect(margin, yPos - 5, contentWidth, teamSectionHeight, 'FD');
+      
+      receipt.events.forEach((event, index) => {
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(event.name, margin + 5, yPos + 5);
+        
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Team Name: ${event.team_name}`, margin + 5, yPos + 12);
+        pdf.text(`Participants: ${event.participants} members`, margin + 5, yPos + 19);
+        
+        // Amount
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(255, 107, 53);
+        pdf.text(`₹${event.amount}`, pageWidth - margin - 5, yPos + 12, { align: 'right' });
+        
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(107, 114, 128);
+        pdf.text('Registration Fee', pageWidth - margin - 5, yPos + 19, { align: 'right' });
+        
+        yPos += 25;
+        
+        if (index < receipt.events.length - 1) {
+          pdf.setDrawColor(229, 231, 235);
+          pdf.line(margin + 5, yPos - 5, pageWidth - margin - 5, yPos - 5);
+        }
+      });
+      
+      yPos += 10;
+      
+      // Total Amount
+      pdf.setDrawColor(255, 107, 53);
+      pdf.setLineWidth(2);
+      pdf.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 10;
+      
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('Total Amount Paid', margin, yPos);
+      pdf.setTextColor(255, 107, 53);
+      pdf.text(`₹${receipt.totalAmount}`, pageWidth - margin, yPos, { align: 'right' });
+      yPos += 20;
+      
+      // Contact Information
+      pdf.setFillColor(31, 41, 55);
+      pdf.rect(margin, yPos, contentWidth, 35, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Contact Information', pageWidth / 2, yPos + 8, { align: 'center' });
+      
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Email: updates.kratos@gmail.com', margin + 10, yPos + 18);
+      pdf.text('Phone: +91 98765 43210', margin + 10, yPos + 26);
+      
+      pdf.setFontSize(10);
+      pdf.setTextColor(203, 213, 225);
+      pdf.text('For event updates and queries, please reach out to us', pageWidth / 2, yPos + 32, { align: 'center' });
+      
+      yPos += 45;
+      
+      // QR Code placeholder (text based since we can't easily embed images)
+      if (receipt.registrant_id) {
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(pageWidth - margin - 40, 90, 35, 35, 'FD');
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFontSize(8);
+        pdf.text('QR CODE', pageWidth - margin - 22.5, 105, { align: 'center' });
+        pdf.text('Team Verification', pageWidth - margin - 22.5, 110, { align: 'center' });
+        pdf.text(`ID: ${receipt.registrant_id}`, pageWidth - margin - 22.5, 115, { align: 'center' });
+      }
+      
+      // Footer
+      pdf.setTextColor(107, 114, 128);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('This is an official receipt for KRATOS 2K25 Technical Symposium', pageWidth / 2, pageHeight - 20, { align: 'center' });
+      pdf.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, pageHeight - 15, { align: 'center' });
       
       // Save the PDF
       const fileName = `Kratos2k25-Receipt-${receipt.payment_id || receipt.id}.pdf`;
@@ -207,45 +353,194 @@ function ReceiptContent() {
   };
 
   const shareReceipt = async () => {
-    if (!receipt || !receiptRef.current) return;
+    if (!receipt) return;
     
     setIsGeneratingPdf(true);
     toast.info("Generating PDF for sharing...");
 
     try {
-      // Temporarily modify styles for better PDF rendering
-      const element = receiptRef.current;
-      const originalStyle = element.style.cssText;
-      
-      // Apply PDF-friendly styles
-      element.style.background = 'white';
-      element.style.color = 'black';
-      element.style.padding = '20px';
-      element.style.width = '210mm';
-      element.style.maxWidth = 'none';
-      
-      // Generate canvas from the receipt element
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: 794,
-        height: 1123,
-      });
-
-      // Restore original styles
-      element.style.cssText = originalStyle;
-
-      // Create PDF
+      // Create PDF with professional layout (same as download)
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgData = canvas.toDataURL('image/png');
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 20;
+      const contentWidth = pageWidth - (2 * margin);
       
-      const pdfWidth = 210;
-      const imgWidth = pdfWidth - 20;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      // Header Background
+      pdf.setFillColor(255, 107, 53);
+      pdf.rect(0, 0, pageWidth, 60, 'F');
       
-      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      // Logo placeholder
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(margin, 15, 20, 20, 'F');
+      pdf.setFontSize(8);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('LOGO', margin + 10, 27, { align: 'center' });
+      
+      // Header Text
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(24);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('KRATOS 2K25', margin + 30, 25);
+      
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Technical Symposium', margin + 30, 32);
+      pdf.text('Easwari Engineering College', margin + 30, 39);
+      
+      // Receipt Title
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('REGISTRATION RECEIPT', pageWidth - margin, 25, { align: 'right' });
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Official Receipt', pageWidth - margin, 32, { align: 'right' });
+      
+      // Venue Banner
+      pdf.setFillColor(248, 250, 252);
+      pdf.rect(0, 60, pageWidth, 15, 'F');
+      pdf.setDrawColor(255, 107, 53);
+      pdf.setLineWidth(2);
+      pdf.line(0, 75, pageWidth, 75);
+      
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Easwari Engineering College, Ramapuram, Chennai - 600089, Tamil Nadu', pageWidth / 2, 70, { align: 'center' });
+      
+      // Content area starts
+      let yPos = 90;
+      
+      // Receipt Details
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 107, 53);
+      pdf.text('Receipt Details', margin, yPos);
+      yPos += 10;
+      
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0, 0, 0);
+      
+      // Payment ID
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Payment ID:', margin, yPos);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(receipt.payment_id || receipt.id, margin + 30, yPos);
+      yPos += 8;
+      
+      // Date
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Registration Date:', margin, yPos);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(receipt.date, margin + 40, yPos);
+      yPos += 8;
+      
+      // Status
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Status:', margin, yPos);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(34, 197, 94);
+      pdf.text('✓ ' + receipt.status, margin + 20, yPos);
+      pdf.setTextColor(0, 0, 0);
+      yPos += 15;
+      
+      // Team Details Section
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 107, 53);
+      pdf.text('Team Details', margin, yPos);
+      yPos += 10;
+      
+      // Draw border for team details
+      pdf.setDrawColor(229, 231, 235);
+      pdf.setFillColor(249, 250, 251);
+      const teamSectionHeight = receipt.events.length * 25 + 10;
+      pdf.rect(margin, yPos - 5, contentWidth, teamSectionHeight, 'FD');
+      
+      receipt.events.forEach((event, index) => {
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(event.name, margin + 5, yPos + 5);
+        
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Team Name: ${event.team_name}`, margin + 5, yPos + 12);
+        pdf.text(`Participants: ${event.participants} members`, margin + 5, yPos + 19);
+        
+        // Amount
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(255, 107, 53);
+        pdf.text(`₹${event.amount}`, pageWidth - margin - 5, yPos + 12, { align: 'right' });
+        
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(107, 114, 128);
+        pdf.text('Registration Fee', pageWidth - margin - 5, yPos + 19, { align: 'right' });
+        
+        yPos += 25;
+        
+        if (index < receipt.events.length - 1) {
+          pdf.setDrawColor(229, 231, 235);
+          pdf.line(margin + 5, yPos - 5, pageWidth - margin - 5, yPos - 5);
+        }
+      });
+      
+      yPos += 10;
+      
+      // Total Amount
+      pdf.setDrawColor(255, 107, 53);
+      pdf.setLineWidth(2);
+      pdf.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 10;
+      
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('Total Amount Paid', margin, yPos);
+      pdf.setTextColor(255, 107, 53);
+      pdf.text(`₹${receipt.totalAmount}`, pageWidth - margin, yPos, { align: 'right' });
+      yPos += 20;
+      
+      // Contact Information
+      pdf.setFillColor(31, 41, 55);
+      pdf.rect(margin, yPos, contentWidth, 35, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Contact Information', pageWidth / 2, yPos + 8, { align: 'center' });
+      
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Email: updates.kratos@gmail.com', margin + 10, yPos + 18);
+      pdf.text('Phone: +91 98765 43210', margin + 10, yPos + 26);
+      
+      pdf.setFontSize(10);
+      pdf.setTextColor(203, 213, 225);
+      pdf.text('For event updates and queries, please reach out to us', pageWidth / 2, yPos + 32, { align: 'center' });
+      
+      yPos += 45;
+      
+      // QR Code placeholder
+      if (receipt.registrant_id) {
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(pageWidth - margin - 40, 90, 35, 35, 'FD');
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFontSize(8);
+        pdf.text('QR CODE', pageWidth - margin - 22.5, 105, { align: 'center' });
+        pdf.text('Team Verification', pageWidth - margin - 22.5, 110, { align: 'center' });
+        pdf.text(`ID: ${receipt.registrant_id}`, pageWidth - margin - 22.5, 115, { align: 'center' });
+      }
+      
+      // Footer
+      pdf.setTextColor(107, 114, 128);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('This is an official receipt for KRATOS 2K25 Technical Symposium', pageWidth / 2, pageHeight - 20, { align: 'center' });
+      pdf.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, pageHeight - 15, { align: 'center' });
       
       // Convert PDF to blob for sharing
       const pdfBlob = pdf.output('blob');
@@ -338,88 +633,166 @@ function ReceiptContent() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gray-900 border border-gray-700 rounded-xl p-8"
+          className="bg-white text-gray-900 rounded-xl overflow-hidden shadow-2xl border border-gray-200"
         >
-          {/* Receipt Header */}
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-yellow-400 mb-2">
-              REGISTRATION RECEIPT
-            </h2>
-            <div className="w-full h-px bg-gradient-to-r from-transparent via-yellow-400 to-transparent"></div>
-          </div>
-
-          {/* Receipt Details */}
-          <div className="grid md:grid-cols-2 gap-8 mb-8">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <Hash className="w-5 h-5 text-yellow-400" />
+          {/* Professional Header with Logo */}
+          <div className="bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 text-white px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <img
+                  src="/assets/Badge.png"
+                  alt="Kratos Logo"
+                  className="w-16 h-16 bg-white rounded-lg p-2"
+                />
                 <div>
-                  <p className="text-gray-400 text-sm">Payment ID</p>
-                  <p className="text-white font-mono">
-                    {receipt.payment_id || receipt.id}
-                  </p>
+                  <h1 className="text-3xl font-bold">KRATOS 2K25</h1>
+                  <p className="text-xl opacity-90">Technical Symposium</p>
+                  <p className="text-sm opacity-80">Easwari Engineering College</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <Calendar className="w-5 h-5 text-yellow-400" />
-                <div>
-                  <p className="text-gray-400 text-sm">Date</p>
-                  <p className="text-white">{receipt.date}</p>
-                </div>
+              <div className="text-right">
+                <h2 className="text-2xl font-bold">REGISTRATION RECEIPT</h2>
+                <p className="text-sm opacity-90">Official Receipt</p>
               </div>
-              <div>
-                <p className="text-gray-400 text-sm">Status</p>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-500/20 text-green-400 border border-green-500/30">
-                  {receipt.status}
-                </span>
-              </div>
-            </div>
-
-            {/* QR Code */}
-            <div className="flex justify-center">
-              {qrCodeUrl && (
-                <div className="text-center">
-                  <img
-                    src={qrCodeUrl}
-                    alt="Team Verification QR Code"
-                    className="w-32 h-32 border border-gray-600 rounded-lg"
-                  />
-                  <p className="text-gray-400 text-xs mt-2">
-                    Scan for team verification
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Events List */}
-          <div className="space-y-4 mb-8">
-            <h3 className="text-xl font-bold text-yellow-400">
-              Events Registered
-            </h3>
-            {receipt.events.map((event, index) => (
-              <div
-                key={index}
-                className="flex justify-between items-center p-4 bg-gray-800 rounded-lg border border-gray-700"
-              >
-                <div>
-                  <p className="text-white font-semibold">{event.name}</p>
-                  <p className="text-gray-400 text-sm">
-                    Team: {event.team_name} • {event.participants} participants
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-yellow-400 font-bold">₹{event.amount}</p>
-                </div>
+          {/* Event Venue Banner */}
+          <div className="bg-gray-50 border-b-4 border-orange-500 px-8 py-4">
+            <div className="flex items-center justify-center space-x-2">
+              <MapPin className="w-5 h-5 text-orange-600" />
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-900">Easwari Engineering College</p>
+                <p className="text-sm text-gray-600">Ramapuram, Chennai - 600089, Tamil Nadu</p>
               </div>
-            ))}
+            </div>
           </div>
 
-          {/* Total */}
-          <div className="border-t border-gray-700 pt-6">
-            <div className="flex justify-between items-center text-2xl font-bold">
-              <span className="text-white">Total Amount</span>
-              <span className="text-yellow-400">₹{receipt.totalAmount}</span>
+          {/* Receipt Content */}
+          <div className="p-8">
+            {/* Receipt Details Grid */}
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
+              <div className="space-y-6">
+                <div className="flex items-start space-x-3">
+                  <Hash className="w-5 h-5 text-orange-500 mt-1" />
+                  <div>
+                    <p className="text-gray-600 text-sm font-medium">Payment ID</p>
+                    <p className="text-gray-900 font-mono text-lg">
+                      {receipt.payment_id || receipt.id}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <Calendar className="w-5 h-5 text-orange-500 mt-1" />
+                  <div>
+                    <p className="text-gray-600 text-sm font-medium">Registration Date</p>
+                    <p className="text-gray-900 text-lg">{receipt.date}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-gray-600 text-sm font-medium mb-2">Payment Status</p>
+                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm bg-green-100 text-green-800 border border-green-200 font-semibold">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    {receipt.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* QR Code */}
+              <div className="flex justify-center">
+                {qrCodeUrl && (
+                  <div className="text-center">
+                    <div className="bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm">
+                      <img
+                        src={qrCodeUrl}
+                        alt="Team Verification QR Code"
+                        className="w-32 h-32"
+                      />
+                    </div>
+                    <p className="text-gray-600 text-sm mt-2 font-medium">
+                      Scan for team verification
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Team Details Section */}
+            <div className="mb-8">
+              <div className="flex items-center space-x-2 mb-4">
+                <Users className="w-6 h-6 text-orange-500" />
+                <h3 className="text-xl font-bold text-gray-900">Team Details</h3>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                {receipt.events.map((event, index) => (
+                  <div key={index} className="mb-4 last:mb-0">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-2">{event.name}</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-600">Team Name:</p>
+                            <p className="font-semibold text-gray-900">{event.team_name}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Participants:</p>
+                            <p className="font-semibold text-gray-900">{event.participants} members</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-2xl font-bold text-orange-600">₹{event.amount}</p>
+                        <p className="text-sm text-gray-600">Registration Fee</p>
+                      </div>
+                    </div>
+                    {index < receipt.events.length - 1 && <hr className="mt-4 border-gray-200" />}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Total Amount */}
+            <div className="border-t-4 border-orange-500 pt-6 mb-8">
+              <div className="flex justify-between items-center">
+                <span className="text-2xl font-bold text-gray-900">Total Amount Paid</span>
+                <span className="text-3xl font-bold text-orange-600">₹{receipt.totalAmount}</span>
+              </div>
+            </div>
+
+            {/* Contact Information */}
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-lg p-6">
+              <h3 className="text-xl font-bold mb-4 text-center">Contact Information</h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="flex items-center space-x-3">
+                  <Mail className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-gray-300">Email Support</p>
+                    <p className="font-semibold">updates.kratos@gmail.com</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Phone className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-gray-300">Phone Support</p>
+                    <p className="font-semibold">+91 98765 43210</p>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center mt-4 pt-4 border-t border-gray-600">
+                <p className="text-sm text-gray-300">
+                  For event updates and queries, please reach out to us
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="text-center mt-6 pt-6 border-t border-gray-200">
+              <p className="text-gray-600 text-sm">
+                This is an official receipt for KRATOS 2K25 Technical Symposium
+              </p>
+              <p className="text-gray-500 text-xs mt-1">
+                Generated on {new Date().toLocaleString()}
+              </p>
             </div>
           </div>
         </motion.div>
