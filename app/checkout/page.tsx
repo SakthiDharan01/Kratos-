@@ -81,51 +81,28 @@ const checkParticipantRegistration = async (email: string, phone: string, exclud
 };
 
 export default function CheckoutPage() {
-  const { cart, user, getCartTotal, clearCart, setRegistrationDraft, formDraft, saveFormDraft } = useStore()
+  const { cart, user, getCartTotal, clearCart, setRegistrationDraft, formDraft, saveFormDraft, clearFormDraft } = useStore()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [participantValidation, setParticipantValidation] = useState<{[key: string]: boolean}>({})
-  const [isRestoringDraft, setIsRestoringDraft] = useState(false)
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false)
   const total = getCartTotal()
 
-  // Build initial form values from draft or defaults
-  const getInitialValues = () => {
-    // Check if we have a recent draft (within 24 hours) and it matches current cart
-    if (formDraft && formDraft.timestamp && (Date.now() - formDraft.timestamp) < 24 * 60 * 60 * 1000) {
-      console.log('Restoring form draft:', formDraft);
-      // Ensure draft matches current cart structure
-      if (formDraft.events && formDraft.events.length === cart.length) {
-        return {
-          events: formDraft.events.map((draftEvent, index) => {
-            const cartItem = cart[index];
-            // Ensure participant count matches cart
-            const adjustedParticipants = Array.from({ length: cartItem.teamSize }, (_, idx) => {
-              if (draftEvent.participants[idx]) {
-                return draftEvent.participants[idx];
-              }
-              // Fill missing participants with default data
-              return {
-                name: idx === 0 ? user?.name || '' : '',
-                email: idx === 0 ? user?.email || '' : '',
-                phone: idx === 0 ? user?.phone || '' : '',
-                college: idx === 0 ? user?.college || '' : '',
-                department: idx === 0 ? user?.department || '' : '',
-                year: idx === 0 ? user?.year || '' : '',
-                sameAsLeader: false,
-              };
-            });
-            
-            return {
-              ...draftEvent,
-              eventId: String(cartItem.event.id),
-              participants: adjustedParticipants
-            };
-          })
-        };
-      }
+  // Clear any existing draft on mount to prevent loops
+  useEffect(() => {
+    console.log('Clearing form draft on mount to prevent loops');
+    clearFormDraft();
+    // Clear localStorage as well
+    try {
+      localStorage.removeItem('checkout-form-draft');
+    } catch (error) {
+      console.error('Failed to clear localStorage:', error);
     }
-    
-    console.log('Creating fresh form values');
+  }, []); // Only run once on mount
+
+  // Build initial form values - start fresh without draft to prevent loops
+  const getInitialValues = () => {
+    console.log('Creating fresh form values (no draft restoration)');
     return {
       events: cart.map(item => ({
         eventId: String(item.event.id),
@@ -149,42 +126,44 @@ export default function CheckoutPage() {
     mode: 'onBlur',
   })
 
-  // Update form when cart or user changes, but avoid loop with formDraft
+  // Update form when cart structure changes, but don't restore draft again
   useEffect(() => {
-    // Only reset form if cart structure has actually changed (not when formDraft changes)
-    const currentCartStructure = cart.map(item => ({ id: item.event.id, teamSize: item.teamSize }));
-    const formCartStructure = form.getValues().events?.map(event => ({ 
-      id: parseInt(event.eventId), 
-      teamSize: event.participants.length 
-    })) || [];
-    
-    const structureChanged = JSON.stringify(currentCartStructure) !== JSON.stringify(formCartStructure);
-    
-    if (structureChanged) {
-      console.log('Cart structure changed, resetting form');
-      const initialValues = {
-        events: cart.map(item => ({
-          eventId: String(item.event.id),
-          teamName: '',
-          participants: Array.from({ length: item.teamSize }, (_, idx) => ({
-            name: idx === 0 ? user?.name || '' : '',
-            email: idx === 0 ? user?.email || '' : '',
-            phone: idx === 0 ? user?.phone || '' : '',
-            college: idx === 0 ? user?.college || '' : '',
-            department: idx === 0 ? user?.department || '' : '',
-            year: idx === 0 ? user?.year || '' : '',
-            sameAsLeader: false,
+    // Only reset form if cart structure has actually changed and we're not restoring
+    if (hasRestoredDraft) {
+      const currentCartStructure = cart.map(item => ({ id: item.event.id, teamSize: item.teamSize }));
+      const formCartStructure = form.getValues().events?.map(event => ({ 
+        id: parseInt(event.eventId), 
+        teamSize: event.participants.length 
+      })) || [];
+      
+      const structureChanged = JSON.stringify(currentCartStructure) !== JSON.stringify(formCartStructure);
+      
+      if (structureChanged) {
+        console.log('Cart structure changed, resetting form without draft');
+        const initialValues = {
+          events: cart.map(item => ({
+            eventId: String(item.event.id),
+            teamName: '',
+            participants: Array.from({ length: item.teamSize }, (_, idx) => ({
+              name: idx === 0 ? user?.name || '' : '',
+              email: idx === 0 ? user?.email || '' : '',
+              phone: idx === 0 ? user?.phone || '' : '',
+              college: idx === 0 ? user?.college || '' : '',
+              department: idx === 0 ? user?.department || '' : '',
+              year: idx === 0 ? user?.year || '' : '',
+              sameAsLeader: false,
+            }))
           }))
-        }))
-      };
-      form.reset(initialValues);
+        };
+        form.reset(initialValues);
+      }
     }
-  }, [cart, user, form]);
+  }, [cart, user, form, hasRestoredDraft]);
 
-  // Auto-save form data on changes with better persistence and debouncing
+  // Auto-save form data on changes with debouncing
   useEffect(() => {
-    // Only run on client side
-    if (typeof window === 'undefined') return;
+    // Only run on client side and after initial restoration
+    if (typeof window === 'undefined' || !hasRestoredDraft) return;
     
     let saveTimeout: NodeJS.Timeout;
     let isUserTyping = false;
@@ -200,8 +179,8 @@ export default function CheckoutPage() {
     document.addEventListener('keydown', handleKeyDown);
     
     const subscription = form.watch((data) => {
-      // Don't auto-save if we're restoring from draft or user is typing
-      if (data && data.events && data.events.length > 0 && !isUserTyping && !isRestoringDraft) {
+      // Only auto-save if user is not typing and we have valid data
+      if (data && data.events && data.events.length > 0 && !isUserTyping) {
         // Clear existing timeout
         if (saveTimeout) {
           clearTimeout(saveTimeout);
@@ -235,7 +214,7 @@ export default function CheckoutPage() {
           } catch (error) {
             console.error('Error in auto-save:', error);
           }
-        }, 2000); // Increased debounce to 2 seconds
+        }, 2000); // 2 second debounce
       }
     });
     
@@ -246,70 +225,14 @@ export default function CheckoutPage() {
         clearTimeout(saveTimeout);
       }
     };
-  }, [form, saveFormDraft, total, user?.id, isRestoringDraft]);
+  }, [form, saveFormDraft, total, user?.id, hasRestoredDraft]);
 
-  // Load from localStorage on component mount as fallback
+  // Mark draft as restored on first load to avoid re-restoration
   useEffect(() => {
-    // Only run on client side and only once on mount
-    if (typeof window === 'undefined') return;
-    
-    // Set flag to prevent auto-save during restoration
-    setIsRestoringDraft(true);
-    
-    try {
-      // First check if we have a recent draft in store
-      if (formDraft && formDraft.timestamp && (Date.now() - formDraft.timestamp) < 24 * 60 * 60 * 1000) {
-        console.log('Restoring form draft from store:', formDraft);
-        if (formDraft.events && formDraft.events.length === cart.length) {
-          const restoreData = {
-            events: formDraft.events.map((draftEvent, index) => {
-              const cartItem = cart[index];
-              const adjustedParticipants = Array.from({ length: cartItem.teamSize }, (_, idx) => {
-                if (draftEvent.participants[idx]) {
-                  return draftEvent.participants[idx];
-                }
-                return {
-                  name: idx === 0 ? user?.name || '' : '',
-                  email: idx === 0 ? user?.email || '' : '',
-                  phone: idx === 0 ? user?.phone || '' : '',
-                  college: idx === 0 ? user?.college || '' : '',
-                  department: idx === 0 ? user?.department || '' : '',
-                  year: idx === 0 ? user?.year || '' : '',
-                  sameAsLeader: false,
-                };
-              });
-              
-              return {
-                ...draftEvent,
-                eventId: String(cartItem.event.id),
-                participants: adjustedParticipants
-              };
-            })
-          };
-          form.reset(restoreData);
-        }
-      } else {
-        // Fallback to localStorage
-        const localDraft = localStorage.getItem('checkout-form-draft');
-        if (localDraft) {
-          const parsedDraft = JSON.parse(localDraft);
-          if (parsedDraft.timestamp && (Date.now() - parsedDraft.timestamp) < 24 * 60 * 60 * 1000) {
-            console.log('Loading from localStorage backup:', parsedDraft);
-            if (parsedDraft.events && parsedDraft.events.length > 0) {
-              form.reset(parsedDraft);
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load draft:', error);
-    } finally {
-      // Reset flag after restoration is complete
-      setTimeout(() => {
-        setIsRestoringDraft(false);
-      }, 1000);
+    if (!hasRestoredDraft) {
+      setHasRestoredDraft(true);
     }
-  }, []); // Only run once on mount
+  }, [hasRestoredDraft]);
 
   // Real-time participant validation with debouncing
   const [validationDebounce, setValidationDebounce] = useState<{[key: string]: NodeJS.Timeout}>({});
