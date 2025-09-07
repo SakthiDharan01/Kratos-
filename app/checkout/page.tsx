@@ -160,9 +160,20 @@ export default function CheckoutPage() {
     if (typeof window === 'undefined') return;
     
     let saveTimeout: NodeJS.Timeout;
+    let isUserTyping = false;
+    
+    // Detect when user is typing to pause auto-save
+    const handleKeyDown = () => {
+      isUserTyping = true;
+      setTimeout(() => {
+        isUserTyping = false;
+      }, 3000); // Wait 3 seconds after last keystroke
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
     
     const subscription = form.watch((data) => {
-      if (data && data.events && data.events.length > 0) {
+      if (data && data.events && data.events.length > 0 && !isUserTyping) {
         // Clear existing timeout
         if (saveTimeout) {
           clearTimeout(saveTimeout);
@@ -196,12 +207,13 @@ export default function CheckoutPage() {
           } catch (error) {
             console.error('Error in auto-save:', error);
           }
-        }, 1000); // 1 second debounce
+        }, 2000); // Increased debounce to 2 seconds
       }
     });
     
     return () => {
       subscription.unsubscribe();
+      document.removeEventListener('keydown', handleKeyDown);
       if (saveTimeout) {
         clearTimeout(saveTimeout);
       }
