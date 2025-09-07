@@ -97,8 +97,8 @@ export async function POST(request: NextRequest) {
     const updateResults = await Promise.all(updatePromises);
     console.log('All update results:', updateResults);
 
-    // Create payment records for each registrant and send confirmation emails
-    const emailPromises = [];
+  // Create payment records for each registrant and send confirmation emails
+  const emailPromises: Promise<any>[] = [];
     
     for (const result of updateResults) {
       const { error: paymentError } = await supabaseAdmin
@@ -121,41 +121,37 @@ export async function POST(request: NextRequest) {
         console.log('Successfully created payment record for registrant:', result.registrantId);
       }
 
-      // Send confirmation email directly (more reliable than fetch)
-      emailPromises.push(
-        (async () => {
-          try {
-            console.log('Sending email directly for registrant:', result.registrantId);
-            
-            // Import and call the email function directly
-            const { sendConfirmationEmail } = await import('../../send-confirmation-email/email-service');
-            const emailResult = await sendConfirmationEmail(result.registrantId, razorpay_payment_id);
-            
-            console.log('Email sent successfully:', emailResult);
-            return emailResult;
-          } catch (emailError) {
-            console.error('CRITICAL: Email sending failed for registrant', result.registrantId);
-            console.error('Email error:', emailError);
-            return null;
-          }
-        })()
-      );
+      // Queue confirmation email (await later)
+      emailPromises.push((async () => {
+        try {
+          console.log('Queueing email send for registrant:', result.registrantId);
+          const { sendConfirmationEmail } = await import('../../send-confirmation-email/email-service');
+          return await sendConfirmationEmail(result.registrantId, razorpay_payment_id);
+        } catch (emailError) {
+          console.error('CRITICAL: Email sending failed for registrant', result.registrantId, emailError);
+          return { success: false, registrantId: result.registrantId, error: emailError instanceof Error ? emailError.message : 'Unknown error' };
+        }
+      })());
     }
+    // Await all emails to ensure reliability (client can handle slightly longer wait)
+    const emailSettled = await Promise.allSettled(emailPromises);
+    const emailSummary = emailSettled.map(r => r.status === 'fulfilled' ? r.value : r.reason);
+    const emailsSent = emailSummary.filter(r => r && r.success !== false && !r.skipped).length;
+    const emailsSkipped = emailSummary.filter(r => r && r.skipped).length;
+    const emailsFailed = emailSummary.filter(r => r && r.success === false).length;
 
-    // Start email sending process (don't wait for completion)
-    Promise.allSettled(emailPromises).then(emailResults => {
-      console.log('Email sending completed:', emailResults.length, 'emails processed');
-    }).catch(error => {
-      console.error('Error in email sending process:', error);
-    });
-
-    console.log('Payment verification completed successfully');
+    console.log('Payment verification + email sending completed:', { emailsSent, emailsSkipped, emailsFailed });
 
     return NextResponse.json({
       success: true,
-      message: 'Payment verified and updated successfully. Confirmation emails are being sent.',
+      message: 'Payment verified. Confirmation emails processed.',
       updated_registrants: registrantIdsArray.length,
-      results: updateResults
+      results: updateResults,
+      email: {
+        emailsSent,
+        emailsSkipped,
+        emailsFailed
+      }
     });
 
   } catch (error) {
