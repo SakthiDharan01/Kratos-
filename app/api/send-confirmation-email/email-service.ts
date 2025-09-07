@@ -39,9 +39,7 @@ function createTransporter() {
   }
 
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false,
+    service: 'gmail',
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
@@ -51,10 +49,22 @@ function createTransporter() {
 
 // Send email using SMTP
 async function sendRegistrationEmail(emailData: EmailData, qrUrl: string) {
-  const transporter = createTransporter();
+  console.log('=== SENDING INDIVIDUAL EMAIL ===');
+  console.log('Email recipient:', emailData.email);
+  console.log('QR URL:', qrUrl);
   
+  console.log('Creating SMTP transporter...');
+  const transporter = createTransporter();
+  console.log('Transporter created successfully');
+  
+  console.log('Generating email content...');
   const htmlContent = generateEmailHTML(emailData, qrUrl);
   const textContent = generateEmailText(emailData);
+  
+  console.log('Email content generated:', {
+    htmlLength: htmlContent.length,
+    textLength: textContent.length
+  });
 
   const mailOptions = {
     from: `"KRATOS 2K25" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
@@ -64,7 +74,20 @@ async function sendRegistrationEmail(emailData: EmailData, qrUrl: string) {
     text: textContent,
   };
 
-  return await transporter.sendMail(mailOptions);
+  console.log('Mail options prepared:', {
+    from: mailOptions.from,
+    to: mailOptions.to,
+    subject: mailOptions.subject
+  });
+
+  console.log('Attempting to send email via SMTP...');
+  const result = await transporter.sendMail(mailOptions);
+  console.log('Email sent successfully:', {
+    messageId: result.messageId,
+    response: result.response
+  });
+
+  return result;
 }
 
 export async function sendConfirmationEmail(registrantId: number, paymentId: string) {
@@ -73,6 +96,8 @@ export async function sendConfirmationEmail(registrantId: number, paymentId: str
   console.log('Payload:', { registrantId, paymentId });
 
   try {
+    console.log('Step 1: Fetching registrant data from Supabase...');
+    
     // Fetch complete registration data with team members and event details
     const { data: registrantData, error: registrantError } = await supabaseAdmin
       .from('registrants')
@@ -108,17 +133,32 @@ export async function sendConfirmationEmail(registrantId: number, paymentId: str
       .eq('payment_status', 'paid')
       .single();
 
+    console.log('Step 2: Supabase query result:', {
+      hasData: !!registrantData,
+      hasError: !!registrantError,
+      error: registrantError?.message
+    });
+
     if (registrantError || !registrantData) {
       console.error('Error fetching registrant data:', registrantError);
       throw new Error(`Registration not found or not paid: ${registrantError?.message}`);
     }
 
+    console.log('Step 3: Processing registrant data...');
     const teamMembers = registrantData.registrations || [];
     const event = (registrantData.events as any);
+    
+    console.log('Step 4: Data validation:', {
+      teamMembersCount: teamMembers.length,
+      hasEvent: !!event,
+      eventName: event?.name
+    });
     
     if (!event) {
       throw new Error('Event information not found');
     }
+
+    console.log('Step 5: Creating SMTP transporter...');
 
     // Generate QR URL for team verification
     const qrUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://kratos-nu.vercel.app'}/qr?id=${registrantData.id}`;
@@ -161,8 +201,17 @@ export async function sendConfirmationEmail(registrantId: number, paymentId: str
     }
 
     // Log email sending attempts
+    console.log('Step 12: Logging to database...');
+    console.log('Database log data:', {
+      registrant_id: registrantId,
+      payment_id: paymentId,
+      emails_sent: emailResults.length,
+      emails_failed: failedEmails.length,
+      recipients: teamMembers.map(m => m.email)
+    });
+    
     try {
-      await supabaseAdmin
+      const { data: logData, error: logError } = await supabaseAdmin
         .from('email_logs')
         .insert({
           registrant_id: registrantId,
@@ -171,7 +220,14 @@ export async function sendConfirmationEmail(registrantId: number, paymentId: str
           emails_failed: failedEmails.length,
           recipients: teamMembers.map(m => m.email),
           sent_at: new Date().toISOString()
-        });
+        })
+        .select();
+        
+      if (logError) {
+        console.error('Database logging error:', logError);
+      } else {
+        console.log('Database logging successful:', logData);
+      }
     } catch (logError) {
       console.error('Failed to log email sending:', logError);
     }
