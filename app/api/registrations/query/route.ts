@@ -58,7 +58,6 @@ async function handleQRCodeLookup(qrId: string, type: string | null) {
           )
         `)
         .eq('id', qrId)
-        .eq('is_active', true)
         .single();
 
       if (regError && regError.code !== 'PGRST116') {
@@ -151,7 +150,6 @@ async function handleQRCodeLookup(qrId: string, type: string | null) {
         )
       `)
       .eq('id', qrId)
-      .eq('is_active', true)
       .single();
 
     if (teamError) {

@@ -65,14 +65,17 @@ function QRContent() {
 
       try {
         setLoading(true);
+        console.log('Fetching team data for ID:', teamId);
         const response = await fetch(`/api/registrations/query?id=${teamId}`);
         
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+        
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch team data');
+          throw new Error(data.error || `HTTP ${response.status}: Failed to fetch team data`);
         }
 
-        const data = await response.json();
         if (!data.success) {
           throw new Error(data.error || 'Team not found or payment not completed');
         }
@@ -107,12 +110,24 @@ function QRContent() {
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
+          <div className="text-center max-w-md">
             <XCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-red-400 mb-2">Team Not Found</h1>
             <p className="text-gray-300 mb-4">
-              {error || 'The team you are looking for does not exist or payment is not completed.'}
+              Please provide userId, email, registrantId, or qrId parameter
             </p>
+            {error && (
+              <div className="bg-red-900/20 border border-red-500 rounded-lg p-4 mt-4">
+                <p className="text-red-300 text-sm">
+                  <strong>Error:</strong> {error}
+                </p>
+                {teamId && (
+                  <p className="text-red-300 text-sm mt-2">
+                    <strong>Team ID:</strong> {teamId}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </Layout>
