@@ -48,7 +48,7 @@ const formSchema = z.object({
 // Function to check if participant already registered in any event
 const checkParticipantRegistration = async (email: string, phone: string, excludeEventId?: string) => {
   try {
-    // Check registrations table for existing participants
+    // Check registrations table for existing participants with PAID status only
     const { data: registrationData, error: regError } = await supabase
       .from('registrations')
       .select(`
@@ -61,7 +61,7 @@ const checkParticipantRegistration = async (email: string, phone: string, exclud
         events(name)
       `)
       .or(`email.eq.${email},phone.eq.${phone}`)
-      .in('registrants.payment_status', ['pending', 'paid']);
+      .eq('registrants.payment_status', 'paid');
 
     if (regError) {
       console.error('Error checking registration:', regError);
@@ -211,15 +211,19 @@ export default function CheckoutPage() {
     // Set new timeout for debounced validation
     const timeoutId = setTimeout(async () => {
       try {
-        const existingRegistration = await checkParticipantRegistration(email, phone, eventId);
+        // Check if participant is already registered for this specific event
+        const existingRegistration = await checkParticipantRegistration(email, phone);
+        
+        // Filter to only check the same event
+        const sameEventRegistration = existingRegistration && existingRegistration.event_id === parseInt(eventId);
         
         setParticipantValidation(prev => ({
           ...prev,
-          [participantKey]: !existingRegistration
+          [participantKey]: !sameEventRegistration
         }));
 
-        if (existingRegistration) {
-          toast.error(`This participant is already registered in another event`, {
+        if (sameEventRegistration) {
+          toast.error(`This participant has already paid for this event`, {
             id: participantKey, // Prevent duplicate toasts
             duration: 3000
           });
@@ -252,25 +256,20 @@ export default function CheckoutPage() {
       for (const event of data.events) {
         const eventRegistrationStatus = await useStore.getState().checkEventRegistrationStatus(parseInt(event.eventId));
         if (eventRegistrationStatus.isRegistered) {
-          toast.error(`You are already registered for this event. Cannot register for the same event twice.`);
+          toast.error(`You have already paid for this event. Cannot register again.`);
           setLoading(false);
           return;
         }
       }
 
-      // Check if user has any other registrations
-      const userRegistrationStatus = await useStore.getState().checkUserRegistrationStatus();
-      if (userRegistrationStatus.hasRegistration) {
-        toast.error(`You are already registered for "${userRegistrationStatus.eventName}". Each participant can only register for one event total.`);
-        setLoading(false);
-        return;
-      }
-
-      // Comprehensive participant uniqueness validation
-      console.log('Validating participant uniqueness across all events...');
+      // Participant validation - only check for duplicates within the same event
+      console.log('Validating participant details and duplicates...');
       
       for (let eventIndex = 0; eventIndex < data.events.length; eventIndex++) {
         const event = data.events[eventIndex];
+        const eventEmails = new Set();
+        const eventPhones = new Set();
+        
         for (let participantIndex = 0; participantIndex < event.participants.length; participantIndex++) {
           const participant = event.participants[participantIndex];
           
@@ -280,41 +279,20 @@ export default function CheckoutPage() {
             return;
           }
 
-          // Check if this participant is already registered in ANY other event
-          const existingRegistration = await checkParticipantRegistration(
-            participant.email, 
-            participant.phone, 
-            event.eventId
-          );
-
-          if (existingRegistration) {
-            toast.error(
-              `${participant.name || 'Participant'} (${participant.email}) is already registered in another event. Each participant can only register for one event total.`
-            );
+          // Check for duplicates within this event only
+          if (eventEmails.has(participant.email)) {
+            toast.error(`Email ${participant.email} is used multiple times in ${event.teamName || `Event ${eventIndex + 1}`}. Each participant in an event must have a unique email.`);
             setLoading(false);
             return;
           }
-        }
-      }
-
-      // Check for duplicates within current registration
-      const allEmails = new Set();
-      const allPhones = new Set();
-      
-      for (const event of data.events) {
-        for (const participant of event.participants) {
-          if (allEmails.has(participant.email)) {
-            toast.error(`Email ${participant.email} is used multiple times. Each participant must have a unique email.`);
+          if (eventPhones.has(participant.phone)) {
+            toast.error(`Phone ${participant.phone} is used multiple times in ${event.teamName || `Event ${eventIndex + 1}`}. Each participant in an event must have a unique phone number.`);
             setLoading(false);
             return;
           }
-          if (allPhones.has(participant.phone)) {
-            toast.error(`Phone ${participant.phone} is used multiple times. Each participant must have a unique phone number.`);
-            setLoading(false);
-            return;
-          }
-          allEmails.add(participant.email);
-          allPhones.add(participant.phone);
+          
+          eventEmails.add(participant.email);
+          eventPhones.add(participant.phone);
         }
       }
 

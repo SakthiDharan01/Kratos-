@@ -158,7 +158,7 @@ export const useStore = create<StoreState>()(
           // Import supabase dynamically to avoid circular dependency
           const { supabase } = await import('@/lib/supabase')
           
-          // Check if user has any existing registrations (as leader or participant)
+          // Check if user has any existing PAID registrations (as leader or participant)
           const { data: registrations, error } = await supabase
             .from('registrations')
             .select(`
@@ -169,7 +169,7 @@ export const useStore = create<StoreState>()(
               events(name)
             `)
             .or(`email.eq.${user.email},phone.eq.${user.phone}`)
-            .in('registrants.payment_status', ['pending', 'paid'])
+            .eq('registrants.payment_status', 'paid')
             .limit(1)
 
           if (error) {
@@ -199,7 +199,7 @@ export const useStore = create<StoreState>()(
           // Import supabase dynamically to avoid circular dependency
           const { supabase } = await import('@/lib/supabase')
           
-          // Check if user is registered for this specific event
+          // Check if user has PAID registration for this specific event only
           const { data: registrations, error } = await supabase
             .from('registrations')
             .select(`
@@ -211,7 +211,7 @@ export const useStore = create<StoreState>()(
             `)
             .or(`email.eq.${user.email},phone.eq.${user.phone}`)
             .eq('event_id', eventId)
-            .in('registrants.payment_status', ['pending', 'paid'])
+            .eq('registrants.payment_status', 'paid')
             .limit(1)
 
           if (error) {

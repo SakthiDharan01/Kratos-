@@ -14,30 +14,23 @@ interface EventCardProps {
 export default function EventCard({ event }: EventCardProps) {
   const [teamSize, setTeamSize] = useState(event.min_team_size)
   const [isRegisteredForThisEvent, setIsRegisteredForThisEvent] = useState(false)
-  const [userHasAnyRegistration, setUserHasAnyRegistration] = useState(false)
-  const [registeredEventName, setRegisteredEventName] = useState('')
   const [checkingRegistration, setCheckingRegistration] = useState(false)
-  const { addToCart, isAuthenticated, checkUserRegistrationStatus, checkEventRegistrationStatus } = useStore()
+  const { addToCart, isAuthenticated, checkEventRegistrationStatus } = useStore()
 
   // Check registration status when component mounts
   useEffect(() => {
     if (isAuthenticated) {
       setCheckingRegistration(true)
       
-      // Check both general registration status and specific event registration
-      Promise.all([
-        checkUserRegistrationStatus(),
-        checkEventRegistrationStatus(event.id)
-      ]).then(([generalStatus, eventStatus]) => {
-        setUserHasAnyRegistration(generalStatus.hasRegistration)
-        setRegisteredEventName(generalStatus.eventName || '')
+      // Only check if user is registered for this specific event
+      checkEventRegistrationStatus(event.id).then((eventStatus) => {
         setIsRegisteredForThisEvent(eventStatus.isRegistered)
         setCheckingRegistration(false)
       }).catch(() => {
         setCheckingRegistration(false)
       })
     }
-  }, [isAuthenticated, checkUserRegistrationStatus, checkEventRegistrationStatus, event.id])
+  }, [isAuthenticated, checkEventRegistrationStatus, event.id])
 
   const now = new Date()
   const regStart = event.registration_start ? new Date(event.registration_start) : null
@@ -45,7 +38,7 @@ export default function EventCard({ event }: EventCardProps) {
   const isWindowOpen = (
     (!regStart || now >= regStart) && (!regEnd || now <= regEnd)
   )
-  const isDisabled = event.status !== 'open' || !isWindowOpen || isRegisteredForThisEvent || (userHasAnyRegistration && !isRegisteredForThisEvent)
+  const isDisabled = event.status !== 'open' || !isWindowOpen || isRegisteredForThisEvent
 
   const handleAddToCart = async () => {
     if (isDisabled) return
@@ -54,22 +47,12 @@ export default function EventCard({ event }: EventCardProps) {
       return
     }
 
-    // Double-check registration status before adding to cart
-    const [generalStatus, eventStatus] = await Promise.all([
-      checkUserRegistrationStatus(),
-      checkEventRegistrationStatus(event.id)
-    ])
+    // Check if user is already registered for this specific event
+    const eventStatus = await checkEventRegistrationStatus(event.id)
     
     if (eventStatus.isRegistered) {
-      toast.error(`You are already registered for this event.`)
+      toast.error(`You have already paid for this event.`)
       setIsRegisteredForThisEvent(true)
-      return
-    }
-    
-    if (generalStatus.hasRegistration) {
-      toast.error(`You are already registered for "${generalStatus.eventName}". Each participant can only register for one event.`)
-      setUserHasAnyRegistration(true)
-      setRegisteredEventName(generalStatus.eventName || '')
       return
     }
 
@@ -92,7 +75,7 @@ export default function EventCard({ event }: EventCardProps) {
             {event.name}
             {isRegisteredForThisEvent && (
               <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-orange-700 text-orange-300 flex items-center gap-1">
-                <Lock className="w-3 h-3" /> Already Registered
+                <Lock className="w-3 h-3" /> Already Paid
               </span>
             )}
             {isDisabled && !isRegisteredForThisEvent && !isWindowOpen && (
@@ -100,21 +83,11 @@ export default function EventCard({ event }: EventCardProps) {
                 <Lock className="w-3 h-3" /> Closed
               </span>
             )}
-            {userHasAnyRegistration && !isRegisteredForThisEvent && isWindowOpen && (
-              <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-yellow-700 text-yellow-300 flex items-center gap-1">
-                <Lock className="w-3 h-3" /> Restricted
-              </span>
-            )}
           </h3>
           <p className="text-xs text-gray-400 mt-1 uppercase">{event.event_type === 'team' ? 'Team Event' : 'Solo Event'}</p>
           {isRegisteredForThisEvent && (
             <p className="text-xs text-orange-400 mt-1">
-              You're registered for this event
-            </p>
-          )}
-          {userHasAnyRegistration && !isRegisteredForThisEvent && (
-            <p className="text-xs text-yellow-400 mt-1">
-              You're registered for: {registeredEventName}
+              You have already paid for this event
             </p>
           )}
         </div>
@@ -181,12 +154,10 @@ export default function EventCard({ event }: EventCardProps) {
               {checkingRegistration 
                 ? 'Checking...' 
                 : isRegisteredForThisEvent 
-                  ? 'Already Registered' 
-                  : userHasAnyRegistration && !isRegisteredForThisEvent
-                    ? 'Restricted'
-                    : !isWindowOpen
-                      ? 'Closed' 
-                      : 'Add to Cart'
+                  ? 'Already Paid' 
+                  : !isWindowOpen
+                    ? 'Closed' 
+                    : 'Add to Cart'
               }
             </span>
           </motion.button>
