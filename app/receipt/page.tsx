@@ -26,6 +26,7 @@ interface ReceiptData {
   totalAmount: number;
   date: string;
   status: string;
+  registrant_id?: number; // Add registrant ID for QR code
 }
 
 function ReceiptContent() {
@@ -113,6 +114,7 @@ function ReceiptContent() {
           id: selectedRegistrant.razorpay_payment_id || selectedRegistrant.id,
           payment_id: selectedRegistrant.razorpay_payment_id,
           order_id: selectedRegistrant.razorpay_order_id,
+          registrant_id: selectedRegistrant.id, // Add for QR code generation
           events: registrants.map((reg: any) => ({
             name: reg.events?.name || 'Unknown Event',
             team_name: reg.team_name || 'Team',
@@ -139,11 +141,11 @@ function ReceiptContent() {
     fetchReceiptData();
   }, [user, paymentId]);
 
-  // Generate QR code for receipt
+  // Generate QR code for team verification
   useEffect(() => {
-    if (receipt) {
-      const receiptUrl = `${window.location.origin}/receipt?payment_id=${receipt.payment_id}`;
-      setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(receiptUrl)}`);
+    if (receipt && receipt.registrant_id) {
+      const teamVerificationUrl = `${window.location.origin}/qr?id=${receipt.registrant_id}`;
+      setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(teamVerificationUrl)}`);
     }
   }, [receipt]);
 
@@ -379,11 +381,11 @@ function ReceiptContent() {
                 <div className="text-center">
                   <img
                     src={qrCodeUrl}
-                    alt="Receipt QR Code"
+                    alt="Team Verification QR Code"
                     className="w-32 h-32 border border-gray-600 rounded-lg"
                   />
                   <p className="text-gray-400 text-xs mt-2">
-                    Scan to view receipt
+                    Scan for team verification
                   </p>
                 </div>
               )}
