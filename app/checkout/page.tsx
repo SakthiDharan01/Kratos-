@@ -133,7 +133,7 @@ export default function CheckoutPage() {
       const currentCartStructure = cart.map(item => ({ id: item.event.id, teamSize: item.teamSize }));
       const formCartStructure = form.getValues().events?.map(event => ({ 
         id: parseInt(event.eventId), 
-        teamSize: event.participants.length 
+        teamSize: (event.participants || []).length 
       })) || [];
       
       const structureChanged = JSON.stringify(currentCartStructure) !== JSON.stringify(formCartStructure);
@@ -307,7 +307,7 @@ export default function CheckoutPage() {
         const eventEmails = new Set();
         const eventPhones = new Set();
         
-        for (let participantIndex = 0; participantIndex < event.participants.length; participantIndex++) {
+        for (let participantIndex = 0; participantIndex < (event.participants || []).length; participantIndex++) {
           const participant = event.participants[participantIndex];
           
           if (!participant.email || !participant.phone) {
