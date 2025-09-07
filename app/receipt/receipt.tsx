@@ -3,14 +3,13 @@
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Download, Share2, CheckCircle, Calendar, Hash, QrCode } from "lucide-react";
+import { Download, Share2, CheckCircle, Calendar, Hash } from "lucide-react";
 import Layout from "@/components/Layout";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import QRCode from 'qrcode';
 
 interface ReceiptEvent {
   name: string;
@@ -34,7 +33,6 @@ interface ReceiptData {
 function ReceiptContent() {
   const searchParams = useSearchParams();
   const paymentId = searchParams.get("payment_id");
-  const [teamQrCodeUrl, setTeamQrCodeUrl] = useState<string>("");
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -90,7 +88,7 @@ function ReceiptContent() {
           id: selectedRegistrant.razorpay_payment_id || selectedRegistrant.id,
           payment_id: selectedRegistrant.razorpay_payment_id,
           order_id: selectedRegistrant.razorpay_order_id,
-          team_id: selectedRegistrant.id, // Add team ID for QR generation
+          team_id: selectedRegistrant.id, // Add team ID for reference
           events: registrants.map((reg: any) => ({
             name: reg.events?.name || 'Unknown Event',
             team_name: reg.team_name || 'Team',
@@ -117,27 +115,6 @@ function ReceiptContent() {
 
     fetchReceiptData();
   }, [user, paymentId]);
-
-  // Generate team verification QR code
-  useEffect(() => {
-    const generateTeamQR = async () => {
-      if (receipt && receipt.team_id) {
-        try {
-          // Generate team verification QR code
-          const teamUrl = `${window.location.origin}/qr?id=${receipt.team_id}`;
-          const teamQR = await QRCode.toDataURL(teamUrl);
-          setTeamQrCodeUrl(teamQR);
-        } catch (error) {
-          console.error('Error generating QR code:', error);
-          // Fallback to external service
-          const teamUrl = `${window.location.origin}/qr?id=${receipt.team_id}`;
-          setTeamQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(teamUrl)}`);
-        }
-      }
-    };
-
-    generateTeamQR();
-  }, [receipt]);
 
   const downloadReceipt = async () => {
     if (!receipt || !receiptRef.current) return;
@@ -493,14 +470,6 @@ function ReceiptContent() {
               </div>
             </div>
             <div className="space-y-3">
-              {teamQrCodeUrl && (
-                <div className="flex items-start space-x-3">
-                  <QrCode className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700">
-                    <strong className="text-yellow-700">Show Team QR Code</strong> at venue for instant verification
-                  </span>
-                </div>
-              )}
               <div className="flex items-start space-x-3">
                 <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                 <span className="text-gray-700">
