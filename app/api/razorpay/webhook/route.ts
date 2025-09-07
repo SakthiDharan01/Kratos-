@@ -64,6 +64,24 @@ export async function POST(request: NextRequest) {
       }
 
       if (registrants && registrants.length > 0) {
+        // Get event details for each registrant to set correct paid_amount
+        const { data: registrantsWithEvents, error: eventFetchError } = await supabase
+          .from('registrants')
+          .select(`
+            id,
+            event_id,
+            events!inner(price)
+          `)
+          .eq('razorpay_order_id', orderId);
+
+        if (eventFetchError) {
+          console.error('Error fetching registrants with event details:', eventFetchError);
+          return NextResponse.json(
+            { error: 'Database error' },
+            { status: 500 }
+          );
+        }
+
         // Update all registrants for this order
         const { error: updateError } = await supabase
           .from('registrants')
@@ -82,6 +100,58 @@ export async function POST(request: NextRequest) {
             { status: 500 }
           );
         }
+
+        // Create payment records in payments table and trigger emails
+        const emailPromises = [];
+        
+        if (registrantsWithEvents) {
+          for (const registrant of registrantsWithEvents) {
+            const eventPrice = (registrant.events as any)?.price || 0;
+            
+            const { error: paymentError } = await supabase
+              .from('payments')
+              .insert({
+                registrant_id: registrant.id,
+                payment_status: 'paid',
+                razorpay_order_id: orderId,
+                razorpay_payment_id: paymentId,
+                paid_amount: eventPrice,
+                payment_method: 'razorpay',
+                payment_time: new Date().toISOString(),
+              });
+
+            if (paymentError) {
+              console.error('Error creating payment record via webhook for registrant', registrant.id, ':', paymentError);
+              // Don't fail the request, just log the error
+            } else {
+              console.log('Successfully created payment record via webhook for registrant:', registrant.id);
+            }
+
+            // Trigger confirmation email sending (async, don't wait)
+            emailPromises.push(
+              fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/send-confirmation-email`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  registrantId: registrant.id,
+                  paymentId: paymentId
+                })
+              }).catch(emailError => {
+                console.error('Error triggering email via webhook for registrant', registrant.id, ':', emailError);
+                // Don't fail the main request
+              })
+            );
+          }
+        }
+
+        // Start email sending process (don't wait for completion)
+        Promise.allSettled(emailPromises).then(emailResults => {
+          console.log('Webhook email sending completed:', emailResults.length, 'emails processed');
+        }).catch(error => {
+          console.error('Error in webhook email sending process:', error);
+        });
 
         console.log(`Updated ${registrants.length} registrants for order ${orderId}`);
       }

@@ -97,7 +97,9 @@ export async function POST(request: NextRequest) {
     const updateResults = await Promise.all(updatePromises);
     console.log('All update results:', updateResults);
 
-    // Create payment records for each registrant
+    // Create payment records for each registrant and send confirmation emails
+    const emailPromises = [];
+    
     for (const result of updateResults) {
       const { error: paymentError } = await supabaseAdmin
         .from('payments')
@@ -107,6 +109,7 @@ export async function POST(request: NextRequest) {
           razorpay_order_id,
           razorpay_payment_id,
           razorpay_signature,
+          paid_amount: result.eventPrice, // Add the paid amount
           payment_method: 'razorpay',
           payment_time: new Date().toISOString(),
         });
@@ -114,14 +117,40 @@ export async function POST(request: NextRequest) {
       if (paymentError) {
         console.error('Error creating payment record for registrant', result.registrantId, ':', paymentError);
         // Don't fail the request, just log the error
+      } else {
+        console.log('Successfully created payment record for registrant:', result.registrantId);
       }
+
+      // Trigger confirmation email sending (async, don't wait)
+      emailPromises.push(
+        fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/send-confirmation-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            registrantId: result.registrantId,
+            paymentId: razorpay_payment_id
+          })
+        }).catch(emailError => {
+          console.error('Error triggering email for registrant', result.registrantId, ':', emailError);
+          // Don't fail the main request
+        })
+      );
     }
+
+    // Start email sending process (don't wait for completion)
+    Promise.allSettled(emailPromises).then(emailResults => {
+      console.log('Email sending completed:', emailResults.length, 'emails processed');
+    }).catch(error => {
+      console.error('Error in email sending process:', error);
+    });
 
     console.log('Payment verification completed successfully');
 
     return NextResponse.json({
       success: true,
-      message: 'Payment verified and updated successfully',
+      message: 'Payment verified and updated successfully. Confirmation emails are being sent.',
       updated_registrants: registrantIdsArray.length,
       results: updateResults
     });

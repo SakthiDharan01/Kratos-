@@ -3,19 +3,21 @@
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Download, Share2, CheckCircle, Calendar, Hash } from "lucide-react";
+import { Download, Share2, CheckCircle, Calendar, Hash, QrCode } from "lucide-react";
 import Layout from "@/components/Layout";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import QRCode from 'qrcode';
 
 interface ReceiptEvent {
   name: string;
   team_name: string;
   participants: number;
   amount: number;
+  team_id?: number;
 }
 
 interface ReceiptData {
@@ -26,12 +28,13 @@ interface ReceiptData {
   totalAmount: number;
   date: string;
   status: string;
+  team_id?: number;
 }
 
 function ReceiptContent() {
   const searchParams = useSearchParams();
   const paymentId = searchParams.get("payment_id");
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+  const [teamQrCodeUrl, setTeamQrCodeUrl] = useState<string>("");
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -87,11 +90,13 @@ function ReceiptContent() {
           id: selectedRegistrant.razorpay_payment_id || selectedRegistrant.id,
           payment_id: selectedRegistrant.razorpay_payment_id,
           order_id: selectedRegistrant.razorpay_order_id,
+          team_id: selectedRegistrant.id, // Add team ID for QR generation
           events: registrants.map((reg: any) => ({
             name: reg.events?.name || 'Unknown Event',
             team_name: reg.team_name || 'Team',
             participants: reg.registrations?.length || 0,
             amount: reg.paid_amount || reg.events?.price || 0,
+            team_id: reg.id, // Add team ID to each event
           })),
           totalAmount: registrants.reduce((sum: number, reg: any) => sum + (reg.paid_amount || 0), 0),
           date: selectedRegistrant.payment_time 
@@ -113,12 +118,25 @@ function ReceiptContent() {
     fetchReceiptData();
   }, [user, paymentId]);
 
-  // Generate QR code for receipt
+  // Generate team verification QR code
   useEffect(() => {
-    if (receipt) {
-      const receiptUrl = `${window.location.origin}/receipt?payment_id=${receipt.payment_id}`;
-      setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(receiptUrl)}`);
-    }
+    const generateTeamQR = async () => {
+      if (receipt && receipt.team_id) {
+        try {
+          // Generate team verification QR code
+          const teamUrl = `${window.location.origin}/qr?id=${receipt.team_id}`;
+          const teamQR = await QRCode.toDataURL(teamUrl);
+          setTeamQrCodeUrl(teamQR);
+        } catch (error) {
+          console.error('Error generating QR code:', error);
+          // Fallback to external service
+          const teamUrl = `${window.location.origin}/qr?id=${receipt.team_id}`;
+          setTeamQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(teamUrl)}`);
+        }
+      }
+    };
+
+    generateTeamQR();
   }, [receipt]);
 
   const downloadReceipt = async () => {
@@ -291,7 +309,7 @@ function ReceiptContent() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center"
+          className="text-center mb-8"
         >
           <div className="flex items-center justify-center space-x-3 mb-4">
             <CheckCircle className="w-12 h-12 text-green-500" />
@@ -300,7 +318,7 @@ function ReceiptContent() {
             </h1>
           </div>
           <p className="text-gray-300 text-lg">
-            Thank you for registering for Kratos 2k25
+            Your registration for Kratos 2k25 has been successfully processed
           </p>
         </motion.div>
 
@@ -310,88 +328,124 @@ function ReceiptContent() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gray-900 border border-gray-700 rounded-xl p-8"
+          className="bg-white text-black rounded-xl overflow-hidden shadow-2xl max-w-2xl mx-auto"
         >
-          {/* Receipt Header */}
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-yellow-400 mb-2">
+          {/* Header with Logo and Title */}
+          <div className="bg-gradient-to-r from-yellow-500 to-orange-500 p-6 text-center">
+            <div className="flex items-center justify-center mb-4">
+              <img 
+                src="/assets/name.png" 
+                alt="Kratos Logo" 
+                className="h-16 w-auto mr-4"
+              />
+              <div>
+                <h1 className="text-3xl font-bold text-white">KRATOS 2K25</h1>
+                <p className="text-yellow-100">Technical Symposium</p>
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-white bg-black/20 px-4 py-2 rounded-lg">
               REGISTRATION RECEIPT
             </h2>
-            <div className="w-full h-px bg-gradient-to-r from-transparent via-yellow-400 to-transparent"></div>
           </div>
 
-          {/* Receipt Details */}
-          <div className="grid md:grid-cols-2 gap-8 mb-8">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <Hash className="w-5 h-5 text-yellow-400" />
+          {/* Event Location Banner */}
+          <div className="bg-gray-100 px-6 py-3 border-b-2 border-yellow-500">
+            <div className="flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-sm font-semibold text-gray-700">VENUE</p>
+                <p className="text-lg font-bold text-gray-900">Easwari Engineering College</p>
+                <p className="text-sm text-gray-600">Chennai, Tamil Nadu</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {/* Receipt Details */}
+            <div className="grid grid-cols-2 gap-6 mb-6">
+              <div className="space-y-4">
                 <div>
-                  <p className="text-gray-400 text-sm">Payment ID</p>
-                  <p className="text-white font-mono">
+                  <p className="text-sm font-semibold text-gray-600 mb-1">Payment ID</p>
+                  <p className="font-mono text-sm bg-gray-100 p-2 rounded border">
                     {receipt.payment_id || receipt.id}
                   </p>
                 </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Calendar className="w-5 h-5 text-yellow-400" />
                 <div>
-                  <p className="text-gray-400 text-sm">Date</p>
-                  <p className="text-white">{receipt.date}</p>
+                  <p className="text-sm font-semibold text-gray-600 mb-1">Registration Date</p>
+                  <p className="text-lg font-semibold">{receipt.date}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-600 mb-1">Status</p>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800 border border-green-300 font-semibold">
+                    ✅ {receipt.status}
+                  </span>
                 </div>
               </div>
-              <div>
-                <p className="text-gray-400 text-sm">Status</p>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-500/20 text-green-400 border border-green-500/30">
-                  {receipt.status}
-                </span>
+
+              {/* Team Verification QR Code */}
+              <div className="flex flex-col items-center justify-center">
+                {teamQrCodeUrl && (
+                  <div className="text-center">
+                    <div className="p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg">
+                      <img
+                        src={teamQrCodeUrl}
+                        alt="Team Verification QR Code"
+                        className="w-24 h-24 mx-auto"
+                      />
+                    </div>
+                    <p className="text-xs font-bold text-yellow-600 mt-2 uppercase tracking-wide">
+                      Team Verification
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Scan for event entry
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* QR Code */}
-            <div className="flex justify-center">
-              {qrCodeUrl && (
-                <div className="text-center">
-                  <img
-                    src={qrCodeUrl}
-                    alt="Receipt QR Code"
-                    className="w-32 h-32 border border-gray-600 rounded-lg"
-                  />
-                  <p className="text-gray-400 text-xs mt-2">
-                    Scan to view receipt
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Events List */}
-          <div className="space-y-4 mb-8">
-            <h3 className="text-xl font-bold text-yellow-400">
-              Events Registered
-            </h3>
-            {receipt.events.map((event, index) => (
-              <div
-                key={index}
-                className="flex justify-between items-center p-4 bg-gray-800 rounded-lg border border-gray-700"
-              >
-                <div>
-                  <p className="text-white font-semibold">{event.name}</p>
-                  <p className="text-gray-400 text-sm">
-                    Team: {event.team_name} • {event.participants} participants
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-yellow-400 font-bold">₹{event.amount}</p>
-                </div>
+            {/* Events List */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 border-b-2 border-yellow-500 pb-2">
+                EVENTS REGISTERED
+              </h3>
+              <div className="space-y-3">
+                {receipt.events.map((event, index) => (
+                  <div
+                    key={index}
+                    className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-200"
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-900">{event.name}</p>
+                      <p className="text-sm text-gray-600">
+                        Team: <span className="font-medium">{event.team_name}</span> • {event.participants} participants
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-green-600">₹{event.amount}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
 
-          {/* Total */}
-          <div className="border-t border-gray-700 pt-6">
-            <div className="flex justify-between items-center text-2xl font-bold">
-              <span className="text-white">Total Amount</span>
-              <span className="text-yellow-400">₹{receipt.totalAmount}</span>
+            {/* Total Amount */}
+            <div className="border-t-2 border-gray-300 pt-4">
+              <div className="flex justify-between items-center bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                <span className="text-xl font-bold text-gray-900">TOTAL AMOUNT</span>
+                <span className="text-2xl font-bold text-green-600">₹{receipt.totalAmount}</span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="text-center">
+                <p className="text-sm font-semibold text-gray-700 mb-2">
+                  🎉 Thank you for registering for KRATOS 2K25! 🎉
+                </p>
+                <p className="text-xs text-gray-600">
+                  Keep this receipt for your records • Generated on {new Date().toLocaleString()}
+                </p>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -421,36 +475,68 @@ function ReceiptContent() {
           </button>
         </motion.div>
 
-        {/* Next Steps */}
+        {/* Important Instructions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="bg-blue-900/30 border border-blue-700 rounded-xl p-6"
+          className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 max-w-2xl mx-auto"
         >
-          <h3 className="text-xl font-bold text-blue-400 mb-4">
-            What's Next?
+          <h3 className="text-xl font-bold text-blue-800 mb-4 flex items-center">
+            <CheckCircle className="w-6 h-6 mr-2" />
+            Important Instructions
           </h3>
-          <ul className="space-y-2 text-gray-300">
-            <li className="flex items-start space-x-3">
-              <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-              <span>
-                You'll receive event details and updates via email
-              </span>
-            </li>
-            <li className="flex items-start space-x-3">
-              <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-              <span>
-                Join our Discord/WhatsApp group for announcements
-              </span>
-            </li>
-            <li className="flex items-start space-x-3">
-              <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-              <span>
-                Bring this receipt (digital or printed) to the event
-              </span>
-            </li>
-          </ul>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                <span className="text-gray-700">
+                  <strong>Save this receipt</strong> for event entry verification
+                </span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                <span className="text-gray-700">
+                  Check your email for detailed event information
+                </span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                <span className="text-gray-700">
+                  Join our official communication channels
+                </span>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {teamQrCodeUrl && (
+                <div className="flex items-start space-x-3">
+                  <QrCode className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">
+                    <strong className="text-yellow-700">Show Team QR Code</strong> at venue for instant verification
+                  </span>
+                </div>
+              )}
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                <span className="text-gray-700">
+                  Arrive 30 minutes before event start time
+                </span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                <span className="text-gray-700">
+                  Bring valid college ID for verification
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800 font-medium text-center">
+              📍 <strong>Venue:</strong> Easwari Engineering College, Chennai | 
+              📧 <strong>Support:</strong> kratos2k25@gmail.com
+            </p>
+          </div>
         </motion.div>
       </div>
     </Layout>

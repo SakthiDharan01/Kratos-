@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { AdminManagement } from '@/components/AdminManagement'
+import { PaymentManagement } from '@/components/PaymentManagement'
 
 // Types for clarity
 interface EventAnalytics {
@@ -65,28 +65,15 @@ export default function AdminPage() {
         return
       }
       
-      try {
-        // Check if user is in the admins table
-        const { data: adminRecord, error } = await supabase
-          .from('admins')
-          .select('id, role, is_active')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .single()
-        
-        if (error || !adminRecord) {
-          console.error('Admin access denied:', error)
-          router.push('/')
-          return
-        }
-        
-        setAuthorized(true)
-      } catch (error) {
-        console.error('Error checking admin access:', error)
+      // Simple email-based admin check since admins table was removed
+      if (!ADMIN_EMAILS.includes(user.email)) {
+        console.error('Admin access denied for email:', user.email)
         router.push('/')
-      } finally {
-        setLoading(false)
+        return
       }
+      
+      setAuthorized(true)
+      setLoading(false)
     }
 
     checkAdminAccess()
@@ -278,7 +265,7 @@ export default function AdminPage() {
         <Tabs defaultValue="dashboard" className="w-full">
           <TabsList className="grid w-full grid-cols-2 bg-gray-800">
             <TabsTrigger value="dashboard" className="data-[state=active]:bg-yellow-600">Dashboard</TabsTrigger>
-            <TabsTrigger value="admin-management" className="data-[state=active]:bg-yellow-600">Admin Management</TabsTrigger>
+            <TabsTrigger value="payments" className="data-[state=active]:bg-yellow-600">Payments</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-8">
@@ -429,8 +416,8 @@ export default function AdminPage() {
         </Card>
           </TabsContent>
 
-          <TabsContent value="admin-management">
-            <AdminManagement />
+          <TabsContent value="payments">
+            <PaymentManagement />
           </TabsContent>
         </Tabs>
       </div>
