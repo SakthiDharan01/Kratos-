@@ -381,25 +381,10 @@ function ReceiptContent() {
                 </div>
               </div>
 
-              {/* Team Verification QR Code */}
+              {/* Team Verification QR Code - REMOVED AS PER USER REQUEST */}
+              {/* QR code now only shown in /qr page for team verification */}
               <div className="flex flex-col items-center justify-center">
-                {teamQrCodeUrl && (
-                  <div className="text-center">
-                    <div className="p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg">
-                      <img
-                        src={teamQrCodeUrl}
-                        alt="Team Verification QR Code"
-                        className="w-24 h-24 mx-auto"
-                      />
-                    </div>
-                    <p className="text-xs font-bold text-yellow-600 mt-2 uppercase tracking-wide">
-                      Team Verification
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      Scan for event entry
-                    </p>
-                  </div>
-                )}
+                {/* QR Code removed from receipt - use /qr page instead */}
               </div>
             </div>
 
