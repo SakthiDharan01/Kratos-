@@ -121,36 +121,24 @@ export async function POST(request: NextRequest) {
         console.log('Successfully created payment record for registrant:', result.registrantId);
       }
 
-      // Trigger confirmation email sending (async, don't wait)
+      // Send confirmation email directly (more reliable than fetch)
       emailPromises.push(
-        fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/send-confirmation-email`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            registrantId: result.registrantId,
-            paymentId: razorpay_payment_id
-          })
-        }).then(async (response) => {
-          console.log('Email API response status:', response.status);
-          const responseText = await response.text();
-          console.log('Email API response:', responseText);
-          
-          if (!response.ok) {
-            throw new Error(`Email API failed with status ${response.status}: ${responseText}`);
+        (async () => {
+          try {
+            console.log('Sending email directly for registrant:', result.registrantId);
+            
+            // Import and call the email function directly
+            const { sendConfirmationEmail } = await import('../../send-confirmation-email/email-service');
+            const emailResult = await sendConfirmationEmail(result.registrantId, razorpay_payment_id);
+            
+            console.log('Email sent successfully:', emailResult);
+            return emailResult;
+          } catch (emailError) {
+            console.error('CRITICAL: Email sending failed for registrant', result.registrantId);
+            console.error('Email error:', emailError);
+            return null;
           }
-          return response;
-        }).catch(emailError => {
-          console.error('CRITICAL: Email sending failed for registrant', result.registrantId, ':', emailError);
-          console.error('Email error details:', {
-            message: emailError.message,
-            stack: emailError.stack,
-            url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/send-confirmation-email`,
-            payload: { registrantId: result.registrantId, paymentId: razorpay_payment_id }
-          });
-          // Don't fail the main request
-        })
+        })()
       );
     }
 
