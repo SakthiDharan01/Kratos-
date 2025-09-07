@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Download, Share2, CheckCircle, Calendar, Hash } from "lucide-react";
@@ -8,6 +8,8 @@ import Layout from "@/components/Layout";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface ReceiptEvent {
   name: string;
@@ -32,6 +34,8 @@ function ReceiptContent() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
   const { user } = useStore();
 
   // Fetch actual receipt data from Supabase
@@ -143,58 +147,146 @@ function ReceiptContent() {
     }
   }, [receipt]);
 
-  const downloadReceipt = () => {
-    if (!receipt) return;
+  const downloadReceipt = async () => {
+    if (!receipt || !receiptRef.current) return;
     
-    const text = `🎉 Successfully registered for Kratos 2k25!
+    setIsGeneratingPdf(true);
+    toast.info("Generating PDF...");
 
-Receipt Details:
-Payment ID: ${receipt.payment_id || receipt.id}
-Date: ${receipt.date}
-Status: ${receipt.status}
+    try {
+      // Temporarily modify styles for better PDF rendering
+      const element = receiptRef.current;
+      const originalStyle = element.style.cssText;
+      
+      // Apply PDF-friendly styles
+      element.style.background = 'white';
+      element.style.color = 'black';
+      element.style.padding = '20px';
+      element.style.width = '210mm';
+      element.style.maxWidth = 'none';
+      
+      // Generate canvas from the receipt element
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: 794, // A4 width in pixels at 96 DPI
+        height: 1123, // A4 height in pixels at 96 DPI
+      });
 
-Events Registered:
-${receipt.events.map((event: ReceiptEvent) => `- ${event.name} (${event.team_name}) - ₹${event.amount}`).join("\n")}
+      // Restore original styles
+      element.style.cssText = originalStyle;
 
-Total Amount: ₹${receipt.totalAmount}
-
-Receipt URL: ${window.location.href}`;
-
-    const element = document.createElement("a");
-    const file = new Blob([text], { type: "text/plain" });
-    element.href = URL.createObjectURL(file);
-    element.download = `Kratos2k25-Receipt-${receipt.payment_id || receipt.id}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/png');
+      
+      // Calculate dimensions to fit A4
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = 297; // A4 height in mm
+      const imgWidth = pdfWidth - 20; // Leave 10mm margin on each side
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      // Add the image to PDF
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      
+      // Save the PDF
+      const fileName = `Kratos2k25-Receipt-${receipt.payment_id || receipt.id}.pdf`;
+      pdf.save(fileName);
+      
+      toast.success("PDF downloaded successfully!");
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   const shareReceipt = async () => {
-    if (!receipt) return;
+    if (!receipt || !receiptRef.current) return;
     
-    const text = `🎉 Successfully registered for Kratos 2k25!
+    setIsGeneratingPdf(true);
+    toast.info("Generating PDF for sharing...");
 
-Receipt Details:
-Payment ID: ${receipt.payment_id || receipt.id}
-Date: ${receipt.date}
-Status: ${receipt.status}
+    try {
+      // Temporarily modify styles for better PDF rendering
+      const element = receiptRef.current;
+      const originalStyle = element.style.cssText;
+      
+      // Apply PDF-friendly styles
+      element.style.background = 'white';
+      element.style.color = 'black';
+      element.style.padding = '20px';
+      element.style.width = '210mm';
+      element.style.maxWidth = 'none';
+      
+      // Generate canvas from the receipt element
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: 794,
+        height: 1123,
+      });
 
-Events Registered:
-${receipt.events.map((event: ReceiptEvent) => `- ${event.name} (${event.team_name}) - ₹${event.amount}`).join("\n")}
+      // Restore original styles
+      element.style.cssText = originalStyle;
 
-Total Amount: ₹${receipt.totalAmount}
-
-Receipt URL: ${window.location.href}`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Kratos 2k25 Receipt", text });
-      } catch (err) {
-        console.log("Error sharing", err);
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/png');
+      
+      const pdfWidth = 210;
+      const imgWidth = pdfWidth - 20;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      
+      // Convert PDF to blob for sharing
+      const pdfBlob = pdf.output('blob');
+      const fileName = `Kratos2k25-Receipt-${receipt.payment_id || receipt.id}.pdf`;
+      
+      if (navigator.share && navigator.canShare({ files: [new File([pdfBlob], fileName, { type: 'application/pdf' })] })) {
+        try {
+          await navigator.share({
+            title: "Kratos 2k25 Receipt",
+            text: "🎉 Successfully registered for Kratos 2k25!",
+            files: [new File([pdfBlob], fileName, { type: 'application/pdf' })]
+          });
+          toast.success("PDF shared successfully!");
+        } catch (err) {
+          console.log("Error sharing PDF", err);
+          // Fallback to download
+          const url = URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast.success("PDF downloaded (sharing not supported)");
+        }
+      } else {
+        // Fallback: download the PDF
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast.success("PDF downloaded (sharing not supported on this device)");
       }
-    } else {
-      await navigator.clipboard.writeText(text);
-      toast.success("Receipt details copied to clipboard!");
+    } catch (error) {
+      console.error('Error generating PDF for sharing:', error);
+      toast.error("Failed to generate PDF for sharing. Please try again.");
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -240,6 +332,7 @@ Receipt URL: ${window.location.href}`;
 
         {/* Receipt Card */}
         <motion.div
+          ref={receiptRef}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -338,17 +431,19 @@ Receipt URL: ${window.location.href}`;
         >
           <button
             onClick={downloadReceipt}
-            className="flex items-center space-x-2 px-6 py-3 bg-yellow-600 hover:bg-yellow-500 text-black font-semibold rounded-lg transition-colors"
+            disabled={isGeneratingPdf}
+            className="flex items-center space-x-2 px-6 py-3 bg-yellow-600 hover:bg-yellow-500 disabled:bg-yellow-400 disabled:cursor-not-allowed text-black font-semibold rounded-lg transition-colors"
           >
             <Download className="w-5 h-5" />
-            <span>Download</span>
+            <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download PDF'}</span>
           </button>
           <button
             onClick={shareReceipt}
-            className="flex items-center space-x-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors"
+            disabled={isGeneratingPdf}
+            className="flex items-center space-x-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
           >
             <Share2 className="w-5 h-5" />
-            <span>Share</span>
+            <span>{isGeneratingPdf ? 'Preparing...' : 'Share PDF'}</span>
           </button>
         </motion.div>
 
