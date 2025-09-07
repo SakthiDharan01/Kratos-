@@ -54,16 +54,40 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
     try {
       setLoading(true)
       
-      // Update user profile in database
-      const { error } = await supabase
+      // First, try to check if user already exists
+      const { data: existingUser } = await supabase
         .from('users')
-        .upsert({
-          id: user!.id,
-          ...formData,
-          updated_at: new Date().toISOString()
-        })
+        .select('id')
+        .eq('id', user!.id)
+        .single()
 
-      if (error) throw error
+      // Prepare update data
+      const updateData = {
+        id: user!.id,
+        ...formData,
+        updated_at: new Date().toISOString()
+      }
+
+      let error
+      if (existingUser) {
+        // User exists, do UPDATE
+        const result = await supabase
+          .from('users')
+          .update(updateData)
+          .eq('id', user!.id)
+        error = result.error
+      } else {
+        // User doesn't exist, do INSERT
+        const result = await supabase
+          .from('users')
+          .insert(updateData)
+        error = result.error
+      }
+
+      if (error) {
+        console.error('Profile update error details:', error)
+        throw error
+      }
 
       // Update local state
       setUser({
@@ -75,7 +99,28 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
       setShowProfileForm(false)
     } catch (error) {
       console.error('Error updating profile:', error)
-      toast.error('Failed to update profile. Please try again.')
+      
+      // More detailed error logging for 409 debugging
+      if (error && typeof error === 'object') {
+        const err = error as any
+        console.error('Error details:', {
+          message: err.message,
+          details: err.details,
+          hint: err.hint,
+          code: err.code,
+          status: err.status
+        })
+        
+        if (err.code === '23505') {
+          toast.error('This email or phone number is already in use by another account.')
+        } else if (err.status === 409) {
+          toast.error('Profile update conflict. Please try again or contact support.')
+        } else {
+          toast.error('Failed to update profile. Please try again.')
+        }
+      } else {
+        toast.error('Failed to update profile. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
