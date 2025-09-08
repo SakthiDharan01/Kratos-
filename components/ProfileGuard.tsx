@@ -29,46 +29,43 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
   })
 
   useEffect(() => {
-    const checkProfileStatus = async () => {
-      if (!isAuthenticated) {
-        router.push('/login')
-        return
-      }
-
-      // Skip profile check if we've already done it recently in this session
-      const profileCompleted = sessionStorage.getItem('profileCompleted')
-      if (profileCompleted === 'true') {
-        setLoading(false)
-        setProfileCheckDone(true)
-        return
-      }
-
-      // Update form data with current user data
-      if (user) {
-        setFormData({
-          name: user.name || '',
-          email: user.email || '',
-          phone: user.phone || '',
-          college: user.college || '',
-          department: user.department || '',
-          year: user.year || ''
-        })
-      }
-
-      const isComplete = isProfileComplete()
-      
-      if (requiresCompleteProfile && !isComplete) {
-        setShowProfileForm(true)
-      } else {
-        // Mark that profile is complete for this session
-        sessionStorage.setItem('profileCompleted', 'true')
-        setProfileCheckDone(true)
-      }
-      
-      setLoading(false)
+    // Fast synchronous check - no async needed
+    if (!isAuthenticated) {
+      router.push('/login')
+      return
     }
 
-    checkProfileStatus()
+    // Skip profile check if already completed in this session
+    const profileCompleted = sessionStorage.getItem('profileCompleted')
+    if (profileCompleted === 'true') {
+      setLoading(false)
+      setProfileCheckDone(true)
+      return
+    }
+
+    // Update form data with current user data
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        college: user.college || '',
+        department: user.department || '',
+        year: user.year || ''
+      })
+    }
+
+    // Quick profile completeness check
+    const isComplete = isProfileComplete()
+    
+    if (requiresCompleteProfile && !isComplete) {
+      setShowProfileForm(true)
+    } else {
+      sessionStorage.setItem('profileCompleted', 'true')
+      setProfileCheckDone(true)
+    }
+    
+    setLoading(false)
   }, [isAuthenticated, requiresCompleteProfile, isProfileComplete, router, user])
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -165,13 +162,7 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto"></div>
-            <div className="absolute inset-0 rounded-full h-12 w-12 border-2 border-gray-700 mx-auto"></div>
-          </div>
-          <p className="text-gray-300 mt-4 text-sm">Checking profile...</p>
-        </div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
       </div>
     )
   }
