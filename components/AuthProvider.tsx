@@ -33,18 +33,25 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           setUser(userData)
           setAuthenticated(true)
           
-          // Sync with users table in background (non-blocking)
-          supabase.from("users").upsert({
-            id: session.user.id,
-            phone: session.user.phone ?? "",
-            name: session.user.user_metadata?.name || "",
-            email: session.user.email || "",
-            college: session.user.user_metadata?.college || "",
-            department: session.user.user_metadata?.department || "",
-            year: session.user.user_metadata?.year || ""
-          }).then(({ error }) => {
-            if (error) console.error('Background user sync error:', error)
-          })
+          // Only sync user data if profile is complete
+          if (userData.name && userData.college && userData.department && userData.year) {
+            supabase.from("users").upsert({
+              id: session.user.id,
+              phone: session.user.phone ?? "",
+              name: session.user.user_metadata?.name || "",
+              email: session.user.email || "",
+              college: session.user.user_metadata?.college || "",
+              department: session.user.user_metadata?.department || "",
+              year: session.user.user_metadata?.year || ""
+            }, { 
+              onConflict: 'id',
+              ignoreDuplicates: true 
+            }).then(({ error }) => {
+              if (error && error.code !== '23505') {
+                console.error('Background user sync error:', error)
+              }
+            })
+          }
         } else {
           setUser(null)
           setAuthenticated(false)

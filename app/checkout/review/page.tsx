@@ -49,34 +49,6 @@ export default function CheckoutReviewPage() {
         throw new Error('User not authenticated');
       }
 
-      // Ensure user exists in users table (upsert from auth.users + store data)
-      const userFromStore = formData.events?.[0]?.participants?.[0]; // Get leader info from first event
-      if (userFromStore) {
-        const userData = {
-          id: authedUserId,
-          name: userFromStore.name,
-          email: userFromStore.email,
-          phone: userFromStore.phone,
-          college: userFromStore.college,
-          department: userFromStore.department,
-          year: userFromStore.year,
-        };
-        
-        const { error: userUpsertError } = await supabase
-          .from('users')
-          .upsert(userData, {
-            onConflict: 'id'
-          });
-        
-        if (userUpsertError) {
-          console.error('User upsert error:', userUpsertError);
-          throw new Error('Failed to create/update user record');
-        }
-        
-        // Update store with latest user data
-        setUser(userData);
-      }
-
       // Create registrations and collect registrant IDs
       const registrantIds: number[] = [];
       console.log('Starting registration creation for events:', formData.events);
