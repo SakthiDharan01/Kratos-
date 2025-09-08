@@ -71,29 +71,6 @@ export default function CheckoutPage() {
                             user.name.trim() !== '' && user.college.trim() !== '' && 
                             user.department.trim() !== '' && user.year.trim() !== '' && user.phone.trim() !== ''
 
-  // Refresh user data when component mounts
-  useEffect(() => {
-    const refreshUserData = async () => {
-      if (isAuthenticated && user?.id) {
-        try {
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          
-          if (userData && !error) {
-            useStore.getState().setUser(userData);
-          }
-        } catch (error) {
-          console.error('Error refreshing user data:', error);
-        }
-      }
-    };
-    
-    refreshUserData();
-  }, [isAuthenticated, user?.id]);
-
   // Initialize team data from user profile and cart
   useEffect(() => {
     if (isProfileComplete && cart.length > 0 && teamData.length === 0) {
@@ -113,7 +90,7 @@ export default function CheckoutPage() {
       }))
       setTeamData(initialTeamData)
     }
-  }, [isProfileComplete, cart, user, teamData.length])
+  }, [isProfileComplete, cart.length, user?.name, user?.email, user?.phone, user?.college, user?.department, user?.year]) // Remove teamData.length dependency
 
   const handleStepNavigation = (step: CheckoutStep) => {
     if (step === 'profile' && !isProfileComplete) {
@@ -229,12 +206,13 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (teamData[currentTeamIndex]) {
       const team = teamData[currentTeamIndex]
-      reset({
+      const formData = {
         teamName: team.teamName,
         ...team.leaderDetails
-      })
+      }
+      reset(formData)
     }
-  }, [currentTeamIndex, teamData, reset])
+  }, [currentTeamIndex]) // Only depend on currentTeamIndex to avoid loops
 
   return (
     <Layout>
