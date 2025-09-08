@@ -33,9 +33,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           setUser(userData)
           setAuthenticated(true)
           
-          // Only sync user data if profile is complete
+          // Only sync user data if profile is complete and different from current
           if (userData.name && userData.college && userData.department && userData.year) {
-            supabase.from("users").upsert({
+            const userDataForSync = {
               id: session.user.id,
               phone: session.user.phone ?? "",
               name: session.user.user_metadata?.name || "",
@@ -43,11 +43,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
               college: session.user.user_metadata?.college || "",
               department: session.user.user_metadata?.department || "",
               year: session.user.user_metadata?.year || ""
-            }, { 
+            }
+            
+            // Only sync if data might be different (avoid unnecessary updates)
+            supabase.from("users").upsert(userDataForSync, { 
               onConflict: 'id',
               ignoreDuplicates: true 
             }).then(({ error }) => {
-              if (error && error.code !== '23505') {
+              if (error && error.code !== '23505' && error.code !== '23503') {
                 console.error('Background user sync error:', error)
               }
             })

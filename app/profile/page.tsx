@@ -153,20 +153,53 @@ export default function ProfilePage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.from('users').update({
+      // Use UPSERT to handle both insert and update cases
+      const userData = {
+        id: user.id,
         name: form.name,
         email: form.email,
         phone: form.phone,
         college: form.college,
         department: form.department,
         year: form.year,
-      }).eq('id', user.id);
-      if (error) throw error;
-      setUser({ ...user, ...form });
-      toast.success('Profile updated!');
+      };
+
+      const { error } = await supabase
+        .from('users')
+        .upsert(userData, { 
+          onConflict: 'id',
+          ignoreDuplicates: false 
+        });
+
+      if (error) {
+        console.error('Profile update error:', error);
+        throw error;
+      }
+
+      // Update the store with new user data
+      setUser(userData);
+      
+      // Also update auth metadata for consistency
+      await supabase.auth.updateUser({
+        data: {
+          name: form.name,
+          college: form.college,
+          department: form.department,
+          year: form.year
+        }
+      });
+
+      toast.success('Profile updated successfully!');
       setEditing(false);
+      
+      // Force re-check of profile completion
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
     } catch (err: any) {
-      toast.error('Failed to update profile');
+      console.error('Profile save error:', err);
+      toast.error(`Failed to update profile: ${err.message}`);
     } finally {
       setLoading(false);
     }

@@ -66,8 +66,33 @@ export default function CheckoutPage() {
     }
   }, [isAuthenticated, router])
 
-  // Check if profile is complete
-  const isProfileComplete = user?.name && user?.college && user?.department && user?.year && user?.phone
+  // Check if profile is complete (with more robust checking)
+  const isProfileComplete = user?.name && user?.college && user?.department && user?.year && user?.phone && 
+                            user.name.trim() !== '' && user.college.trim() !== '' && 
+                            user.department.trim() !== '' && user.year.trim() !== '' && user.phone.trim() !== ''
+
+  // Refresh user data when component mounts
+  useEffect(() => {
+    const refreshUserData = async () => {
+      if (isAuthenticated && user?.id) {
+        try {
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          if (userData && !error) {
+            useStore.getState().setUser(userData);
+          }
+        } catch (error) {
+          console.error('Error refreshing user data:', error);
+        }
+      }
+    };
+    
+    refreshUserData();
+  }, [isAuthenticated, user?.id]);
 
   // Initialize team data from user profile and cart
   useEffect(() => {
