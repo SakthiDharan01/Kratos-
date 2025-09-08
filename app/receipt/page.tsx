@@ -32,6 +32,7 @@ interface ReceiptData {
 function ReceiptContent() {
   const searchParams = useSearchParams();
   const paymentId = searchParams.get("payment_id");
+  const registrantId = searchParams.get("registrant_id"); // New parameter for direct registrant access
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +51,7 @@ function ReceiptContent() {
 
       console.log('Fetching receipt data for user:', user.id);
       console.log('Payment ID from URL:', paymentId);
+      console.log('Registrant ID from URL:', registrantId);
 
       try {
         setLoading(true);
@@ -76,6 +78,12 @@ function ReceiptContent() {
         if (paymentId) {
           query = query.eq('razorpay_payment_id', paymentId);
           console.log('Filtering by payment_id:', paymentId);
+        }
+        
+        // If specific registrant_id is requested, filter by it
+        if (registrantId) {
+          query = query.eq('id', registrantId);
+          console.log('Filtering by registrant_id:', registrantId);
         }
 
         const { data: registrants, error } = await query.order('payment_time', { ascending: false });
@@ -139,13 +147,13 @@ function ReceiptContent() {
     };
 
     fetchReceiptData();
-  }, [user, paymentId]);
+  }, [user, paymentId, registrantId]);
 
   // Generate QR code for team verification
   useEffect(() => {
     if (receipt && receipt.registrant_id) {
-      const teamVerificationUrl = `${window.location.origin}/qr?id=${receipt.registrant_id}`;
-      setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(teamVerificationUrl)}`);
+      // Generate QR code with just the registrant ID for scanning at college
+      setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${receipt.registrant_id}`);
     }
   }, [receipt]);
 
