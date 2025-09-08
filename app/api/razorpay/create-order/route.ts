@@ -3,7 +3,7 @@ import { createRazorpayOrder } from '@/lib/razorpay';
 
 export async function POST(request: NextRequest) {
   try {
-    const { amount, currency = 'INR' } = await request.json();
+    const { amount, currency = 'INR', metadata } = await request.json();
 
     if (!amount || amount <= 0) {
       return NextResponse.json(
@@ -15,9 +15,10 @@ export async function POST(request: NextRequest) {
     const order = await createRazorpayOrder(amount, currency);
 
     return NextResponse.json({
-      orderId: order.id,
+      id: order.id,          // Change from orderId to id
       amount: order.amount,
       currency: order.currency,
+      metadata: metadata     // Pass through metadata if provided
     });
   } catch (error) {
     console.error('Error creating Razorpay order:', error);
