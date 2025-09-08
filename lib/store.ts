@@ -91,8 +91,14 @@ export const useStore = create<StoreState>()(
       cart: [],
       isAuthenticated: false,
       formDraft: null,
-      setUser: (user) => set({ user }),
-      setAuthenticated: (status) => set({ isAuthenticated: status }),
+      setUser: (user) => {
+        console.log('Store: Setting user:', user?.id || 'null')
+        set({ user })
+      },
+      setAuthenticated: (status) => {
+        console.log('Store: Setting authenticated:', status)
+        set({ isAuthenticated: status })
+      },
       addToCart: (event, teamSize) => {
         const cart = get().cart
         const existingItem = cart.find(item => item.event.id === event.id)
@@ -249,9 +255,12 @@ export const useStore = create<StoreState>()(
         registrationDraft: state.registrationDraft,
         // Exclude formDraft from persistence to avoid hydration issues
       }),
+      version: 1, // Add version for potential future migrations
       onRehydrateStorage: () => (state) => {
         if (state) {
-          console.log('Store rehydrated successfully');
+          console.log('Store: Successfully rehydrated with user:', state.user?.id || 'null', 'authenticated:', state.isAuthenticated);
+        } else {
+          console.log('Store: Failed to rehydrate state');
         }
       },
     }
