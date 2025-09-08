@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Layout from '@/components/Layout'
-import ProfileGuard from '@/components/ProfileGuard'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, Users, IndianRupee, ShoppingCart } from 'lucide-react'
 import { useStore } from '@/lib/store'
@@ -10,27 +9,34 @@ import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateCartItem, getCartTotal } = useStore()
+  const { cart, removeFromCart, updateCartItem, getCartTotal, isAuthenticated } = useStore()
   const router = useRouter()
+
+  // Simple auth check without profile requirement
+  if (!isAuthenticated) {
+    router.push('/login')
+    return null
+  }
 
   const handleRemoveFromCart = (eventId: number) => {
     removeFromCart(eventId)
-    toast.success('Item removed from cart')
+    toast.success('✅ Item removed from cart')
   }
 
   const handleProceedToCheckout = () => {
     if (cart.length === 0) {
-      toast.error('Your cart is empty')
+      toast.error('🛒 Your cart is empty')
       return
     }
+    // Add loading toast for better UX
+    toast.loading('Redirecting to checkout...', { duration: 1000 })
     router.push('/checkout')
   }
 
   const total = getCartTotal()
 
   return (
-    <ProfileGuard requiresCompleteProfile={true}>
-      <Layout>
+    <Layout>
       <div className="max-w-4xl mx-auto space-y-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -155,9 +161,12 @@ export default function CartPage() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleProceedToCheckout}
-                    className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-8 py-3 rounded-lg transition-colors mt-4"
+                    className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-8 py-3 rounded-lg transition-all duration-200 mt-4 flex items-center gap-2"
                   >
                     Proceed to Checkout
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </motion.button>
                 </div>
               </div>
@@ -166,6 +175,5 @@ export default function CartPage() {
         )}
       </div>
     </Layout>
-    </ProfileGuard>
   )
 }

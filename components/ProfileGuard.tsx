@@ -18,6 +18,7 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [showProfileForm, setShowProfileForm] = useState(false)
+  const [profileCheckDone, setProfileCheckDone] = useState(false)
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -28,16 +29,47 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
   })
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login')
-      return
+    const checkProfileStatus = async () => {
+      if (!isAuthenticated) {
+        router.push('/login')
+        return
+      }
+
+      // Skip profile check if we've already done it recently in this session
+      const profileCompleted = sessionStorage.getItem('profileCompleted')
+      if (profileCompleted === 'true') {
+        setLoading(false)
+        setProfileCheckDone(true)
+        return
+      }
+
+      // Update form data with current user data
+      if (user) {
+        setFormData({
+          name: user.name || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          college: user.college || '',
+          department: user.department || '',
+          year: user.year || ''
+        })
+      }
+
+      const isComplete = isProfileComplete()
+      
+      if (requiresCompleteProfile && !isComplete) {
+        setShowProfileForm(true)
+      } else {
+        // Mark that profile is complete for this session
+        sessionStorage.setItem('profileCompleted', 'true')
+        setProfileCheckDone(true)
+      }
+      
+      setLoading(false)
     }
 
-    if (requiresCompleteProfile && !isProfileComplete()) {
-      setShowProfileForm(true)
-    }
-    setLoading(false)
-  }, [isAuthenticated, requiresCompleteProfile, isProfileComplete, router])
+    checkProfileStatus()
+  }, [isAuthenticated, requiresCompleteProfile, isProfileComplete, router, user])
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -95,8 +127,12 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
         ...formData
       })
 
+      // Mark profile as completed for this session
+      sessionStorage.setItem('profileCompleted', 'true')
+
       toast.success('Profile completed successfully!')
       setShowProfileForm(false)
+      setProfileCheckDone(true)
     } catch (error) {
       console.error('Error updating profile:', error)
       
@@ -129,7 +165,13 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-yellow-400"></div>
+        <div className="text-center">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto"></div>
+            <div className="absolute inset-0 rounded-full h-12 w-12 border-2 border-gray-700 mx-auto"></div>
+          </div>
+          <p className="text-gray-300 mt-4 text-sm">Checking profile...</p>
+        </div>
       </div>
     )
   }
@@ -240,9 +282,16 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={loading}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50"
+                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-medium py-3 rounded-lg transition-colors disabled:cursor-not-allowed flex items-center justify-center"
               >
-                {loading ? 'Saving...' : 'Complete Profile'}
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving Profile...
+                  </>
+                ) : (
+                  'Complete Profile'
+                )}
               </motion.button>
             </form>
           </motion.div>
