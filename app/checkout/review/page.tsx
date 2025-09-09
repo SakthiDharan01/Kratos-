@@ -170,15 +170,17 @@ export default function CheckoutReviewPage() {
               metadata: { registrant_ids: registrantIds }
             });
 
-            // Send confirmation email
-            await fetch('/api/send-confirmation-email', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                registration_ids: registrantIds,
-                user_email: user?.email
-              })
-            });
+            // Send confirmation email for each registration
+            for (const registrantId of registrantIds) {
+              await fetch('/api/send-confirmation-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  registrantId: registrantId,
+                  paymentId: response.razorpay_payment_id
+                })
+              });
+            }
 
             // Clear session data and cart
             sessionStorage.removeItem('checkoutTeamData');

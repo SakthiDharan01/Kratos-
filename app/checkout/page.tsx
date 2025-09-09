@@ -42,11 +42,38 @@ export default function CheckoutPage() {
   // Load data from session storage on mount
   useEffect(() => {
     const savedData = sessionStorage.getItem('checkoutTeamData')
+    const savedStep = sessionStorage.getItem('checkoutCurrentStep')
+    const savedTeamIndex = sessionStorage.getItem('checkoutCurrentTeamIndex')
+    const savedFormData = sessionStorage.getItem('checkoutFormData')
+    
     if (savedData) {
       try {
-        setTeamData(JSON.parse(savedData))
+        const parsedTeamData = JSON.parse(savedData)
+        if (Array.isArray(parsedTeamData) && parsedTeamData.length > 0) {
+          setTeamData(parsedTeamData)
+        }
       } catch (error) {
         console.error('Error loading saved checkout data:', error)
+      }
+    }
+    
+    if (savedStep && ['profile', 'team', 'participants', 'review'].includes(savedStep)) {
+      setCurrentStep(savedStep as CheckoutStep)
+    }
+    
+    if (savedTeamIndex) {
+      const parsedIndex = parseInt(savedTeamIndex)
+      if (!isNaN(parsedIndex) && parsedIndex >= 0) {
+        setCurrentTeamIndex(parsedIndex)
+      }
+    }
+    
+    if (savedFormData) {
+      try {
+        const parsedFormData = JSON.parse(savedFormData)
+        reset(parsedFormData)
+      } catch (error) {
+        console.error('Error parsing saved form data:', error)
       }
     }
   }, [])
@@ -57,6 +84,25 @@ export default function CheckoutPage() {
       sessionStorage.setItem('checkoutTeamData', JSON.stringify(teamData))
     }
   }, [teamData])
+
+  // Save current step and team index to session storage
+  useEffect(() => {
+    sessionStorage.setItem('checkoutCurrentStep', currentStep)
+    sessionStorage.setItem('checkoutCurrentTeamIndex', currentTeamIndex.toString())
+  }, [currentStep, currentTeamIndex])
+
+  // Auto-save function for form data
+  const autoSaveFormData = (formData: any) => {
+    sessionStorage.setItem('checkoutFormData', JSON.stringify(formData))
+  }
+
+  // Clear all session data
+  const clearSessionData = () => {
+    sessionStorage.removeItem('checkoutTeamData')
+    sessionStorage.removeItem('checkoutCurrentStep')
+    sessionStorage.removeItem('checkoutCurrentTeamIndex')
+    sessionStorage.removeItem('checkoutFormData')
+  }
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -109,6 +155,9 @@ export default function CheckoutPage() {
   }
 
   const handleTeamDetailsSubmit = (data: any) => {
+    // Auto-save form data before processing
+    autoSaveFormData(data)
+    
     const updatedTeamData = [...teamData]
     updatedTeamData[currentTeamIndex] = {
       ...updatedTeamData[currentTeamIndex],
@@ -165,6 +214,9 @@ export default function CheckoutPage() {
       [field]: value
     }
     setTeamData(updatedTeamData)
+    
+    // Auto-save updated participant data
+    autoSaveFormData({ teamData: updatedTeamData })
   }
 
   const proceedToPayment = () => {

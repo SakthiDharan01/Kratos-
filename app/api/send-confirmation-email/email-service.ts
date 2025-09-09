@@ -297,9 +297,12 @@ function generateEmailHTML(data: EmailData, qrUrl: string): string {
     <title>KRATOS 2K25 Registration Confirmed</title>
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="font-size: 2.5em; margin-bottom: 10px;">🎉 KRATOS 2K25</h1>
-        <p style="font-size: 1.2em;">Technical Symposium</p>
+    <div style="background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <!-- Kratos Logo -->
+        <img src="https://kratos-nu.vercel.app/assets/name.png" alt="KRATOS" style="max-width: 200px; height: auto; margin-bottom: 20px;">
+        <h1 style="font-size: 2.5em; margin-bottom: 10px; color: #FFD700;">KRATOS 2K25</h1>
+        <p style="font-size: 1.2em; color: #FFD700;">Technical Symposium</p>
+        <p style="font-size: 1em; color: #ccc;">Easwari Engineering College</p>
     </div>
 
     <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -315,7 +318,7 @@ function generateEmailHTML(data: EmailData, qrUrl: string): string {
         </p>
 
         <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 25px; margin: 25px 0;">
-            <h3 style="color: #FF6B35; margin-bottom: 20px;">📋 Registration Details</h3>
+            <h3 style="color: #FFD700; margin-bottom: 20px;">📋 Registration Details</h3>
             <p><strong>Payment ID:</strong> ${paymentId}</p>
             <p><strong>Amount Paid:</strong> <span style="color: #28a745; font-weight: bold;">₹${amount}</span></p>
             <p><strong>Event:</strong> ${eventName}</p>
@@ -323,17 +326,43 @@ function generateEmailHTML(data: EmailData, qrUrl: string): string {
             <p><strong>Registration Date:</strong> ${new Date().toLocaleDateString('en-IN')}</p>
         </div>
 
+        <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 25px; margin: 25px 0;">
+            <h3 style="color: #FFD700; margin-bottom: 20px;">👥 Team Members (${teamMembers.length})</h3>
+            ${teamMembers.map(member => `
+              <div style="margin-bottom: 15px; padding: 10px; background: white; border-radius: 5px; border-left: 4px solid ${member.is_leader ? '#FFD700' : '#28a745'};">
+                <strong>${member.name}</strong> ${member.is_leader ? '<span style="color: #FFD700;">(TEAM LEADER)</span>' : ''}
+                <br><small>📧 ${member.email} | 🏫 ${member.college}</small>
+                <br><small>📚 ${member.department} | 📅 ${member.year}</small>
+              </div>
+            `).join('')}
+        </div>
+
+        <!-- QR Code Section -->
+        <div style="background: #000; color: white; padding: 25px; border-radius: 8px; text-align: center; margin: 25px 0;">
+            <h3 style="color: #FFD700; margin-bottom: 15px;">📱 Event Entry QR Code</h3>
+            <p style="margin-bottom: 20px;">Show this QR code at the event venue for entry verification</p>
+            <div style="background: white; padding: 20px; border-radius: 8px; display: inline-block;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}" 
+                     alt="Event Entry QR Code" 
+                     style="width: 200px; height: 200px; display: block;">
+            </div>
+            <p style="margin-top: 15px; font-size: 0.9em; color: #ccc;">Keep this QR code ready on your mobile device</p>
+        </div>
+
         <div style="text-align: center; padding: 25px; background: #f8f9fa; border-radius: 8px;">
-            <h4 style="margin-bottom: 15px;">Need Help?</h4>
-            <p><strong>Email:</strong> kratos2k25@easwari.edu.in</p>
-            <p><strong>Phone:</strong> +91 XXXXX XXXXX</p>
+            <h4 style="margin-bottom: 15px; color: #FFD700;">Need Help?</h4>
+            <p><strong>Email:</strong> updates.kratos@gmail.com</p>
+            <p><strong>Phone:</strong> +91 98765 43210</p>
+            <p><strong>Venue:</strong> Easwari Engineering College, Chennai</p>
         </div>
     </div>
 
     <div style="background: #212529; color: white; padding: 30px; text-align: center; border-radius: 0 0 10px 10px;">
-        <h3>🏆 KRATOS 2K25</h3>
+        <img src="https://kratos-nu.vercel.app/assets/Badge.png" alt="KRATOS Badge" style="max-width: 80px; height: auto; margin-bottom: 15px;">
+        <h3 style="color: #FFD700;">🏆 KRATOS 2K25</h3>
         <p>Technical Symposium - Easwari Engineering College</p>
         <p>Chennai, Tamil Nadu</p>
+        <p style="font-size: 0.9em; color: #888;">© 2025 KRATOS. All rights reserved.</p>
     </div>
 </body>
 </html>
@@ -365,18 +394,24 @@ ${teamMembers.map(member => `
   📚 ${member.department} | 📅 ${member.year}
 `).join('')}
 
+QR CODE FOR EVENT ENTRY:
+Show this QR code at the event venue for entry verification.
+Your unique entry URL: https://kratos-nu.vercel.app/qr?id=${data.teamMembers[0]?.name || 'team'}
+
 EVENT VENUE:
 📍 Easwari Engineering College
 Chennai, Tamil Nadu
 
 SUPPORT:
-📧 Email: kratos2k25@easwari.edu.in
-📞 Phone: +91 XXXXX XXXXX
+📧 Email: updates.kratos@gmail.com
+📞 Phone: +91 98765 43210
 
 Thank you for registering for KRATOS 2K25!
 
 Best regards,
 KRATOS 2K25 Team
 Easwari Engineering College, Chennai
+
+© 2025 KRATOS. All rights reserved.
   `;
 }
