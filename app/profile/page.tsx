@@ -166,6 +166,10 @@ export default function ProfilePage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
+    // Debug: Log form data
+    console.log('Saving profile with form data:', form);
+    
     try {
       // Use UPSERT to handle both insert and update cases
       const userData = {
@@ -177,6 +181,8 @@ export default function ProfilePage() {
         department: form.department,
         year: form.year,
       };
+
+      console.log('userData to save:', userData);
 
       const { error } = await supabase
         .from('users')
@@ -190,18 +196,23 @@ export default function ProfilePage() {
         throw error;
       }
 
+      console.log('Database update successful');
+
       // Update the store with new user data
       setUser(userData);
       
       // Also update auth metadata for consistency
-      await supabase.auth.updateUser({
+      const authUpdateResult = await supabase.auth.updateUser({
         data: {
           name: form.name,
+          phone: form.phone,
           college: form.college,
           department: form.department,
           year: form.year
         }
       });
+
+      console.log('Auth metadata update result:', authUpdateResult);
 
       toast.success('Profile updated successfully!');
       setEditing(false);

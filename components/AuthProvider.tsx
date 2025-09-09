@@ -22,13 +22,16 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           // User is authenticated, set state immediately
           const userData = {
             id: session.user.id,
-            phone: session.user.phone ?? "",
+            phone: session.user.user_metadata?.phone || "",
             name: session.user.user_metadata?.name || "",
             email: session.user.email || "",
             college: session.user.user_metadata?.college || "",
             department: session.user.user_metadata?.department || "",
             year: session.user.user_metadata?.year || ""
           }
+          
+          console.log('AuthProvider: Setting user data:', userData);
+          console.log('AuthProvider: Raw session user metadata:', session.user.user_metadata);
           
           setUser(userData)
           setAuthenticated(true)
@@ -37,7 +40,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           if (userData.name && userData.college && userData.department && userData.year) {
             const userDataForSync = {
               id: session.user.id,
-              phone: session.user.phone ?? "",
+              phone: session.user.user_metadata?.phone || "",
               name: session.user.user_metadata?.name || "",
               email: session.user.email || "",
               college: session.user.user_metadata?.college || "",
@@ -84,7 +87,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           if (session?.user) {
             const userData = {
               id: session.user.id,
-              phone: session.user.phone ?? "",
+              phone: session.user.user_metadata?.phone || "",
               name: session.user.user_metadata?.name || "",
               email: session.user.email || "",
               college: session.user.user_metadata?.college || "",
