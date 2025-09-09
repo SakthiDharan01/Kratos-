@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
 type CheckoutStep = 'profile' | 'team' | 'participants' | 'review'
-
+//hello there 
 interface Participant {
   name: string
   email: string
