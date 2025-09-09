@@ -22,6 +22,20 @@ export default function ProfilePage() {
     department: user?.department || '',
     year: user?.year || '',
   });
+
+  // Update form when user data changes or when entering edit mode
+  useEffect(() => {
+    if (user) {
+      setForm({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        college: user.college || '',
+        department: user.department || '',
+        year: user.year || '',
+      });
+    }
+  }, [user]);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [regLoading, setRegLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -205,6 +219,36 @@ export default function ProfilePage() {
     }
   };
 
+  const handleEditProfile = () => {
+    // Ensure form is populated with current user data when entering edit mode
+    if (user) {
+      setForm({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        college: user.college || '',
+        department: user.department || '',
+        year: user.year || '',
+      });
+    }
+    setEditing(true);
+  };
+
+  const handleCancel = () => {
+    // Reset form to original user data when canceling
+    if (user) {
+      setForm({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        college: user.college || '',
+        department: user.department || '',
+        year: user.year || '',
+      });
+    }
+    setEditing(false);
+  };
+
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-8">
@@ -294,7 +338,7 @@ export default function ProfilePage() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
-                    onClick={() => setEditing(true)}
+                    onClick={handleEditProfile}
                   >
                     <Edit className="w-4 h-4" />
                     <span>Edit Profile</span>
@@ -392,7 +436,7 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 rounded-lg transition-colors"
-                      onClick={() => setEditing(false)}
+                      onClick={handleCancel}
                       disabled={loading}
                     >
                       Cancel
