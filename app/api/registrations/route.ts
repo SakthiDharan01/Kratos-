@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +22,21 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Get authorization header from request
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Authorization header missing' },
+        { status: 401 }
+      );
+    }
+
+    // Create Supabase client with service role key for server operations
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     // Start a transaction-like operation
     // 1. Create the registrant (team/payment record)
@@ -50,14 +65,16 @@ export async function POST(request: NextRequest) {
 
     // 2. Create individual participant records
     const participantRecords = participants.map((participant: any) => ({
-      registrant_id: registrant.id,
+      leader_id: registrant.id,
       name: participant.name,
       email: participant.email,
       phone: participant.phone,
       college: participant.college,
       department: participant.department,
       year: participant.year,
-      is_leader: participant.is_leader || false
+      is_leader: participant.is_leader || false,
+      event_id: parseInt(event_id),
+      team_name: team_name
     }));
 
     const { data: registrations, error: registrationError } = await supabase
@@ -101,6 +118,12 @@ export async function GET(request: NextRequest) {
   const eventId = searchParams.get('event_id');
 
   try {
+    // Create Supabase client with service role key
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     let query = supabase
       .from('registrants')
       .select(`
