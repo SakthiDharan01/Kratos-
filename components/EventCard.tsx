@@ -6,15 +6,21 @@ import { Event } from '@/lib/store'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { useStore } from '@/lib/store'
+import { RulesModal } from './RulesModal'
 
 interface EventCardProps {
   event: Event
 }
 
 export default function EventCard({ event }: EventCardProps) {
-  const [teamSize, setTeamSize] = useState(event.min_team_size)
+  // Initialize teamSize with min_team_size for team events, or 1 for solo
+  const [teamSize, setTeamSize] = useState(
+    event.event_type === 'team' ? event.min_team_size : 1
+  )
   const [isRegisteredForThisEvent, setIsRegisteredForThisEvent] = useState(false)
   const [checkingRegistration, setCheckingRegistration] = useState(false)
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [showRules, setShowRules] = useState(false)
   const { addToCart, isAuthenticated, checkEventRegistrationStatus } = useStore()
 
   // Check registration status when component mounts
@@ -35,10 +41,14 @@ export default function EventCard({ event }: EventCardProps) {
   const now = new Date()
   const regStart = event.registration_start ? new Date(event.registration_start) : null
   const regEnd = event.registration_end ? new Date(event.registration_end) : null
-  const isWindowOpen = (
-    (!regStart || now >= regStart) && (!regEnd || now <= regEnd)
-  )
-  const isDisabled = event.status !== 'open' || !isWindowOpen || isRegisteredForThisEvent
+  const isWindowOpen = (!regStart || now >= regStart) && (!regEnd || now <= regEnd)
+  const isDisabled = event.status !== 'open' || !isWindowOpen || isRegisteredForThisEvent || 
+                     (event.participant_limit != null && 
+                      event.current_registrations != null && 
+                      event.current_registrations >= event.participant_limit)
+
+  // The price calculation remains the same since teamSize is now properly initialized
+  const totalPrice = event.price * (event.event_type === 'team' ? teamSize : 1)
 
   const handleAddToCart = async () => {
     if (isDisabled) return
@@ -60,109 +70,136 @@ export default function EventCard({ event }: EventCardProps) {
     toast.success(`${event.name} added to cart!`)
   }
 
-  const totalPrice = event.price * teamSize
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5 }}
-      className="bg-gray-900/50 border border-red-500/20 rounded-xl p-6 backdrop-blur-sm hover:border-red-500/40 transition-all duration-300"
-    >
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-xl font-bold text-yellow-400 flex items-center gap-2">
-            {event.name}
-            {isRegisteredForThisEvent && (
-              <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-orange-700 text-orange-300 flex items-center gap-1">
-                <Lock className="w-3 h-3" /> Already Paid
-              </span>
+    <>
+      <div className="w-full h-[400px] [perspective:1000px]" onClick={() => setIsFlipped(!isFlipped)}>
+        <div className={`relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
+          {/* Front of card */}
+          <div className="absolute w-full h-full [backface-visibility:hidden] bg-gray-900 rounded-2xl border-2 border-yellow-400 flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:shadow-[0_0_30px_rgba(250,204,21,0.3)] transition-shadow duration-300">
+            <p className="text-sm uppercase text-gray-400">{event.event_type === 'team' ? 'Team Event' : 'Solo Event'}</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-yellow-400 my-4">{event.name}</h2>
+            {event.event_date && event.start_time && event.end_time && (
+              <p className="text-sm text-gray-300 mb-2">
+                {new Date(event.event_date).toLocaleDateString()} | {event.start_time}-{event.end_time}
+              </p>
             )}
-            {isDisabled && !isRegisteredForThisEvent && !isWindowOpen && (
-              <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-gray-700 text-gray-300 flex items-center gap-1">
-                <Lock className="w-3 h-3" /> Closed
-              </span>
+            {event.event_type === 'team' ? (
+              <p className="font-semibold text-white flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Team Size: {event.min_team_size}-{event.max_team_size}
+              </p>
+            ) : (
+              <p className="font-semibold text-white flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Solo Event
+              </p>
             )}
-          </h3>
-          <p className="text-xs text-gray-400 mt-1 uppercase">{event.event_type === 'team' ? 'Team Event' : 'Solo Event'}</p>
-          {isRegisteredForThisEvent && (
-            <p className="text-xs text-orange-400 mt-1">
-              You have already paid for this event
-            </p>
-          )}
-        </div>
-        <div className="flex items-center text-green-400 font-bold">
-          <IndianRupee className="w-4 h-4" />
-          <span>{event.price}</span>
-        </div>
-      </div>
-      
-      <p className="text-gray-300 mb-4 leading-relaxed">{event.description}</p>
-      
-      {event.event_type === 'team' && (
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center text-sm text-gray-400">
-            <Users className="w-4 h-4 mr-1" />
-            <span>Team: {event.min_team_size}-{event.max_team_size} members</span>
+            {/* <p className="mt-2 font-medium text-gray-300">₹{event.price}/member</p> */}
+            <p className="mt-8 text-xs text-gray-500">Click to see details & register</p>
+          </div>
+
+          {/* Back of card */}
+          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-gray-800 rounded-2xl p-6 flex flex-col justify-between">
+            <div>
+              <h3 className="font-bold text-white text-lg mb-1">{event.name}</h3>
+              <p className="text-gray-300 text-sm mb-3 leading-relaxed">{event.description}</p>
+              {event.rules && (
+                <button 
+                  onClick={(e) => { 
+                    e.stopPropagation()
+                    setShowRules(true)
+                  }} 
+                  className="text-sm font-semibold text-yellow-400 hover:text-yellow-300 hover:underline"
+                >
+                  View Rules
+                </button>
+              )}
+              {(event.incharge_name1 || event.incharge_name2) && (
+                <div className="mt-4 text-sm text-gray-300">
+                  <p>Contact:</p>
+                  {event.incharge_name1 && event.incharge_phone1 && (
+                    <p>{event.incharge_name1}: {event.incharge_phone1}</p>
+                  )}
+                  {event.incharge_name2 && event.incharge_phone2 && (
+                    <p>{event.incharge_name2}: {event.incharge_phone2}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Team Size
+                </label>
+                {event.event_type === 'team' ? (
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <select
+                      value={teamSize}
+                      disabled={isDisabled}
+                      onChange={(e) => setTeamSize(Number(e.target.value))}
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-red-500 focus:outline-none disabled:opacity-50"
+                    >
+                      {Array.from(
+                        { length: event.max_team_size - event.min_team_size + 1 },
+                        (_, i) => event.min_team_size + i
+                      ).map((size) => (
+                        <option key={size} value={size}>
+                          {size} member{size > 1 ? 's' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-400">Solo participation</div>
+                )}
+              </div>
+
+              <div className="flex justify-between items-center pt-2" onClick={(e) => e.stopPropagation()}>
+                <div className="text-sm text-gray-400">
+                  Total: <span className="text-green-400 font-bold">₹{totalPrice}</span>
+                  {event.event_type === 'team' && (
+                    <span className="text-xs ml-1">
+                      (₹{event.price} × {teamSize})
+                    </span>
+                  )}
+                </div>
+                <motion.button
+                  whileHover={!isDisabled ? { scale: 1.05 } : undefined}
+                  whileTap={!isDisabled ? { scale: 0.95 } : undefined}
+                  onClick={handleAddToCart}
+                  disabled={isDisabled || checkingRegistration}
+                  className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
+                    isDisabled || checkingRegistration
+                      ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                      : 'bg-red-600 hover:bg-red-700 text-white'
+                  }`}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>
+                    {checkingRegistration 
+                      ? 'Checking...' 
+                      : isRegisteredForThisEvent 
+                        ? 'Already Paid' 
+                        : !isWindowOpen
+                          ? 'Closed' 
+                          : 'Add to Cart'
+                    }
+                  </span>
+                </motion.button>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
+
+      {showRules && event.rules && (
+        <RulesModal
+          eventTitle={event.name}
+          rules={event.rules}
+          onClose={() => setShowRules(false)}
+        />
       )}
-
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Team Size
-          </label>
-          {event.event_type === 'team' ? (
-            <select
-              value={teamSize}
-              disabled={isDisabled}
-              onChange={(e) => setTeamSize(Number(e.target.value))}
-              className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-red-500 focus:outline-none disabled:opacity-50"
-            >
-              {Array.from(
-                { length: event.max_team_size - event.min_team_size + 1 },
-                (_, i) => event.min_team_size + i
-              ).map((size) => (
-                <option key={size} value={size}>
-                  {size} member{size > 1 ? 's' : ''}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <div className="text-sm text-gray-400">Solo participation</div>
-          )}
-        </div>
-
-        <div className="flex justify-between items-center pt-2">
-          <div className="text-sm text-gray-400">
-            Total: <span className="text-green-400 font-bold">₹{totalPrice}</span>
-          </div>
-          <motion.button
-            whileHover={!isDisabled ? { scale: 1.05 } : undefined}
-            whileTap={!isDisabled ? { scale: 0.95 } : undefined}
-            onClick={handleAddToCart}
-            disabled={isDisabled || checkingRegistration}
-            className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
-              isDisabled || checkingRegistration
-                ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
-                : 'bg-red-600 hover:bg-red-700 text-white'
-            }`}
-          >
-            <Plus className="w-4 h-4" />
-            <span>
-              {checkingRegistration 
-                ? 'Checking...' 
-                : isRegisteredForThisEvent 
-                  ? 'Already Paid' 
-                  : !isWindowOpen
-                    ? 'Closed' 
-                    : 'Add to Cart'
-              }
-            </span>
-          </motion.button>
-        </div>
-      </div>
-    </motion.div>
+    </>
   )
 }
