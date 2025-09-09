@@ -38,8 +38,6 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    console.log('Creating registrant for user:', user_id, 'event:', event_id);
-
     // Start a transaction-like operation
     // 1. Create the registrant (team/payment record)
     const { data: registrant, error: registrantError } = await supabase
