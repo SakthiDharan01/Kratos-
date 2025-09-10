@@ -5,6 +5,7 @@ export interface Event {
   id: number
   name: string
   description: string
+  description_detailed?: string
   rules: string
   price: number
   min_team_size: number

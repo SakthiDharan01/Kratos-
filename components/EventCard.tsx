@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { useStore } from '@/lib/store'
 import { RulesModal } from './RulesModal'
+import { EventDetailsModal } from './EventDetailsModal'
 
 interface EventCardProps {
   event: Event
@@ -20,7 +21,7 @@ export default function EventCard({ event }: EventCardProps) {
   const [isRegisteredForThisEvent, setIsRegisteredForThisEvent] = useState(false)
   const [checkingRegistration, setCheckingRegistration] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
-  const [showRules, setShowRules] = useState(false)
+  const [showEventDetails, setShowEventDetails] = useState(false)
   const { addToCart, isAuthenticated, checkEventRegistrationStatus } = useStore()
 
   // Check registration status when component mounts
@@ -77,22 +78,12 @@ export default function EventCard({ event }: EventCardProps) {
           <div className="absolute w-full h-full [backface-visibility:hidden] bg-gray-900 rounded-2xl border-2 border-yellow-400 flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:shadow-[0_0_30px_rgba(250,204,21,0.3)] transition-shadow duration-300">
             <p className="text-sm uppercase text-gray-400">{event.event_type === 'team' ? 'Team Event' : 'Solo Event'}</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-yellow-400 my-4">{event.name}</h2>
-            {event.event_date && (
-              <p className="text-sm text-gray-300 mb-2">
-                {new Date(event.event_date).toLocaleDateString()}
-                {event.time_slot && ` | ${event.time_slot === 'morning' ? 'Morning' : event.time_slot === 'afternoon' ? 'Afternoon' : 'Full Day'}`}
-              </p>
-            )}
-            {event.venue && (
-              <p className="text-sm text-gray-300 mb-2 flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                {event.venue}
-              </p>
-            )}
             {event.event_type === 'team' ? (
               <p className="font-semibold text-white flex items-center gap-2">
                 <Users className="w-5 h-5" />
-                Team Size: {event.min_team_size}-{event.max_team_size}
+                Team Size: {event.min_team_size === event.max_team_size ? 
+                  `${event.min_team_size} member${event.min_team_size > 1 ? 's' : ''}` : 
+                  `${event.min_team_size}-${event.max_team_size} members`}
               </p>
             ) : (
               <p className="font-semibold text-white flex items-center gap-2">
@@ -109,17 +100,29 @@ export default function EventCard({ event }: EventCardProps) {
             <div>
               <h3 className="font-bold text-white text-lg mb-1">{event.name}</h3>
               <p className="text-gray-300 text-sm mb-3 leading-relaxed">{event.description}</p>
-              {event.rules && (
-                <button 
-                  onClick={(e) => { 
-                    e.stopPropagation()
-                    setShowRules(true)
-                  }} 
-                  className="text-sm font-semibold text-yellow-400 hover:text-yellow-300 hover:underline"
-                >
-                  View Rules
-                </button>
+              
+              {/* Slot Details */}
+              {event.time_slot && (
+                <div className="mb-3">
+                  <p className="text-sm text-gray-400 mb-1">Time Slot:</p>
+                  <p className="text-sm text-yellow-400 font-medium">
+                    {event.time_slot === 'morning' ? 'Morning Session' : 
+                     event.time_slot === 'afternoon' ? 'Afternoon Session' : 
+                     'Full Day (Morning & Afternoon)'}
+                  </p>
+                </div>
               )}
+
+              <button 
+                onClick={(e) => { 
+                  e.stopPropagation()
+                  setShowEventDetails(true)
+                }} 
+                className="text-sm font-semibold text-yellow-400 hover:text-yellow-300 hover:underline"
+              >
+                View Event Details
+              </button>
+              
               {(event.incharge_name1 || event.incharge_name2) && (
                 <div className="mt-4 text-sm text-gray-300">
                   <p>Contact:</p>
@@ -164,11 +167,6 @@ export default function EventCard({ event }: EventCardProps) {
               <div className="flex justify-between items-center pt-2" onClick={(e) => e.stopPropagation()}>
                 <div className="text-sm text-gray-400">
                   Total: <span className="text-green-400 font-bold">₹{totalPrice}</span>
-                  {event.event_type === 'team' && (
-                    <span className="text-xs ml-1">
-                      (₹{event.price} × {teamSize})
-                    </span>
-                  )}
                 </div>
                 <motion.button
                   whileHover={!isDisabled ? { scale: 1.05 } : undefined}
@@ -199,11 +197,10 @@ export default function EventCard({ event }: EventCardProps) {
         </div>
       </div>
 
-      {showRules && event.rules && (
-        <RulesModal
-          eventTitle={event.name}
-          rules={event.rules}
-          onClose={() => setShowRules(false)}
+      {showEventDetails && (
+        <EventDetailsModal
+          event={event}
+          onClose={() => setShowEventDetails(false)}
         />
       )}
     </>

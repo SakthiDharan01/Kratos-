@@ -52,10 +52,22 @@ export function EventModal({ open, onOpenChange, event }: EventModalProps) {
             <h3 className="text-lg font-semibold mb-2">Description</h3>
             <p className="text-gray-300 leading-relaxed whitespace-pre-line">{event.description}</p>
           </div>
+          {event.description_detailed && (
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Detailed Description</h3>
+              <p className="text-gray-300 leading-relaxed whitespace-pre-line">{event.description_detailed}</p>
+            </div>
+          )}
           {event.rules && (
             <div>
               <h3 className="text-lg font-semibold mb-2">Rules</h3>
               <div className="prose prose-invert max-w-none text-sm" dangerouslySetInnerHTML={{ __html: event.rules }} />
+            </div>
+          )}
+          {event.rounds && (
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Rounds</h3>
+              <p className="text-gray-300 leading-relaxed whitespace-pre-line">{event.rounds}</p>
             </div>
           )}
           <div className="flex flex-wrap gap-6 items-end justify-between">

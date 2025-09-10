@@ -473,6 +473,11 @@ export default function CheckoutPage() {
 
                 {teamData.map((team, teamIndex) => {
                   const event = cart.find(item => item.event.id.toString() === team.eventId)?.event
+                  const isSoloEvent = event?.event_type === 'solo' || (event?.min_team_size === 1 && event?.max_team_size === 1)
+                  const currentTeamSize = 1 + team.participants.length // Leader + participants
+                  const maxTeamSize = event?.max_team_size || 1
+                  const minTeamSize = event?.min_team_size || 1
+                  
                   return (
                     <div key={teamIndex} className="mb-8 p-4 border border-gray-600 rounded-lg">
                       <h3 className="text-xl font-bold text-yellow-400 mb-4">{event?.name} - {team.teamName}</h3>
@@ -484,79 +489,102 @@ export default function CheckoutPage() {
                         </div>
                       </div>
 
-                      <div>
-                        <div className="flex justify-between items-center mb-4">
-                          <h4 className="text-lg font-medium text-white">Team Members</h4>
-                          <button
-                            type="button"
-                            onClick={() => addParticipant(teamIndex)}
-                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm flex items-center"
-                          >
-                            <Plus size={16} className="mr-1" />
-                            Add Member
-                          </button>
-                        </div>
-
-                        {team.participants.map((participant, participantIndex) => (
-                          <div key={participantIndex} className="bg-gray-800 p-4 rounded-lg mb-4">
-                            <div className="flex justify-between items-center mb-3">
-                              <h5 className="text-white font-medium">Participant {participantIndex + 1}</h5>
+                      {!isSoloEvent && (
+                        <div>
+                          <div className="flex justify-between items-center mb-4">
+                            <div>
+                              <h4 className="text-lg font-medium text-white">Team Members</h4>
+                              <p className="text-sm text-gray-400">
+                                Current: {currentTeamSize}/{maxTeamSize} members
+                                {minTeamSize > 1 && currentTeamSize < minTeamSize && (
+                                  <span className="text-red-400 ml-2">
+                                    (Minimum {minTeamSize} required)
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            {currentTeamSize < maxTeamSize && (
                               <button
                                 type="button"
-                                onClick={() => removeParticipant(teamIndex, participantIndex)}
-                                className="bg-red-600 hover:bg-red-700 text-white p-1 rounded"
+                                onClick={() => addParticipant(teamIndex)}
+                                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm flex items-center"
                               >
-                                <X size={16} />
+                                <Plus size={16} className="mr-1" />
+                                Add Member
                               </button>
-                            </div>
-                            
-                            <div className="grid md:grid-cols-2 gap-3">
-                              <input
-                                value={participant.name}
-                                onChange={(e) => updateParticipant(teamIndex, participantIndex, 'name', e.target.value)}
-                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
-                                placeholder="Name"
-                              />
-                              <input
-                                value={participant.email}
-                                onChange={(e) => updateParticipant(teamIndex, participantIndex, 'email', e.target.value)}
-                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
-                                placeholder="Email"
-                                type="email"
-                              />
-                              <input
-                                value={participant.phone}
-                                onChange={(e) => updateParticipant(teamIndex, participantIndex, 'phone', e.target.value)}
-                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
-                                placeholder="Phone"
-                              />
-                              <input
-                                value={participant.college}
-                                onChange={(e) => updateParticipant(teamIndex, participantIndex, 'college', e.target.value)}
-                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
-                                placeholder="College"
-                              />
-                              <input
-                                value={participant.department}
-                                onChange={(e) => updateParticipant(teamIndex, participantIndex, 'department', e.target.value)}
-                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
-                                placeholder="Department"
-                              />
-                              <select
-                                value={participant.year}
-                                onChange={(e) => updateParticipant(teamIndex, participantIndex, 'year', e.target.value)}
-                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
-                              >
-                                <option value="">Select Year</option>
-                                <option value="1">1st Year</option>
-                                <option value="2">2nd Year</option>
-                                <option value="3">3rd Year</option>
-                                <option value="4">4th Year</option>
-                              </select>
-                            </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
+
+                          {team.participants.map((participant, participantIndex) => (
+                            <div key={participantIndex} className="bg-gray-800 p-4 rounded-lg mb-4">
+                              <div className="flex justify-between items-center mb-3">
+                                <h5 className="text-white font-medium">Participant {participantIndex + 1}</h5>
+                                <button
+                                  type="button"
+                                  onClick={() => removeParticipant(teamIndex, participantIndex)}
+                                  className="bg-red-600 hover:bg-red-700 text-white p-1 rounded"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </div>
+                              
+                              <div className="grid md:grid-cols-2 gap-3">
+                                <input
+                                  value={participant.name}
+                                  onChange={(e) => updateParticipant(teamIndex, participantIndex, 'name', e.target.value)}
+                                  className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                                  placeholder="Name"
+                                />
+                                <input
+                                  value={participant.email}
+                                  onChange={(e) => updateParticipant(teamIndex, participantIndex, 'email', e.target.value)}
+                                  className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                                  placeholder="Email"
+                                  type="email"
+                                />
+                                <input
+                                  value={participant.phone}
+                                  onChange={(e) => updateParticipant(teamIndex, participantIndex, 'phone', e.target.value)}
+                                  className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                                  placeholder="Phone"
+                                />
+                                <input
+                                  value={participant.college}
+                                  onChange={(e) => updateParticipant(teamIndex, participantIndex, 'college', e.target.value)}
+                                  className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                                  placeholder="College"
+                                />
+                                <input
+                                  value={participant.department}
+                                  onChange={(e) => updateParticipant(teamIndex, participantIndex, 'department', e.target.value)}
+                                  className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                                  placeholder="Department"
+                                />
+                                <select
+                                  value={participant.year}
+                                  onChange={(e) => updateParticipant(teamIndex, participantIndex, 'year', e.target.value)}
+                                  className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                                >
+                                  <option value="">Select Year</option>
+                                  <option value="1">1st Year</option>
+                                  <option value="2">2nd Year</option>
+                                  <option value="3">3rd Year</option>
+                                  <option value="4">4th Year</option>
+                                </select>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {isSoloEvent && (
+                        <div className="bg-blue-900/30 border border-blue-500 p-4 rounded-lg">
+                          <p className="text-blue-300 text-center">
+                            <Users className="inline w-5 h-5 mr-2" />
+                            This is a solo event. Only the team leader will participate.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -569,7 +597,24 @@ export default function CheckoutPage() {
                     Back to Team Details
                   </button>
                   <button
-                    onClick={() => setCurrentStep('review')}
+                    onClick={() => {
+                      // Validate team sizes before proceeding
+                      const isValid = teamData.every(team => {
+                        const event = cart.find(item => item.event.id.toString() === team.eventId)?.event
+                        const isSoloEvent = event?.event_type === 'solo' || (event?.min_team_size === 1 && event?.max_team_size === 1)
+                        const currentTeamSize = 1 + team.participants.length
+                        const minTeamSize = event?.min_team_size || 1
+                        
+                        return isSoloEvent || currentTeamSize >= minTeamSize
+                      })
+                      
+                      if (!isValid) {
+                        toast.error('Please ensure all teams meet the minimum size requirements')
+                        return
+                      }
+                      
+                      setCurrentStep('review')
+                    }}
                     className="bg-yellow-600 hover:bg-yellow-700 text-black px-6 py-3 rounded-lg font-medium transition-colors"
                   >
                     Review & Pay

@@ -1,10 +1,11 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Zen_Dots } from "next/font/google";
+import { Exo_2 } from "next/font/google";
 
-const inter = Zen_Dots({
+const exo2 = Exo_2({
   subsets: ["latin"],
-  weight: ["400"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-exo2",
 });
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={`${exo2.variable} font-sans`}>{children}</body>
     </html>
   );
 }

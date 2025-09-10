@@ -10,6 +10,7 @@ export async function fetchEvents(category?: string): Promise<Event[]> {
         id,
         name,
         description,
+        description_detailed,
         rules,
         price,
         min_team_size,
