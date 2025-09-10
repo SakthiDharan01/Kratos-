@@ -14,24 +14,26 @@ export default function OnlinePage() {
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Event | null>(null)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const data = await fetchEvents('online')
-        setEvents(data)
-      } catch (err) {
-        const errorMessage = err instanceof Error 
-          ? `Failed to load events: ${err.message}`
-          : 'An unexpected error occurred while loading events'
-        setError(errorMessage)
-        console.error('Error loading online events:', err)
-      } finally {
-        setLoading(false)
-      }
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      console.log('Fetching online events...')
+      const data = await fetchEvents('online')
+      console.log('Online events fetched:', data)
+      setEvents(data)
+    } catch (err) {
+      const errorMessage = err instanceof Error 
+        ? `Failed to load events: ${err.message}`
+        : 'An unexpected error occurred while loading events'
+      setError(errorMessage)
+      console.error('Error loading online events:', err)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchData()
   }, [])
 

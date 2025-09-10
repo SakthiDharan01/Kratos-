@@ -14,24 +14,26 @@ export default function NoCodePage() {
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Event | null>(null)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const data = await fetchEvents('no_code')
-        setEvents(data)
-      } catch (err) {
-        const errorMessage = err instanceof Error 
-          ? `Failed to load events: ${err.message}`
-          : 'An unexpected error occurred while loading events'
-        setError(errorMessage)
-        console.error('Error loading no-code events:', err)
-      } finally {
-        setLoading(false)
-      }
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      console.log('Fetching no-code events...')
+      const data = await fetchEvents('no_code')
+      console.log('No-code events fetched:', data)
+      setEvents(data)
+    } catch (err) {
+      const errorMessage = err instanceof Error 
+        ? `Failed to load events: ${err.message}`
+        : 'An unexpected error occurred while loading events'
+      setError(errorMessage)
+      console.error('Error loading no-code events:', err)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchData()
   }, [])
 

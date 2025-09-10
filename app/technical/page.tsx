@@ -14,24 +14,26 @@ export default function TechnicalPage() {
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Event | null>(null)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const data = await fetchEvents('technical')
-        setEvents(data)
-      } catch (err) {
-        const errorMessage = err instanceof Error 
-          ? `Failed to load events: ${err.message}`
-          : 'An unexpected error occurred while loading events'
-        setError(errorMessage)
-        console.error('Error loading technical events:', err)
-      } finally {
-        setLoading(false)
-      }
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      console.log('Fetching technical events...')
+      const data = await fetchEvents('technical')
+      console.log('Technical events fetched:', data)
+      setEvents(data)
+    } catch (err) {
+      const errorMessage = err instanceof Error 
+        ? `Failed to load events: ${err.message}`
+        : 'An unexpected error occurred while loading events'
+      setError(errorMessage)
+      console.error('Error loading technical events:', err)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchData()
   }, [])
 
@@ -49,10 +51,11 @@ export default function TechnicalPage() {
         <div className="text-center py-20">
           <p className="text-red-400 mb-4">{error}</p>
           <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-colors"
+            onClick={fetchData}
+            disabled={loading}
+            className="px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-colors disabled:opacity-50"
           >
-            Try Again
+            {loading ? 'Loading...' : 'Try Again'}
           </button>
         </div>
       )
@@ -60,8 +63,18 @@ export default function TechnicalPage() {
 
     if (!events.length) {
       return (
-        <div className="text-center text-gray-400 py-20">
-          No events available at the moment
+        <div className="text-center py-20">
+          <div className="text-gray-400 mb-4">
+            <h3 className="text-xl mb-2">No Technical Events Available</h3>
+            <p>Check back later or try refreshing the page</p>
+          </div>
+          <button 
+            onClick={fetchData}
+            disabled={loading}
+            className="px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Loading...' : 'Refresh'}
+          </button>
         </div>
       )
     }
