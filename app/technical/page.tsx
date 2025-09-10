@@ -18,23 +18,21 @@ export default function TechnicalPage() {
     const fetchData = async () => {
       try {
         setLoading(true)
+        setError(null)
         const data = await fetchEvents('technical')
-        if (!data) throw new Error('No data received')
         setEvents(data)
       } catch (err) {
         const errorMessage = err instanceof Error 
           ? `Failed to load events: ${err.message}`
           : 'An unexpected error occurred while loading events'
         setError(errorMessage)
+        console.error('Error loading technical events:', err)
       } finally {
         setLoading(false)
       }
     }
 
-    return () => {
-      setEvents([])
-      setError(null)
-    }
+    fetchData()
   }, [])
 
   const renderContent = () => {

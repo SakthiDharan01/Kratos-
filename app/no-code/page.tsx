@@ -18,25 +18,21 @@ export default function NoCodePage() {
     const fetchData = async () => {
       try {
         setLoading(true)
+        setError(null)
         const data = await fetchEvents('no_code')
-        if (!data) throw new Error('No data received')
         setEvents(data)
       } catch (err) {
         const errorMessage = err instanceof Error 
           ? `Failed to load events: ${err.message}`
           : 'An unexpected error occurred while loading events'
         setError(errorMessage)
+        console.error('Error loading no-code events:', err)
       } finally {
         setLoading(false)
       }
     }
 
     fetchData()
-
-    return () => {
-      setEvents([])
-      setError(null)
-    }
   }, [])
 
   const renderContent = () => {

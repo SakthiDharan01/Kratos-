@@ -136,7 +136,7 @@ export const useStore = create<StoreState>()(
       },
       getCartTotal: () => {
         return get().cart.reduce((total, item) => {
-          return total + (item.event.price * item.teamSize)
+          return total + item.event.price
         }, 0)
       },
       registrationDraft: null,

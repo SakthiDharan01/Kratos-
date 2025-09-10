@@ -46,8 +46,8 @@ export default function EventCard({ event }: EventCardProps) {
                       event.current_registrations != null && 
                       event.current_registrations >= event.participant_limit)
 
-  // The price calculation remains the same since teamSize is now properly initialized
-  const totalPrice = event.price * (event.event_type === 'team' ? teamSize : 1)
+  // Fixed price per event, not per person
+  const totalPrice = event.price
 
   const handleAddToCart = async () => {
     if (isDisabled) return

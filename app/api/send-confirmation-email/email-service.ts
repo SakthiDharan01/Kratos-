@@ -14,6 +14,12 @@ interface EmailData {
   eventName: string;
   paymentId: string;
   amount: number;
+  eventIncharge: {
+    name1: string;
+    phone1: string;
+    name2: string;
+    phone2: string;
+  };
   teamMembers: Array<{
     name: string;
     email: string;
@@ -211,6 +217,12 @@ export async function sendConfirmationEmail(registrantId: number, paymentId: str
           eventName: event.name,
           paymentId: registrantData.razorpay_payment_id || registrantData.id,
           amount: registrantData.paid_amount || event.price,
+          eventIncharge: {
+            name1: event.incharge_name1,
+            phone1: event.incharge_phone1,
+            name2: event.incharge_name2,
+            phone2: event.incharge_phone2
+          },
           teamMembers: teamMembers
         };
 
@@ -286,7 +298,7 @@ export async function sendConfirmationEmail(registrantId: number, paymentId: str
 }
 
 function generateEmailHTML(data: EmailData, qrUrl: string): string {
-  const { name, teamName, eventName, paymentId, amount, teamMembers } = data;
+  const { name, teamName, eventName, paymentId, amount, teamMembers, eventIncharge } = data;
 
   return `
 <!DOCTYPE html>
@@ -350,9 +362,12 @@ function generateEmailHTML(data: EmailData, qrUrl: string): string {
         </div>
 
         <div style="text-align: center; padding: 25px; background: #f8f9fa; border-radius: 8px;">
-            <h4 style="margin-bottom: 15px; color: #FFD700;">Need Help?</h4>
-            <p><strong>Email:</strong> updates.kratos@gmail.com</p>
-            <p><strong>Phone:</strong> +91 98765 43210</p>
+            <h4 style="margin-bottom: 15px; color: #FFD700;">Event Contact Information</h4>
+            <p><strong>Event Incharge:</strong> ${eventIncharge.name1}</p>
+            <p><strong>Phone:</strong> +91 ${eventIncharge.phone1}</p>
+            ${eventIncharge.name2 ? `<p><strong>Co-Incharge:</strong> ${eventIncharge.name2}</p>` : ''}
+            ${eventIncharge.phone2 ? `<p><strong>Phone:</strong> +91 ${eventIncharge.phone2}</p>` : ''}
+            <p><strong>General Email:</strong> updates.kratos@gmail.com</p>
             <p><strong>Venue:</strong> Easwari Engineering College, Chennai</p>
         </div>
     </div>
@@ -370,7 +385,7 @@ function generateEmailHTML(data: EmailData, qrUrl: string): string {
 }
 
 function generateEmailText(data: EmailData): string {
-  const { name, teamName, eventName, paymentId, amount, teamMembers } = data;
+  const { name, teamName, eventName, paymentId, amount, teamMembers, eventIncharge } = data;
 
   return `
 KRATOS 2K25 - Registration Confirmed!
@@ -402,9 +417,10 @@ EVENT VENUE:
 📍 Easwari Engineering College
 Chennai, Tamil Nadu
 
-SUPPORT:
-📧 Email: updates.kratos@gmail.com
-📞 Phone: +91 98765 43210
+EVENT CONTACT:
+📧 General Email: updates.kratos@gmail.com
+📞 Event Incharge: ${eventIncharge.name1} - +91 ${eventIncharge.phone1}
+${eventIncharge.name2 ? `📞 Co-Incharge: ${eventIncharge.name2} - +91 ${eventIncharge.phone2}` : ''}
 
 Thank you for registering for KRATOS 2K25!
 

@@ -60,7 +60,7 @@ export function EventModal({ open, onOpenChange, event }: EventModalProps) {
           )}
           <div className="flex flex-wrap gap-6 items-end justify-between">
             <div>
-              {event.event_type === 'team' ? (
+              {event.event_type === 'team' && event.max_team_size > 1 ? (
                 <>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Team Size</label>
                   <select
@@ -79,9 +79,9 @@ export function EventModal({ open, onOpenChange, event }: EventModalProps) {
               )}
             </div>
             <div className="flex items-center gap-2 text-green-400 font-bold">
-              <IndianRupee className="w-5 h-5" /> {event.price} / person
+              <IndianRupee className="w-5 h-5" /> {event.price} / event
             </div>
-            <div className="text-sm text-gray-400">Total: <span className="text-green-400 font-semibold">₹{event.price * teamSize}</span></div>
+            <div className="text-sm text-gray-400">Total: <span className="text-green-400 font-semibold">₹{event.price}</span></div>
             <motion.button
               whileHover={!isDisabled ? { scale: 1.05 } : undefined}
               whileTap={!isDisabled ? { scale: 0.95 } : undefined}
