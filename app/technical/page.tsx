@@ -18,7 +18,7 @@ export default function TechnicalPage() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const data = await fetchEvents('Technical')
+        const data = await fetchEvents('technical')
         if (!data) throw new Error('No data received')
         setEvents(data)
       } catch (err) {

@@ -5,26 +5,23 @@ export interface Event {
   id: number
   name: string
   description: string
-  rules?: string | null
+  rules: string
   price: number
   min_team_size: number
   max_team_size: number
-  category: string
+  category: 'technical' | 'no_code' | 'playground' | 'online'
   event_type: 'team' | 'solo'
   status: 'open' | 'closed' | 'completed'
-  participant_limit?: number | null
+  participant_limit: number
   current_registrations?: number | null
-  registration_start?: string | null
-  registration_end?: string | null
-  event_date?: string | null
-  time_slot?: 'slot1' | 'slot2' | 'both' | null
-  slot_duration?: 'single' | 'double' | null
-  start_time?: string | null
-  end_time?: string | null
-  incharge_name1?: string | null
-  incharge_phone1?: string | null
-  incharge_name2?: string | null
-  incharge_phone2?: string | null
+  event_date: string
+  time_slot?: 'morning' | 'afternoon' | 'both' | null
+  venue: string
+  rounds?: string | null
+  incharge_name1: string
+  incharge_phone1: string
+  incharge_name2: string
+  incharge_phone2: string
 }
 
 export interface CartItem {

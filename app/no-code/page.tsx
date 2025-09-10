@@ -18,7 +18,7 @@ export default function NoCodePage() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const data = await fetchEvents('No-Code')
+        const data = await fetchEvents('no_code')
         if (!data) throw new Error('No data received')
         setEvents(data)
       } catch (err) {

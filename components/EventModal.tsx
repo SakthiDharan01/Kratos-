@@ -18,9 +18,8 @@ export function EventModal({ open, onOpenChange, event }: EventModalProps) {
   const [teamSize, setTeamSize] = useState<number>(event?.min_team_size || 1);
 
   const now = new Date();
-  const regStart = event?.registration_start ? new Date(event.registration_start) : null;
-  const regEnd = event?.registration_end ? new Date(event.registration_end) : null;
-  const isWindowOpen = (!regStart || now >= regStart) && (!regEnd || now <= regEnd);
+  // Registration is always open now since we removed registration_start/end
+  const isWindowOpen = true;
   const isDisabled = !event || event.status !== 'open' || !isWindowOpen;
 
   if (!event) return null;

@@ -39,8 +39,8 @@ async function handleQRCodeLookup(qrId: string, type: string | null) {
             event_type,
             category,
             event_date,
-            start_time,
-            end_time
+            time_slot,
+            venue
           ),
           registrants!inner(
             id,
@@ -95,8 +95,8 @@ async function handleQRCodeLookup(qrId: string, type: string | null) {
             event_type: event.event_type,
             category: event.category,
             event_date: event.event_date,
-            start_time: event.start_time,
-            end_time: event.end_time
+            time_slot: event.time_slot,
+            venue: event.venue
           },
           team: {
             name: registrationData.team_name,
@@ -140,8 +140,8 @@ async function handleQRCodeLookup(qrId: string, type: string | null) {
           event_type,
           category,
           event_date,
-          start_time,
-          end_time
+          time_slot,
+          venue
         ),
         registrations!inner(
           id,
@@ -184,8 +184,8 @@ async function handleQRCodeLookup(qrId: string, type: string | null) {
         event_type: event.event_type,
         category: event.category,
         event_date: event.event_date,
-        start_time: event.start_time,
-        end_time: event.end_time
+        time_slot: event.time_slot,
+        venue: event.venue
       },
       team: {
         id: teamData.id,
@@ -261,8 +261,8 @@ export async function GET(request: NextRequest) {
             event_type,
             category,
             event_date,
-            start_time,
-            end_time
+            time_slot,
+            venue
           ),
           registrations!inner(
             id,
@@ -303,8 +303,8 @@ export async function GET(request: NextRequest) {
             event_type,
             category,
             event_date,
-            start_time,
-            end_time
+            time_slot,
+            venue
           ),
           registrants!inner(
             id,
@@ -339,8 +339,8 @@ export async function GET(request: NextRequest) {
             event_type,
             category,
             event_date,
-            start_time,
-            end_time
+            time_slot,
+            venue
           ),
           registrations!inner(
             id,
@@ -401,8 +401,8 @@ export async function GET(request: NextRequest) {
           event_type: registrant.events.event_type,
           category: registrant.events.category,
           event_date: registrant.events.event_date,
-          start_time: registrant.events.start_time,
-          end_time: registrant.events.end_time
+          time_slot: registrant.events.time_slot,
+          venue: registrant.events.venue
         },
         team_members: registrant.registrations.map((participant: any) => ({
           id: participant.id,
@@ -436,8 +436,8 @@ export async function GET(request: NextRequest) {
           event_type: participant.events.event_type,
           category: participant.events.category,
           event_date: participant.events.event_date,
-          start_time: participant.events.start_time,
-          end_time: participant.events.end_time
+          time_slot: participant.events.time_slot,
+          venue: participant.events.venue
         },
         team_registration: {
           registrant_id: participant.registrants.id,

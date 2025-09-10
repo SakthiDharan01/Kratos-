@@ -25,9 +25,10 @@ interface Event {
   price: number;
   event_type: string;
   category: string;
-  event_date: string | null;
-  start_time: string | null;
-  end_time: string | null;
+  event_date: string;
+  time_slot: string | null;
+  venue: string;
+  rounds: string | null;
 }
 
 interface Team {
@@ -183,11 +184,15 @@ function QRContent() {
                     <strong className="text-white">Date:</strong> {new Date(event.event_date).toLocaleDateString()}
                   </p>
                 )}
-                {event.start_time && (
+                {event.time_slot && (
                   <p className="text-gray-300 mb-2 flex items-center">
                     <Clock className="w-4 h-4 mr-2" />
-                    <strong className="text-white">Time:</strong> {event.start_time}
-                    {event.end_time && ` - ${event.end_time}`}
+                    <strong className="text-white">Time:</strong> {event.time_slot === 'morning' ? 'Morning' : event.time_slot === 'afternoon' ? 'Afternoon' : 'Full Day'}
+                  </p>
+                )}
+                {event.venue && (
+                  <p className="text-gray-300 mb-2">
+                    <strong className="text-white">Venue:</strong> {event.venue}
                   </p>
                 )}
                 <p className="text-gray-300 mb-2">

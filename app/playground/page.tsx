@@ -18,7 +18,7 @@ export default function PlaygroundPage() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const data = await fetchEvents('PlayGround')
+        const data = await fetchEvents('playground')
         if (!data) throw new Error('No data received')
         setEvents(data)
       } catch (err) {

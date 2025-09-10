@@ -18,7 +18,7 @@ export default function OnlinePage() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const data = await fetchEvents('Online Events')
+        const data = await fetchEvents('online')
         if (!data) throw new Error('No data received')
         setEvents(data)
       } catch (err) {

@@ -126,8 +126,8 @@ export async function sendConfirmationEmail(registrantId: number, paymentId: str
           description,
           price,
           event_date,
-          start_time,
-          end_time
+          time_slot,
+          venue
         ),
         registrations (
           id,

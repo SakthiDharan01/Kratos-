@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Plus, Users, IndianRupee, Lock } from 'lucide-react'
+import { Plus, Users, IndianRupee, Lock, MapPin } from 'lucide-react'
 import { Event } from '@/lib/store'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
@@ -39,9 +39,8 @@ export default function EventCard({ event }: EventCardProps) {
   }, [isAuthenticated, checkEventRegistrationStatus, event.id])
 
   const now = new Date()
-  const regStart = event.registration_start ? new Date(event.registration_start) : null
-  const regEnd = event.registration_end ? new Date(event.registration_end) : null
-  const isWindowOpen = (!regStart || now >= regStart) && (!regEnd || now <= regEnd)
+  // Registration is always open now since we removed registration_start/end
+  const isWindowOpen = true
   const isDisabled = event.status !== 'open' || !isWindowOpen || isRegisteredForThisEvent || 
                      (event.participant_limit != null && 
                       event.current_registrations != null && 
@@ -78,9 +77,16 @@ export default function EventCard({ event }: EventCardProps) {
           <div className="absolute w-full h-full [backface-visibility:hidden] bg-gray-900 rounded-2xl border-2 border-yellow-400 flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:shadow-[0_0_30px_rgba(250,204,21,0.3)] transition-shadow duration-300">
             <p className="text-sm uppercase text-gray-400">{event.event_type === 'team' ? 'Team Event' : 'Solo Event'}</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-yellow-400 my-4">{event.name}</h2>
-            {event.event_date && event.start_time && event.end_time && (
+            {event.event_date && (
               <p className="text-sm text-gray-300 mb-2">
-                {new Date(event.event_date).toLocaleDateString()} | {event.start_time}-{event.end_time}
+                {new Date(event.event_date).toLocaleDateString()}
+                {event.time_slot && ` | ${event.time_slot === 'morning' ? 'Morning' : event.time_slot === 'afternoon' ? 'Afternoon' : 'Full Day'}`}
+              </p>
+            )}
+            {event.venue && (
+              <p className="text-sm text-gray-300 mb-2 flex items-center gap-1">
+                <MapPin className="w-4 h-4" />
+                {event.venue}
               </p>
             )}
             {event.event_type === 'team' ? (
