@@ -21,7 +21,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${exo2.variable} font-sans`}>{children}</body>
+      <body className={`${exo2.variable} font-sans`}>
+        {children}
+        <script defer async src="https://apply.devfolio.co/v2/sdk.js"></script>
+      </body>
     </html>
   );
 }

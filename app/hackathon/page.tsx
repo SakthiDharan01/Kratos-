@@ -4,8 +4,24 @@ import { motion } from 'framer-motion'
 import { Calendar, Clock, Users, Code, Lightbulb, Trophy, ArrowRight, ExternalLink, Shield, Heart, Network, Brain } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useEffect } from 'react'
 
 export default function HackathonPage() {
+  // Load Devfolio SDK
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://apply.devfolio.co/v2/sdk.js';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+    
+    return () => {
+      // Only remove if it exists to avoid errors
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    }
+  }, []);
   const tracks = [
     {
       icon: <Network className="w-8 h-8" />,
@@ -159,21 +175,12 @@ export default function HackathonPage() {
             transition={{ delay: 0.7, duration: 0.8 }}
             className="text-center"
           >
-            <a 
-              href="https://devfolio.co" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 bg-white text-black font-bold py-4 px-10 rounded-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-blue-500/25"
-            >
-              <Image 
-                src="/hackathon/devfolio-logo.png" 
-                alt="DEVFOLIO LOGO"
-                width={28}
-                height={28}
-              />
-              Apply with Devfolio
-              <ExternalLink className="w-5 h-5" />
-            </a>
+            <div 
+              className="apply-button mx-auto" 
+              data-hackathon-slug="hacktothefuture" 
+              data-button-theme="light"
+              style={{ height: '44px', width: '312px' }}
+            ></div>
             <p className="text-sm text-gray-400 mt-4">Register now to secure your spot!</p>
           </motion.div>
         </div>
@@ -334,21 +341,12 @@ export default function HackathonPage() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <a 
-                href="https://devfolio.co" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-3 bg-white text-black font-bold py-4 px-10 rounded-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-blue-500/25"
-              >
-                <Image 
-                  src="/hackathon/devfolio-logo.png" 
-                  alt="DEVFOLIO LOGO"
-                  width={28}
-                  height={28}
-                />
-                Apply with Devfolio
-                <ExternalLink className="w-5 h-5" />
-              </a>
+              <div 
+                className="apply-button" 
+                data-hackathon-slug="hacktothefuture" 
+                data-button-theme="light"
+                style={{ height: '44px', width: '312px' }}
+              ></div>
               
               <Link 
                 href="/"
