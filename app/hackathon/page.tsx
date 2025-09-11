@@ -91,7 +91,7 @@ export default function HackathonPage() {
             {/* Main Logo */}
             <div className="mb-8">
               <Image 
-                src="/hackathon/hack-to-future-logo.svg" 
+                src="/hackathon/hack-the future.png" 
                 alt="HACK TO THE FUTURE LOGO"
                 width={700}
                 height={220}
@@ -133,7 +133,7 @@ export default function HackathonPage() {
             <div className="text-center">
               <p className="text-sm text-gray-400 mb-4">Powered by</p>
               <Image 
-                src="/hackathon/devfolio-logo.svg" 
+                src="/hackathon/devfolio-logo.png" 
                 alt="DEVFOLIO LOGO"
                 width={200}
                 height={60}
@@ -143,7 +143,7 @@ export default function HackathonPage() {
             <div className="text-center">
               <p className="text-sm text-gray-400 mb-4">In partnership with</p>
               <Image 
-                src="/hackathon/ethindia-logo.svg" 
+                src="/hackathon/ethindia-logo.png" 
                 alt="ETHINDIA LOGO"
                 width={240}
                 height={70}
@@ -166,7 +166,7 @@ export default function HackathonPage() {
               className="inline-flex items-center gap-3 bg-white text-black font-bold py-4 px-10 rounded-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-blue-500/25"
             >
               <Image 
-                src="/hackathon/devfolio-logo.svg" 
+                src="/hackathon/devfolio-logo.png" 
                 alt="DEVFOLIO LOGO"
                 width={28}
                 height={28}
@@ -341,7 +341,7 @@ export default function HackathonPage() {
                 className="inline-flex items-center gap-3 bg-white text-black font-bold py-4 px-10 rounded-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-blue-500/25"
               >
                 <Image 
-                  src="/hackathon/devfolio-logo.svg" 
+                  src="/hackathon/devfolio-logo.png" 
                   alt="DEVFOLIO LOGO"
                   width={28}
                   height={28}
@@ -372,13 +372,13 @@ export default function HackathonPage() {
           <div className="text-center mb-8">
             <div className="flex justify-center items-center gap-8 mb-6">
               <Image 
-                src="/hackathon/devfolio-logo.svg" 
+                src="/hackathon/devfolio-logo.png" 
                 alt="DEVFOLIO LOGO"
                 width={140}
                 height={35}
               />
               <Image 
-                src="/hackathon/ethindia-logo.svg" 
+                src="/hackathon/ethindia-logo.png" 
                 alt="ETHINDIA LOGO"
                 width={170}
                 height={45}
