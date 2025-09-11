@@ -290,19 +290,21 @@ export default function ConferencePage() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-black via-purple-900/20 to-black text-white px-6 py-20">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:radial-gradient(white,transparent_70%)] pointer-events-none" />
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={loading ? 'loading' : (error ? 'error' : 'content')}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            {renderContent()}
-          </motion.div>
-        </AnimatePresence>
+      <div className="min-h-screen w-full bg-gradient-to-b from-black via-purple-900/20 to-black text-white relative">
+        <div className="absolute inset-0 w-full h-full bg-[url('/grid.svg')] bg-center [mask-image:radial-gradient(white,transparent_70%)] pointer-events-none" />
+        <div className="relative z-10 px-6 py-20">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={loading ? 'loading' : (error ? 'error' : 'content')}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </Layout>
   );

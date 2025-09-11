@@ -90,7 +90,7 @@ export default function Home() {
                 <div className="flex items-center justify-center space-x-8 md:space-x-12">
                   <img
                     src="/assets/ace-bw.png"
-                    alt="ACE - Association of Computer Engineers Logo"
+                    alt="ACE Logo"
                     className="h-16 md:h-20 w-auto"
                   />
                   <img
@@ -99,16 +99,6 @@ export default function Home() {
                     className="h-16 md:h-20 w-auto"
                   />
                 </div>
-                
-                {/* Presents Text */}
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4, duration: 0.6 }}
-                  className="text-lg md:text-xl text-gray-300 font-semibold tracking-wider"
-                >
-                  <span className="text-blue-400">ACE</span> and <span className="text-blue-400">Easwari Engineering College</span> present
-                </motion.p>
               </motion.div>
             </div>
 

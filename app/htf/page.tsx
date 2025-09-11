@@ -47,11 +47,11 @@ export default function HTFCountdownPage() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-black text-white relative overflow-hidden">
+      <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-blue-900 to-black text-white relative overflow-hidden">
         {/* Animated Tech Background */}
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
           {/* Grid Pattern */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.1)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+          <div className="absolute inset-0 w-full h-full bg-[linear-gradient(rgba(59,130,246,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.1)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
           
           {/* Floating Tech Elements */}
           {windowSize.width > 0 && techElements.map((element, index) => (
@@ -119,7 +119,7 @@ export default function HTFCountdownPage() {
                     >
                       <img
                         src="/assets/ace-bw.png"
-                        alt="ACE - Association of Computer Engineers Logo"
+                        alt="ACE Logo"
                         className="h-20 md:h-24 w-auto filter drop-shadow-2xl"
                       />
                     </motion.div>
@@ -131,30 +131,11 @@ export default function HTFCountdownPage() {
                     >
                       <img
                         src="/assets/easwari-bw.png"
-                        alt="Easwari Engineering College Logo"
+                        alt="College Logo"
                         className="h-20 md:h-24 w-auto filter drop-shadow-2xl"
                       />
                     </motion.div>
                   </div>
-                  
-                  {/* Presents Text */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.6, duration: 0.6 }}
-                    className="text-center"
-                  >
-                    <p className="text-lg md:text-xl text-gray-300 font-semibold tracking-wider mb-2">
-                      <span className="text-blue-400">ACE</span> and <span className="text-blue-400">Easwari Engineering College</span>
-                    </p>
-                    <motion.p 
-                      className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400"
-                      animate={{ scale: [1, 1.05, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      present
-                    </motion.p>
-                  </motion.div>
                 </div>
               </motion.div>
 
@@ -189,31 +170,11 @@ export default function HTFCountdownPage() {
                 </div>
               </motion.div>
 
-              {/* Announcement Badge */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 1, duration: 0.8, type: "spring", bounce: 0.5 }}
-                className="mb-12"
-              >
-                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-400/30 rounded-full px-6 py-3 backdrop-blur-sm">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Rocket className="w-5 h-5 text-yellow-400" />
-                  </motion.div>
-                  <span className="text-yellow-400 font-semibold text-lg">
-                    🎉 FIRST EVER HACKATHON BY ACE CLUB 🎉
-                  </span>
-                </div>
-              </motion.div>
-
               {/* Partner Logos */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.4, duration: 0.8 }}
+                transition={{ delay: 1, duration: 0.8 }}
                 className="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16 mb-16"
               >
                 <div className="text-center">
@@ -280,22 +241,8 @@ export default function HTFCountdownPage() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.6, duration: 0.8 }}
-                className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+                className="flex justify-center items-center"
               >
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link 
-                    href="/hackathon"
-                    className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 shadow-2xl hover:shadow-blue-500/25"
-                  >
-                    <Code className="w-6 h-6" />
-                    Learn More About HTF
-                    <ArrowRight className="w-5 h-5" />
-                  </Link>
-                </motion.div>
-                
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}

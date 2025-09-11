@@ -10,7 +10,7 @@ const exo2 = Exo_2({
 
 export const metadata: Metadata = {
   title: "Kratos 2k25 - Multi-Event Platform",
-  description: "Register for technical and non-technical events at Kratos 2025 - National Level Technical Symposium by Easwari Engineering College",
+  description: "Register for technical and non-technical events at Kratos 2025 - National Level Technical Symposium",
   icons: {
     icon: '/assets/Badge.png',
   },
