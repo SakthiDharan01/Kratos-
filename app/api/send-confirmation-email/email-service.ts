@@ -133,7 +133,11 @@ export async function sendConfirmationEmail(registrantId: number, paymentId: str
           price,
           event_date,
           time_slot,
-          venue
+          venue,
+          incharge_name1,
+          incharge_phone1,
+          incharge_name2,
+          incharge_phone2
         ),
         registrations (
           id,

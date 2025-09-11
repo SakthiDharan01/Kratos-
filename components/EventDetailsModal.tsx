@@ -58,12 +58,18 @@ export function EventDetailsModal({ event, onClose }: EventDetailsModalProps) {
                     'Full Day (Morning & Afternoon)'
                   }</p>
                 )}
-                <p><span className="font-semibold text-yellow-400">Venue:</span> {event.venue}</p>
               </div>
               <div>
-                <p><span className="font-semibold text-yellow-400">Event Type:</span> {event.event_type === 'team' ? 'Team Event' : 'Solo Event'}</p>
+                {event.event_type === 'solo' && (
+                  <p><span className="font-semibold text-yellow-400">Event Type:</span> Solo Event</p>
+                )}
                 {event.event_type === 'team' && (
-                  <p><span className="font-semibold text-yellow-400">Team Size:</span> {event.min_team_size}-{event.max_team_size} members</p>
+                  <p>
+                    <span className="font-semibold text-yellow-400">Team Size: </span>
+                    {event.min_team_size === event.max_team_size 
+                      ? `${event.min_team_size} members` 
+                      : `${event.min_team_size}-${event.max_team_size} members`}
+                  </p>
                 )}
                 <p><span className="font-semibold text-yellow-400">Registration Fee:</span> ₹{event.price}</p>
               </div>
