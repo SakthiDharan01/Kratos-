@@ -18,6 +18,8 @@ interface Participant {
   college: string
   department: string
   year: string
+  state: string
+  location: string
   isLeader?: boolean
 }
 
@@ -130,6 +132,8 @@ export default function CheckoutPage() {
           college: user.college,
           department: user.department,
           year: user.year,
+          state: '', // Initialize as empty, user will fill it
+          location: '', // Initialize as empty, user will fill it
           isLeader: true
         },
         participants: []
@@ -169,6 +173,8 @@ export default function CheckoutPage() {
         college: data.college,
         department: data.department,
         year: data.year,
+        state: data.state,
+        location: data.location,
         isLeader: true
       }
     }
@@ -196,7 +202,9 @@ export default function CheckoutPage() {
       phone: '',
       college: '',
       department: '',
-      year: ''
+      year: '',
+      state: '',
+      location: ''
     })
     setTeamData(updatedTeamData)
   }
@@ -443,6 +451,26 @@ export default function CheckoutPage() {
                       </select>
                       {errors.year && <p className="text-red-400 text-sm mt-1">{errors.year.message as string}</p>}
                     </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">State</label>
+                      <input
+                        {...register('state', { required: 'State is required' })}
+                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white"
+                        placeholder="State"
+                      />
+                      {errors.state && <p className="text-red-400 text-sm mt-1">{errors.state.message as string}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Location/City</label>
+                      <input
+                        {...register('location', { required: 'Location is required' })}
+                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white"
+                        placeholder="City/Location"
+                      />
+                      {errors.location && <p className="text-red-400 text-sm mt-1">{errors.location.message as string}</p>}
+                    </div>
                   </div>
 
                   <div className="flex justify-between pt-6">
@@ -571,6 +599,18 @@ export default function CheckoutPage() {
                                   <option value="3">3rd Year</option>
                                   <option value="4">4th Year</option>
                                 </select>
+                                <input
+                                  value={participant.state || ''}
+                                  onChange={(e) => updateParticipant(teamIndex, participantIndex, 'state', e.target.value)}
+                                  className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                                  placeholder="State"
+                                />
+                                <input
+                                  value={participant.location || ''}
+                                  onChange={(e) => updateParticipant(teamIndex, participantIndex, 'location', e.target.value)}
+                                  className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                                  placeholder="City/Location"
+                                />
                               </div>
                             </div>
                           ))}
@@ -646,12 +686,14 @@ export default function CheckoutPage() {
                         <div className="bg-gray-800 p-3 rounded">
                           <p className="text-green-400 font-medium">👑 {team.leaderDetails.name} (Leader)</p>
                           <p className="text-gray-300 text-sm">{team.leaderDetails.email} | {team.leaderDetails.college}</p>
+                          <p className="text-gray-300 text-sm">{team.leaderDetails.state}, {team.leaderDetails.location}</p>
                         </div>
                         
                         {team.participants.map((participant, pIndex) => (
                           <div key={pIndex} className="bg-gray-800 p-3 rounded">
                             <p className="text-white">{participant.name}</p>
                             <p className="text-gray-300 text-sm">{participant.email} | {participant.college}</p>
+                            <p className="text-gray-300 text-sm">{participant.state}, {participant.location}</p>
                           </div>
                         ))}
                       </div>

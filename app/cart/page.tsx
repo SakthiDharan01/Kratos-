@@ -93,7 +93,7 @@ export default function CartPage() {
                         </span>
                         <span className="flex items-center">
                           <IndianRupee className="w-4 h-4 mr-1" />
-                          {item.event.price} per person
+                          {item.event.price} per team
                         </span>
                       </div>
                     </div>
@@ -123,7 +123,7 @@ export default function CartPage() {
                         <div className="text-sm text-gray-400 mb-2">Total</div>
                         <div className="text-lg font-bold text-green-400 flex items-center">
                           <IndianRupee className="w-4 h-4" />
-                          {item.event.price * item.teamSize}
+                          {item.event.price}
                         </div>
                       </div>
 
@@ -148,7 +148,7 @@ export default function CartPage() {
                 <div>
                   <h3 className="text-2xl font-bold text-white mb-2">Order Summary</h3>
                   <p className="text-white/80">
-                    {cart.length} event{cart.length > 1 ? 's' : ''} • {cart.reduce((sum, item) => sum + item.teamSize, 0)} total participants
+                    {cart.length} event{cart.length > 1 ? 's' : ''} • {cart.reduce((sum, item) => sum + item.teamSize, 0)} participants planned
                   </p>
                 </div>
                 

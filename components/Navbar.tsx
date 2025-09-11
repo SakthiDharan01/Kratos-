@@ -25,11 +25,15 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
   const navigation = [
     { name: 'Home', href: '/' },
     { name: 'Technical', href: '/technical' },
-    { name: 'No-Code', href: '/no-code' },
+    { name: 'Spark Events', href: '/no-code' },
     { name: 'PlayGround', href: '/playground' },
     { name: 'Online Events', href: '/online' },
-    { name: 'Hackathon', href: '/hackathon' },
+    { name: 'Hack to the Future', href: '/htf' },
+    { name: 'Conference', href: '/conference' }
   ]
+
+  // Check if we're on the HTF page for special styling
+  const isHTFPage = pathname === '/htf'
 
   // Auto-hide navbar logic - only when enableAutoHide is true
   useEffect(() => {
@@ -71,9 +75,13 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
 
   return (
     <motion.nav 
-    className="bg-black/90 backdrop-blur-md border-b border-red-500/20 sticky top-0 left-0 right-0 z-50"
+      className={`backdrop-blur-md border-b sticky top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isHTFPage 
+          ? 'bg-gradient-to-r from-purple-900/90 via-blue-900/90 to-indigo-900/90 border-cyan-500/30 shadow-lg shadow-cyan-500/20' 
+          : 'bg-black/90 border-red-500/20'
+      }`}
       initial={false}
-    animate={{ y: 0 }}
+      animate={{ y: 0 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
     >
       <div className="container mx-auto px-4">
@@ -98,8 +106,14 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`text-sm font-medium transition-colors hover:text-yellow-400 ${
-                  pathname === item.href ? 'text-yellow-400' : 'text-white'
+                className={`text-sm font-medium transition-all duration-300 ${
+                  pathname === item.href 
+                    ? (isHTFPage 
+                        ? 'text-cyan-300 glow-cyan' 
+                        : 'text-yellow-400')
+                    : (isHTFPage 
+                        ? 'text-white hover:text-cyan-300 hover:glow-cyan' 
+                        : 'text-white hover:text-yellow-400')
                 }`}
               >
                 {item.name}
@@ -161,7 +175,9 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden border-t border-red-500/20"
+              className={`md:hidden border-t ${
+                isHTFPage ? 'border-cyan-500/30' : 'border-red-500/20'
+              }`}
             >
               <div className="py-4 space-y-2">
                 {navigation.map((item) => (
@@ -169,8 +185,14 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
                     key={item.name}
                     href={item.href}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`block px-4 py-2 text-sm font-medium transition-colors hover:text-yellow-400 ${
-                      pathname === item.href ? 'text-yellow-400' : 'text-white'
+                    className={`block px-4 py-2 text-sm font-medium transition-all duration-300 ${
+                      pathname === item.href 
+                        ? (isHTFPage 
+                            ? 'text-cyan-300 glow-cyan' 
+                            : 'text-yellow-400')
+                        : (isHTFPage 
+                            ? 'text-white hover:text-cyan-300 hover:glow-cyan' 
+                            : 'text-white hover:text-yellow-400')
                     }`}
                   >
                     {item.name}

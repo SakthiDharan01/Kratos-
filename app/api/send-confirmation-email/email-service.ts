@@ -147,6 +147,8 @@ export async function sendConfirmationEmail(registrantId: number, paymentId: str
           college,
           department,
           year,
+          state,
+          location,
           is_leader
         )
       `)

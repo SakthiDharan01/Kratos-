@@ -10,7 +10,7 @@ export default function Home() {
     {
       icon: <Calendar className="w-8 h-8" />,
       title: 'Focused Tracks',
-      description: 'Technical • No-Code • PlayGround • Online'
+      description: 'Technical • Spark • PlayGround • Online'
     },
     {
       icon: <Users className="w-8 h-8" />,
@@ -37,8 +37,8 @@ export default function Home() {
       color: 'from-red-500 to-orange-600'
     },
     {
-      title: 'No-Code',
-      description: 'Build without writing code',
+      title: 'Spark',
+      description: 'Prototype ideas without technical barriers',
       href: '/no-code',
       color: 'from-indigo-500 to-purple-600'
     },
@@ -53,6 +53,18 @@ export default function Home() {
       description: 'Remote participation challenges',
       href: '/online',
       color: 'from-yellow-500 to-red-600'
+    },
+    {
+      title: 'Hackathon', 
+      description: '24-hour coding marathon', 
+      href: '/hackathon', 
+      color: 'from-blue-500 to-cyan-600'
+    },
+    {
+      title: 'Conference', 
+      description: 'IEEE Paper Presentation',
+      href: '/conference', 
+      color: 'from-pink-500 to-rose-600'
     }
   ]
 
@@ -66,14 +78,49 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="flex items-center justify-center h-screen">
+            {/* College and ACE Logos */}
+            <div className="pt-20 pb-8">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.6 }}
+                className="flex flex-col items-center space-y-6 mb-8"
+              >
+                {/* Logos Row */}
+                <div className="flex items-center justify-center space-x-8 md:space-x-12">
+                  <img
+                    src="/assets/ace-bw.png"
+                    alt="ACE - Association of Computer Engineers Logo"
+                    className="h-16 md:h-20 w-auto"
+                  />
+                  <img
+                    src="/assets/easwari-bw.png"
+                    alt="Easwari Engineering College Logo"
+                    className="h-16 md:h-20 w-auto"
+                  />
+                </div>
+                
+                {/* Presents Text */}
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4, duration: 0.6 }}
+                  className="text-lg md:text-xl text-gray-300 font-semibold tracking-wider"
+                >
+                  <span className="text-blue-400">ACE</span> and <span className="text-blue-400">Easwari Engineering College</span> present
+                </motion.p>
+              </motion.div>
+            </div>
+
+            <div className="flex items-center justify-center relative">
               <img
                 src="/assets/name.png"
-                alt="name"
-                className="w-1000 sm:w-200 md:w-300 lg:w-600 h-auto"
+                alt="Kratos 2K25 Logo"
+                className="w-full max-w-4xl h-auto px-4"
               />
             </div>
-            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto py-40">
+            
+            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto py-20">
               Join the ultimate technical festival with exciting competitions, 
               innovative challenges, and amazing prizes
             </p>
@@ -118,7 +165,7 @@ export default function Home() {
             <br></br>
             Event Categories
           </motion.h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
             {eventCategories.map((category, index) => (
               <motion.div
                 key={index}
@@ -129,10 +176,10 @@ export default function Home() {
               >
                 <Link href={category.href} className="block">
                   <div className={`bg-gradient-to-br ${category.color} p-6 rounded-xl text-white h-full`}>
-                    <h3 className="text-2xl font-bold mb-3">{category.title}</h3>
-                    <p className="text-white/90">{category.description}</p>
+                    <h3 className="text-xl font-bold mb-3">{category.title}</h3>
+                    <p className="text-white/90 text-sm">{category.description}</p>
                     <div className="mt-4">
-                      <span className="text-sm font-medium">Explore Events →</span>
+                      <span className="text-xs font-medium">Explore Events →</span>
                     </div>
                   </div>
                 </Link>

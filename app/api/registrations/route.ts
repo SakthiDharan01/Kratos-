@@ -72,6 +72,8 @@ export async function POST(request: NextRequest) {
       college: participant.college,
       department: participant.department,
       year: participant.year,
+      state: participant.state,
+      location: participant.location,
       is_leader: participant.is_leader || false,
       event_id: parseInt(event_id),
       team_name: team_name
@@ -136,7 +138,7 @@ export async function GET(request: NextRequest) {
         razorpay_payment_id,
         razorpay_order_id,
         events(id, name, price),
-        registrations(name, email, phone, college, department, year, is_leader)
+        registrations(name, email, phone, college, department, year, state, location, is_leader)
       `);
 
     if (userId) {

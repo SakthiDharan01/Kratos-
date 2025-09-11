@@ -137,6 +137,7 @@ export const useStore = create<StoreState>()(
       },
       getCartTotal: () => {
         return get().cart.reduce((total, item) => {
+          // Price is per team/event, not per participant
           return total + item.event.price
         }, 0)
       },

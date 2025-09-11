@@ -92,10 +92,9 @@ export default function NoCodePage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <h1 className="text-8xl font-bold text-yellow-400 mb-4 pt-20">No-Code Events</h1>
+          <h1 className="text-8xl font-bold text-yellow-400 mb-4 pt-20">Spark Events</h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Build without coding! These events focus on visual development 
-            and low-code/no-code platform solutions.
+            Build without coding! These events sharpen creativity, challenge perception, and train memory through fun and skill-based experiences.
           </p>
         </motion.div>
 

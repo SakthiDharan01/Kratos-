@@ -57,6 +57,8 @@ async function handleQRCodeLookup(qrId: string, type: string | null) {
               college,
               department,
               year,
+              state,
+              location,
               is_leader
             )
           )
@@ -151,6 +153,8 @@ async function handleQRCodeLookup(qrId: string, type: string | null) {
           college,
           department,
           year,
+          state,
+          location,
           is_leader
         )
       `)
@@ -202,6 +206,8 @@ async function handleQRCodeLookup(qrId: string, type: string | null) {
           college: member.college,
           department: member.department,
           year: member.year,
+          state: member.state,
+          location: member.location,
           is_leader: member.is_leader
         }))
       }
@@ -290,6 +296,8 @@ export async function GET(request: NextRequest) {
           college,
           department,
           year,
+          state,
+          location,
           is_leader,
           team_name,
           event_id,
@@ -412,6 +420,8 @@ export async function GET(request: NextRequest) {
           college: participant.college,
           department: participant.department,
           year: participant.year,
+          state: participant.state,
+          location: participant.location,
           is_leader: participant.is_leader
         }))
       }));
@@ -425,6 +435,8 @@ export async function GET(request: NextRequest) {
         college: participant.college,
         department: participant.department,
         year: participant.year,
+        state: participant.state,
+        location: participant.location,
         is_leader: participant.is_leader,
         team_name: participant.team_name,
         registration_date: participant.registration_date,

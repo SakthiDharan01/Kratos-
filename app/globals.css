@@ -83,6 +83,15 @@
   }
 }
 
+/* Glow effects for HTF navbar */
+.glow-cyan {
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.8);
+}
+
+.hover\:glow-cyan:hover {
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
+}
+
 /* Loading screen animations */
 @keyframes reverseDisintegrate {
   0% {

@@ -275,6 +275,8 @@ export default function CheckoutReviewPage() {
                             <p><strong>College:</strong> {participant.college}</p>
                             <p><strong>Department:</strong> {participant.department}</p>
                             <p><strong>Year:</strong> {participant.year}</p>
+                            <p><strong>State:</strong> {participant.state}</p>
+                            <p><strong>Location:</strong> {participant.location}</p>
                           </div>
                         </div>
                       ))}
