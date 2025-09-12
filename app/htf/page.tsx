@@ -98,6 +98,25 @@ export default function HTFCountdownPage() {
 
         {/* Main Content */}
         <div className="relative z-10">
+          {/* Institution Logos - Right below navbar */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex justify-start items-center gap-6 px-6 py-6"
+          >
+            <img
+              src="/assets/ace-bw.png"
+              alt="ACE Logo"
+              className="h-16 w-auto opacity-80 hover:opacity-100 transition-opacity"
+            />
+            <img
+              src="/assets/easwari-bw.png"
+              alt="Easwari Engineering College Logo"
+              className="h-16 w-auto opacity-80 hover:opacity-100 transition-opacity"
+            />
+          </motion.div>
+
           {/* Hero Section */}
           <section className="min-h-screen flex items-center justify-center pt-20">
             <div className="container mx-auto px-6 text-center">

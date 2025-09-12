@@ -316,6 +316,12 @@ function generateEmailHTML(data: EmailData, qrUrl: string): string {
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <!-- Institution Logos -->
+        <div style="display: flex; justify-content: center; align-items: center; gap: 30px; margin-bottom: 20px; flex-wrap: wrap;">
+            <img src="https://kratos-nu.vercel.app/assets/ace-bw.png" alt="ACE Logo" style="max-width: 80px; height: auto;">
+            <img src="https://kratos-nu.vercel.app/assets/easwari-bw.png" alt="Easwari Logo" style="max-width: 80px; height: auto;">
+        </div>
+        
         <!-- Kratos Logo -->
         <img src="https://kratos-nu.vercel.app/assets/name.png" alt="KRATOS" style="max-width: 200px; height: auto; margin-bottom: 20px;">
         <h1 style="font-size: 2.5em; margin-bottom: 10px; color: #FFD700;">KRATOS 2K25</h1>

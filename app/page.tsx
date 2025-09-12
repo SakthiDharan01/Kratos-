@@ -71,6 +71,25 @@ export default function Home() {
   return (
     <Layout>
       <div className="space-y-0">
+        {/* Institution Logos - Right below navbar */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="flex justify-start items-center gap-6 px-6 py-6"
+        >
+          <img
+            src="/assets/ace-bw.png"
+            alt="ACE Logo"
+            className="h-16 w-auto opacity-80 hover:opacity-100 transition-opacity"
+          />
+          <img
+            src="/assets/easwari-bw.png"
+            alt="Easwari Engineering College Logo"
+            className="h-16 w-auto opacity-80 hover:opacity-100 transition-opacity"
+          />
+        </motion.div>
+
         {/* Hero Section */}
         <section className="text-center py-0 relative">
           <motion.div
@@ -78,16 +97,16 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            {/* Main Kratos Logo - Centered */}
-            <div className="flex items-center justify-center relative pt-20">
+            {/* Main Kratos Logo - Centered and Smaller */}
+            <div className="flex items-center justify-center relative pt-24 pb-8">
               <img
                 src="/assets/name.png"
                 alt="Kratos 2K25 Logo"
-                className="w-auto h-32 md:h-44 lg:h-56"
+                className="w-auto h-24 md:h-32 lg:h-40"
               />
             </div>
             
-            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto py-20">
+            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto py-12">
               Join the ultimate technical festival with exciting competitions, 
               innovative challenges, and amazing prizes
             </p>
