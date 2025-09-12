@@ -98,21 +98,6 @@ export default function HTFCountdownPage() {
 
         {/* Main Content */}
         <div className="relative z-10">
-          {/* ACE Logo - Top Left Below Navbar */}
-          <div className="absolute top-20 left-6 z-20">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-            >
-              <img
-                src="/assets/ace-bw.png"
-                alt="ACE Logo"
-                className="h-20 md:h-24 w-auto filter drop-shadow-2xl"
-              />
-            </motion.div>
-          </div>
-
           {/* Hero Section */}
           <section className="min-h-screen flex items-center justify-center pt-20">
             <div className="container mx-auto px-6 text-center">
