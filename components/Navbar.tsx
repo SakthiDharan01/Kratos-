@@ -29,7 +29,7 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
     { name: 'PlayGround', href: '/playground' },
     { name: 'Online Events', href: '/online' },
     { name: 'Hack to the Future', href: '/htf' },
-    { name: 'Conference', href: '/conference' }
+    { name: 'Paper Conference', href: '/conference' }
   ]
 
   // Check if we're on the HTF page for special styling

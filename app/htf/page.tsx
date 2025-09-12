@@ -98,41 +98,47 @@ export default function HTFCountdownPage() {
 
         {/* Main Content */}
         <div className="relative z-10">
-          {/* Header with Association Logos */}
-          <div className="absolute top-0 left-0 right-0 flex justify-between items-start p-6 z-20">
-            {/* Left: ACE Logo with "In Association With" */}
-            <motion.div 
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-              className="flex flex-col items-center space-y-2"
-            >
-              <p className="text-gray-300 text-sm font-medium">In Association With</p>
-              <img
-                src="/assets/ace-bw.png"
-                alt="ACE Logo"
-                className="h-20 md:h-24 w-auto filter drop-shadow-2xl"
-              />
-            </motion.div>
-            
-            {/* Right: Easwari Logo */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4, duration: 0.8 }}
-              className="flex flex-col items-center"
-            >
-              <img
-                src="/assets/easwari-bw.png"
-                alt="Easwari Engineering College Logo"
-                className="h-20 md:h-24 w-auto filter drop-shadow-2xl"
-              />
-            </motion.div>
-          </div>
-
           {/* Hero Section */}
-          <section className="min-h-screen flex items-center justify-center pt-32">
+          <section className="min-h-screen flex items-center justify-center pt-20">
             <div className="container mx-auto px-6 text-center">
+              
+              {/* ACE and College Logos */}
+              <motion.div
+                initial={{ opacity: 0, y: -30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="mb-12"
+              >
+                <div className="flex flex-col items-center space-y-8">
+                  <p className="text-gray-300 text-sm font-medium">In Association With</p>
+                  {/* Logos Row */}
+                  <div className="flex items-center justify-center space-x-12 md:space-x-16">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      transition={{ delay: 0.2, duration: 0.8, type: "spring" }}
+                    >
+                      <img
+                        src="/assets/ace-bw.png"
+                        alt="ACE Logo"
+                        className="h-20 md:h-24 w-auto filter drop-shadow-2xl"
+                      />
+                    </motion.div>
+                    
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.5, rotate: 10 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      transition={{ delay: 0.4, duration: 0.8, type: "spring" }}
+                    >
+                      <img
+                        src="/assets/easwari-bw.png"
+                        alt="College Logo"
+                        className="h-20 md:h-24 w-auto filter drop-shadow-2xl"
+                      />
+                    </motion.div>
+                  </div>
+                </div>
+              </motion.div>
 
               {/* Hack to the Future Logo */}
               <motion.div

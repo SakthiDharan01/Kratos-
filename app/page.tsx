@@ -78,34 +78,37 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            {/* Header with Association Logos */}
-            <div className="absolute top-0 left-0 right-0 flex justify-between items-start p-6 z-10">
-              {/* Left: ACE Logo with "In Association With" */}
-              <div className="flex flex-col items-center space-y-2">
-                <p className="text-gray-400 text-sm font-medium">In Association With</p>
-                <img
-                  src="/assets/ace-bw.png"
-                  alt="ACE Logo"
-                  className="h-16 md:h-20 w-auto"
-                />
-              </div>
-              
-              {/* Right: Easwari Logo */}
-              <div className="flex flex-col items-center">
-                <img
-                  src="/assets/easwari-bw.png"
-                  alt="Easwari Engineering College Logo"
-                  className="h-16 md:h-20 w-auto"
-                />
-              </div>
+            {/* College and ACE Logos */}
+            <div className="pt-20 pb-8">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.6 }}
+                className="flex flex-col items-center space-y-6 mb-8"
+              >
+                <p className="text-gray-400 text-sm font-medium mb-4">In Association With</p>
+                {/* Logos Row */}
+                <div className="flex items-center justify-center space-x-8 md:space-x-12">
+                  <img
+                    src="/assets/ace-bw.png"
+                    alt="ACE Logo"
+                    className="h-16 md:h-20 w-auto"
+                  />
+                  <img
+                    src="/assets/easwari-bw.png"
+                    alt="Easwari Engineering College Logo"
+                    className="h-16 md:h-20 w-auto"
+                  />
+                </div>
+              </motion.div>
             </div>
 
-            {/* Main Kratos Logo - Centered */}
-            <div className="flex items-center justify-center relative pt-32">
+            {/* Main Kratos Logo - Centered & Slightly Smaller */}
+            <div className="flex items-center justify-center relative">
               <img
                 src="/assets/name.png"
                 alt="Kratos 2K25 Logo"
-                className="w-auto h-48 md:h-64 lg:h-80"
+                className="w-auto h-40 md:h-52 lg:h-64"
               />
             </div>
             
