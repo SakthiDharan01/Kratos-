@@ -110,3 +110,47 @@
     filter: blur(0px);
   }
 }
+
+/* Glow effects for themed navbars */
+.glow-cyan {
+  text-shadow: 0 0 5px #06b6d4, 0 0 10px #06b6d4, 0 0 15px #06b6d4;
+}
+
+.glow-amber {
+  text-shadow: 0 0 5px #f59e0b, 0 0 10px #f59e0b, 0 0 15px #f59e0b;
+}
+
+/* Custom scrollbar for themed layouts */
+.hackathon-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.hackathon-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.3);
+}
+
+.hackathon-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #06b6d4, #3b82f6);
+  border-radius: 4px;
+}
+
+.hackathon-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #0891b2, #2563eb);
+}
+
+.conference-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.conference-scrollbar::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.3);
+}
+
+.conference-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #f59e0b, #ea580c);
+  border-radius: 4px;
+}
+
+.conference-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #d97706, #dc2626);
+}

@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Countdown } from '@/components/Countdown'
-import Layout from '@/components/Layout'
+import HackathonLayout from '@/components/HackathonLayout'
 
 export default function HTFCountdownPage() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
@@ -46,7 +46,7 @@ export default function HTFCountdownPage() {
   ]
 
   return (
-    <Layout>
+    <HackathonLayout>
       <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-blue-900 to-black text-white relative overflow-hidden">
         {/* Animated Tech Background */}
         <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -247,7 +247,7 @@ export default function HTFCountdownPage() {
                 className="mt-16 grid md:grid-cols-3 gap-8 max-w-4xl mx-auto"
               >
                 {[
-                  { icon: <Users className="w-6 h-6" />, title: "Team Event", desc: "Form teams of 2-4 members" },
+                  { icon: <Users className="w-6 h-6" />, title: "Team Event", desc: "Form teams of 3-4 members" },
                   { icon: <Clock className="w-6 h-6" />, title: "12 Hours", desc: "Non-stop innovation sprint" },
                   { icon: <Trophy className="w-6 h-6" />, title: "Amazing Prizes", desc: "Win exciting rewards & recognition" }
                 ].map((item, index) => (
@@ -270,6 +270,6 @@ export default function HTFCountdownPage() {
           </section>
         </div>
       </div>
-    </Layout>
+    </HackathonLayout>
   )
 }

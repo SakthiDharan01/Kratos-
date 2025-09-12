@@ -1,13 +1,12 @@
 'use client'
 
-import Layout from '@/components/Layout'
+import ConferenceLayout from '@/components/ConferenceLayout'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { fetchEvents } from '@/lib/events'
 import { Event, useStore } from '@/lib/store'
 import toast from 'react-hot-toast'
-import { Sparkles, FileText, Users, Calendar, MapPin, ScrollText } from 'lucide-react'
-
+import { Sparkles, FileText, Users, Calendar, MapPin, ScrollText, Phone } from 'lucide-react'
 
 const LoadingSpinner = () => (
   <div className="flex justify-center items-center py-20">
@@ -226,12 +225,50 @@ export default function ConferencePage() {
             </div>
           </div>
         </motion.div>
+        
+        {/* Coordinators Section */}
+        <motion.div variants={itemVariants} className="mb-12">
+          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl p-8 rounded-2xl border border-white/10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-white">Event Coordinators</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-black/20 p-6 rounded-xl border border-white/5 hover:border-white/10 transition-all group">
+                <p className="text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-1">
+                  {event.incharge_name1}
+                </p>
+                <a 
+                  href={`tel:${event.incharge_phone1}`}
+                  className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 group-hover:text-purple-400"
+                >
+                  <Phone className="w-4 h-4" />
+                  {event.incharge_phone1}
+                </a>
+              </div>
+              <div className="bg-black/20 p-6 rounded-xl border border-white/5 hover:border-white/10 transition-all group">
+                <p className="text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-1">
+                  {event.incharge_name2}
+                </p>
+                <a 
+                  href={`tel:${event.incharge_phone2}`}
+                  className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 group-hover:text-purple-400"
+                >
+                  <Phone className="w-4 h-4" />
+                  {event.incharge_phone2}
+                </a>
+              </div>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Registration Section */}
         <motion.div variants={itemVariants}>
           <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl p-6 rounded-2xl border border-white/10">
             <div className="flex flex-col sm:flex-row items-center gap-6 justify-between">
-              {event.event_type === 'team' && (
+              {event && event.event_type === 'team' && (
                 <div className="w-full sm:w-auto space-y-2">
                   <label className="block text-sm text-gray-400">Team Size</label>
                   <select
@@ -289,23 +326,21 @@ export default function ConferencePage() {
   };
 
   return (
-    <Layout>
-      <div className="min-h-screen w-full bg-gradient-to-b from-black via-purple-900/20 to-black text-white relative">
-        <div className="absolute inset-0 w-full h-full bg-[url('/grid.svg')] bg-center [mask-image:radial-gradient(white,transparent_70%)] pointer-events-none" />
-        <div className="relative z-10 px-6 py-20">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={loading ? 'loading' : (error ? 'error' : 'content')}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              {renderContent()}
-            </motion.div>
-          </AnimatePresence>
-        </div>
+    <ConferenceLayout>
+      <div className="min-h-screen bg-gradient-to-b from-black via-purple-900/20 to-black text-white px-6 py-20">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:radial-gradient(white,transparent_70%)] pointer-events-none" />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={loading ? 'loading' : (error ? 'error' : 'content')}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
       </div>
-    </Layout>
+    </ConferenceLayout>
   );
 }

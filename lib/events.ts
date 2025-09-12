@@ -29,7 +29,7 @@ export async function fetchEvents(category?: string): Promise<Event[]> {
         incharge_name2,
         incharge_phone2
       `)
-      .order('event_date', { ascending: true })
+      .order('id', { ascending: true })
 
     if (category) {
       query = query.eq('category', category)
