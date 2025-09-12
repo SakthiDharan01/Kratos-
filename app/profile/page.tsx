@@ -115,6 +115,7 @@ export default function ProfilePage() {
   
   useEffect(() => {
     refreshRegistrations();
+    
     // Debug: verify users table accessible under RLS (adds status/code if available)
     (async () => {
       if (!user) return;
@@ -134,6 +135,17 @@ export default function ProfilePage() {
         console.log('User row ok', userRow?.id);
       }
     })();
+
+    // Check if user came from payment success and refresh data with delay
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('from') === 'payment') {
+      // Refresh after a short delay to allow database updates to complete
+      setTimeout(() => {
+        refreshRegistrations();
+      }, 2000);
+      // Clean up URL without reload
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
 
     const onFocus = () => refreshRegistrations();
     if (typeof window !== 'undefined') {

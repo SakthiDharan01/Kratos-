@@ -25,13 +25,14 @@ interface Event {
 
 interface Registration {
   id: string
-  user_id: string
   event_id: string
-  team_size: number
-  amount_paid: number
+  team_name: string
   payment_status: string
-  payment_id: string | null
+  paid_amount: number
   registration_date: string
+  payment_time: string | null
+  razorpay_payment_id: string | null
+  razorpay_order_id: string | null
   events: Event
 }
 
@@ -43,7 +44,10 @@ function ReceiptContent() {
   const [qrCodes, setQrCodes] = useState<{[key: string]: string}>({})
 
   useEffect(() => {
-    const fetchReceiptData = async () => {
+    const fetchReceiptData = async (retryCount = 0) => {
+      const maxRetries = 3;
+      const retryDelay = 2000; // 2 seconds
+      
       try {
         // Get current user
         const { data: { user: currentUser } } = await supabase.auth.getUser()
@@ -66,11 +70,20 @@ function ReceiptContent() {
           setUser({ ...currentUser, ...profile })
         }
 
-        // Fetch user's registrations with event details
+        // Fetch user's registrations with event details from the registrants table
+        // The registrants table contains team-level registrations with payment info
         const { data: userRegistrations, error } = await supabase
-          .from('registrations')
+          .from('registrants')
           .select(`
-            *,
+            id,
+            team_name,
+            payment_status,
+            paid_amount,
+            registration_date,
+            payment_time,
+            razorpay_payment_id,
+            razorpay_order_id,
+            event_id,
             events (
               id,
               name,
@@ -89,7 +102,7 @@ function ReceiptContent() {
             )
           `)
           .eq('user_id', currentUser.id)
-          .eq('payment_status', 'completed')
+          .in('payment_status', ['paid', 'completed'])
           .order('registration_date', { ascending: false })
 
         if (error) {
@@ -98,7 +111,16 @@ function ReceiptContent() {
           return
         }
 
-        setRegistrations(userRegistrations || [])
+        // If no registrations found and we haven't exhausted retries, try again
+        if ((!userRegistrations || userRegistrations.length === 0) && retryCount < maxRetries) {
+          console.log(`No registrations found, retrying in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`)
+          setTimeout(() => {
+            fetchReceiptData(retryCount + 1)
+          }, retryDelay)
+          return
+        }
+
+        setRegistrations((userRegistrations || []) as any[])
 
         // Generate QR codes for each registration
         const qrPromises = (userRegistrations || []).map(async (registration) => {
@@ -106,12 +128,12 @@ function ReceiptContent() {
             const qrData = {
               registrationId: registration.id,
               eventId: registration.event_id,
-              eventName: registration.events.name,
+              eventName: (registration.events as any)?.[0]?.name || 'Unknown Event',
               userName: profile?.name || currentUser.email,
               userPhone: profile?.phone || 'Not provided',
-              teamSize: registration.team_size,
+              teamSize: 1, // Default team size for now
               registrationDate: registration.registration_date,
-              paymentId: registration.payment_id
+              paymentId: registration.razorpay_payment_id
             }
 
             const response = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(JSON.stringify(qrData))}`)
@@ -142,7 +164,16 @@ function ReceiptContent() {
         setLoading(false)
       } catch (error) {
         console.error('Error in fetchReceiptData:', error)
-        setLoading(false)
+        
+        // If error occurred and we haven't exhausted retries, try again
+        if (retryCount < maxRetries) {
+          console.log(`Retrying due to error in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`)
+          setTimeout(() => {
+            fetchReceiptData(retryCount + 1)
+          }, retryDelay)
+        } else {
+          setLoading(false)
+        }
       }
     }
 
@@ -160,7 +191,7 @@ function ReceiptContent() {
 
       for (let i = 0; i < registrations.length; i++) {
         const registration = registrations[i]
-        const event = registration.events
+        const event = (registration.events as any)?.[0] || {}
 
         // Add new page for each event (except the first one)
         if (i > 0) {
@@ -207,16 +238,16 @@ function ReceiptContent() {
         }
 
         if (event.event_type === 'team') {
-          pdf.text(`Team Size: ${registration.team_size} members`, 20, 200)
+          pdf.text(`Team Size: ${1} members`, 20, 200)
         } else {
           pdf.text(`Event Type: Solo Participation`, 20, 200)
         }
 
-        pdf.text(`Amount Paid: ₹${registration.amount_paid}`, 20, 215)
+        pdf.text(`Amount Paid: ₹${registration.paid_amount}`, 20, 215)
         pdf.text(`Payment Status: ${registration.payment_status.toUpperCase()}`, 20, 230)
         
-        if (registration.payment_id) {
-          pdf.text(`Payment ID: ${registration.payment_id}`, 20, 245)
+        if (registration.razorpay_payment_id) {
+          pdf.text(`Payment ID: ${registration.razorpay_payment_id}`, 20, 245)
         }
 
         // Contact information
@@ -320,7 +351,7 @@ function ReceiptContent() {
     )
   }
 
-  const totalAmount = registrations.reduce((sum, reg) => sum + reg.amount_paid, 0)
+  const totalAmount = registrations.reduce((sum, reg) => sum + reg.paid_amount, 0)
 
   return (
     <div className="min-h-screen bg-gray-900 py-8">
@@ -366,7 +397,7 @@ function ReceiptContent() {
         {/* Individual Event Receipts */}
         <div className="space-y-6">
           {registrations.map((registration, index) => {
-            const event = registration.events
+            const event = (registration.events as any)?.[0] || {}
             return (
               <div key={registration.id} className="bg-gray-800 rounded-lg p-6 border border-gray-700">
                 <div className="flex flex-col lg:flex-row gap-6">
@@ -411,14 +442,14 @@ function ReceiptContent() {
                         <Users className="w-4 h-4 text-yellow-400" />
                         <span>
                           {event.event_type === 'team' 
-                            ? `Team Event (${registration.team_size} members)` 
+                            ? `Team Event (Team Size: ${registration.team_name})` 
                             : 'Solo Event'}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2 text-gray-300">
                         <IndianRupee className="w-4 h-4 text-yellow-400" />
-                        <span>₹{registration.amount_paid}</span>
+                        <span>₹{registration.paid_amount}</span>
                       </div>
                     </div>
 
@@ -474,10 +505,10 @@ function ReceiptContent() {
                       <p className="text-gray-400">Registration Date</p>
                       <p className="text-white">{new Date(registration.registration_date).toLocaleDateString()}</p>
                     </div>
-                    {registration.payment_id && (
+                    {registration.razorpay_payment_id && (
                       <div>
                         <p className="text-gray-400">Payment ID</p>
-                        <p className="text-white font-mono">{registration.payment_id}</p>
+                        <p className="text-white font-mono">{registration.razorpay_payment_id}</p>
                       </div>
                     )}
                   </div>

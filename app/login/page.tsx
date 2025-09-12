@@ -21,7 +21,7 @@ export default function LoginPage() {
             className="bg-gray-900/50 border border-red-500/20 rounded-xl p-8 backdrop-blur-sm text-center"
           >
             <h1 className="text-3xl font-bold text-yellow-400 mb-8">
-              Join TechFest 2024
+              Join Kratos'25
             </h1>
             <p className="text-gray-300 mb-12">Sign in with Google to continue.</p>
             

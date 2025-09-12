@@ -145,42 +145,29 @@ export default function CheckoutReviewPage() {
           try {
             console.log('Payment successful:', response);
             
-            // Update payment status to "paid" and add Razorpay details
-            for (const registrantId of registrantIds) {
-              await supabase
-                .from('registrants')
-                .update({
-                  payment_status: 'paid',
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_signature: response.razorpay_signature,
-                  paid_amount: totalAmount / registrantIds.length
-                })
-                .eq('id', registrantId);
-            }
-
-            // Create payment record
-            await supabase.from('payments').insert({
-              user_id: authedUserId,
-              amount: totalAmount,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
-              status: 'paid',
-              metadata: { registrant_ids: registrantIds }
+            // Use the verification API to properly update payment status
+            const verifyResponse = await fetch('/api/razorpay/verify-payment', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                registrant_ids: registrantIds,
+                amount: totalAmount
+              })
             });
 
-            // Send confirmation email for each registration
-            for (const registrantId of registrantIds) {
-              await fetch('/api/send-confirmation-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  registrantId: registrantId,
-                  paymentId: response.razorpay_payment_id
-                })
-              });
+            if (!verifyResponse.ok) {
+              const errorData = await verifyResponse.json();
+              throw new Error(errorData.error || 'Payment verification failed');
             }
+
+            const verifyResult = await verifyResponse.json();
+            console.log('Payment verification result:', verifyResult);
 
             // Clear session data and cart
             sessionStorage.removeItem('checkoutTeamData');
@@ -195,7 +182,7 @@ export default function CheckoutReviewPage() {
             
           } catch (error) {
             console.error('Post-payment processing error:', error);
-            toast.error('Payment successful but email sending failed. Please contact support.');
+            toast.error('Payment successful but verification failed. Please contact support.');
           }
         },
         prefill: {
