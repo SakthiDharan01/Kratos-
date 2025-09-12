@@ -21,21 +21,22 @@ export default function Layout({ children }: LayoutProps) {
         <AnimatedBackground />
         <div className="sticky top-0 z-50">
           <Navbar enableAutoHide={isMainPage} />
-          <main className="container mx-auto px-4 py-8">
+          <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
             {children}
           </main>
         </div>
         <Toaster 
             position="top-right"
-            gutter={12} // spacing between toasts
+            gutter={12}
             toastOptions={{
               style: {
                 background: '#1a1a1a',
                 color: '#fff',
                 border: '1px solid #dc2626',
+                fontSize: '14px',
               },
             }}
-            containerClassName="mt-16 mr-4" // offset below navbar
+            containerClassName="mt-16 mr-2 sm:mr-4 z-50"
           />
       </div>
     </AuthProvider>

@@ -71,100 +71,100 @@ export default function Home() {
   return (
     <Layout>
       <div className="space-y-0">
-        {/* Institution Logos - Right below navbar */}
+        {/* Institution Logos - Right below navbar - Responsive */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="flex justify-start items-center gap-6 px-6 py-6"
+          className="flex justify-center sm:justify-start items-center gap-4 sm:gap-6 px-4 sm:px-6 py-4 sm:py-6"
         >
           <img
             src="/assets/ace-bw.png"
             alt="ACE Logo"
-            className="h-16 w-auto opacity-80 hover:opacity-100 transition-opacity"
+            className="h-12 sm:h-16 w-auto opacity-80 hover:opacity-100 transition-opacity"
           />
           <img
             src="/assets/easwari-bw.png"
             alt="Easwari Engineering College Logo"
-            className="h-16 w-auto opacity-80 hover:opacity-100 transition-opacity"
+            className="h-12 sm:h-16 w-auto opacity-80 hover:opacity-100 transition-opacity"
           />
         </motion.div>
 
-        {/* Hero Section */}
-        <section className="text-center py-0 relative">
+        {/* Hero Section - Responsive */}
+        <section className="text-center py-0 relative px-4">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            {/* Main Kratos Logo - Centered and Smaller */}
-            <div className="flex items-center justify-center relative pt-24 pb-8">
+            {/* Main Kratos Logo - Responsive sizing */}
+            <div className="flex items-center justify-center relative pt-12 sm:pt-24 pb-4 sm:pb-8">
               <img
                 src="/assets/name.png"
                 alt="Kratos 2K25 Logo"
-                className="w-auto h-24 md:h-32 lg:h-40"
+                className="w-auto h-20 sm:h-24 md:h-32 lg:h-40"
               />
             </div>
             
-            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto py-12">
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-6 sm:mb-8 max-w-3xl mx-auto py-6 sm:py-12 px-4">
               Join the ultimate technical festival with exciting competitions, 
               innovative challenges, and amazing prizes
             </p>
           </motion.div>
         </section>
 
-        {/* Features Section */}
-        <section>
+        {/* Features Section - Responsive */}
+        <section className="px-4">
           <motion.h2
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-4xl font-bold text-yellow-400 text-center mb-12"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-yellow-400 text-center mb-8 sm:mb-12"
           >
             Why Join Kratos 2k25?
           </motion.h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="text-center p-6 bg-gray-900/30 border border-red-500/20 rounded-xl backdrop-blur-sm hover:border-red-500/40 transition-all duration-300"
+                className="text-center p-4 sm:p-6 bg-gray-900/30 border border-red-500/20 rounded-xl backdrop-blur-sm hover:border-red-500/40 transition-all duration-300"
               >
-                <div className="text-red-500 mb-4 flex justify-center">
+                <div className="text-red-500 mb-3 sm:mb-4 flex justify-center">
                   {feature.icon}
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
-                <p className="text-gray-300">{feature.description}</p>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">{feature.title}</h3>
+                <p className="text-gray-300 text-sm sm:text-base">{feature.description}</p>
               </motion.div>
             ))}
           </div>
         </section>
 
-        {/* Event Categories */}
-        <section>
+        {/* Event Categories - Responsive */}
+        <section className="px-4">
           <motion.h2
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-4xl font-bold text-yellow-400 text-center mb-12"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-yellow-400 text-center mb-8 sm:mb-12 pt-8 sm:pt-12"
           >
-            <br></br>
             Event Categories
           </motion.h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
             {eventCategories.map((category, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.02 }}
+                className="sm:hover:scale-105 transition-transform duration-300"
               >
                 <Link href={category.href} className="block">
-                  <div className={`bg-gradient-to-br ${category.color} p-6 rounded-xl text-white h-full`}>
-                    <h3 className="text-xl font-bold mb-3">{category.title}</h3>
-                    <p className="text-white/90 text-sm">{category.description}</p>
-                    <div className="mt-4">
+                  <div className={`bg-gradient-to-br ${category.color} p-4 sm:p-6 rounded-xl text-white h-full min-h-[120px] sm:min-h-[140px]`}>
+                    <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">{category.title}</h3>
+                    <p className="text-white/90 text-xs sm:text-sm leading-relaxed">{category.description}</p>
+                    <div className="mt-3 sm:mt-4">
                       <span className="text-xs font-medium">Explore Events →</span>
                     </div>
                   </div>

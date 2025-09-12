@@ -60,43 +60,91 @@ function ReceiptContent() {
 
         setUser(currentUser)
 
-        // Use inner join to get event data along with registration data
-        const { data: registrationsData, error } = await supabase
+        // Get the registrant_id from URL parameters
+        const registrantId = searchParams.get('registrant_id')
+        console.log('Looking for registrant_id:', registrantId)
+
+        let query = supabase
           .from('registrants')
           .select(`
             *,
             event:events!inner(*)
           `)
-          .eq('user_id', currentUser.id)
-          .eq('payment_status', 'completed')
 
-        if (error) {
-          throw error
-        }
+        // If registrant_id is provided, filter by it and check ownership
+        if (registrantId) {
+          query = query.eq('id', registrantId)
+          
+          const { data: registrationsData, error } = await query
+          
+          if (error) {
+            console.error('Database query error:', error)
+            throw error
+          }
 
-        if (!registrationsData || registrationsData.length === 0) {
-          if (retryCount < maxRetries) {
-            console.log(`Retrying... (${retryCount + 1}/${maxRetries})`)
-            setTimeout(() => fetchReceiptData(retryCount + 1), retryDelay)
+          console.log('Registration data found:', registrationsData)
+
+          // Check if registration exists and belongs to current user or if payment is completed
+          if (registrationsData && registrationsData.length > 0) {
+            const registration = registrationsData[0]
+            
+            // Allow access if user owns the registration OR if payment is completed
+            if (registration.user_id === currentUser.id || registration.payment_status === 'completed') {
+              const transformedData = registrationsData.map(reg => ({
+                ...reg,
+                team_size: reg.team_size || 1
+              }))
+
+              console.log('Transformed data:', transformedData)
+              setRegistrations(transformedData)
+
+              if (transformedData.length > 0) {
+                generateQRCode(transformedData[0])
+              }
+              return
+            } else {
+              console.error('Registration found but access denied - not owner and payment not completed')
+              setRegistrations([])
+              return
+            }
+          }
+        } else {
+          // If no registrant_id provided, get all user's completed registrations
+          query = query.eq('user_id', currentUser.id).eq('payment_status', 'completed')
+          
+          const { data: registrationsData, error } = await query
+
+          if (error) {
+            console.error('Database query error:', error)
+            throw error
+          }
+
+          console.log('Query results:', registrationsData)
+
+          if (registrationsData && registrationsData.length > 0) {
+            const transformedData = registrationsData.map(reg => ({
+              ...reg,
+              team_size: reg.team_size || 1
+            }))
+
+            console.log('Transformed data:', transformedData)
+            setRegistrations(transformedData)
+
+            if (transformedData.length > 0) {
+              generateQRCode(transformedData[0])
+            }
             return
           }
-          console.error('No completed registrations found')
-          setRegistrations([])
+        }
+
+        // If we get here, no data was found
+        if (retryCount < maxRetries) {
+          console.log(`Retrying... (${retryCount + 1}/${maxRetries})`)
+          setTimeout(() => fetchReceiptData(retryCount + 1), retryDelay)
           return
         }
-
-        // Transform the data to match our interface
-        const transformedData = registrationsData.map(reg => ({
-          ...reg,
-          team_size: reg.team_size || 1
-        }))
-
-        setRegistrations(transformedData)
-
-        // Generate QR code for the first registration
-        if (transformedData.length > 0) {
-          generateQRCode(transformedData[0])
-        }
+        console.error('No registrations found for:', registrantId ? `registrant_id: ${registrantId}` : `user_id: ${currentUser.id}`)
+        setRegistrations([])
 
       } catch (error) {
         console.error('Error fetching receipt data:', error)
@@ -253,20 +301,40 @@ function ReceiptContent() {
   }
 
   if (registrations.length === 0) {
+    const registrantId = searchParams.get('registrant_id')
+    
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto px-4">
           <div className="text-red-400 text-6xl mb-4">❌</div>
           <h1 className="text-2xl font-bold text-white mb-4">No Registrations Found</h1>
-          <p className="text-gray-400 mb-8">
-            We couldn't find any completed registrations for your account.
+          <p className="text-gray-400 mb-4">
+            {registrantId 
+              ? `We couldn't find registration with ID: ${registrantId}`
+              : "We couldn't find any completed registrations for your account."
+            }
           </p>
-          <Button 
-            onClick={() => window.location.href = '/'}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-          >
-            Go to Homepage
-          </Button>
+          <p className="text-gray-500 text-sm mb-8">
+            {registrantId 
+              ? "This registration may not exist, might be incomplete, or may not belong to your account."
+              : "Please complete your payment to view the receipt."
+            }
+          </p>
+          <div className="space-y-4">
+            <Button 
+              onClick={() => window.location.href = '/profile'}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
+              View My Profile
+            </Button>
+            <Button 
+              onClick={() => window.location.href = '/'}
+              variant="outline"
+              className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
+            >
+              Go to Homepage
+            </Button>
+          </div>
         </div>
       </div>
     )

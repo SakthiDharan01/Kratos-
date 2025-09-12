@@ -158,25 +158,25 @@ export default function ConferencePage() {
         animate="visible"
         className="max-w-6xl mx-auto w-full"
       >
-        {/* Hero Section */}
-        <motion.div variants={itemVariants} className="text-center mb-16 relative">
+        {/* Hero Section - Responsive */}
+        <motion.div variants={itemVariants} className="text-center mb-12 sm:mb-16 relative px-4">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 blur-3xl -z-10" />
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/10 mb-6">
+          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/10 mb-4 sm:mb-6">
             <Sparkles className="w-4 h-4 text-yellow-400" />
-            <span className="text-white/70">Paper Presentation</span>
+            <span className="text-white/70 text-sm">Paper Presentation</span>
           </div>
-          <h1 className="text-6xl md:text-7xl font-black mb-6 tracking-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-4 sm:mb-6 tracking-tight leading-tight">
             <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
               {event.name}
             </span>
           </h1>
-          <p className="text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
             {event.description_detailed}
           </p>
         </motion.div>
 
-        {/* Details Grid */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        {/* Details Grid - Responsive */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12 px-4">
           <EventDetailItem icon={Calendar} label="Date">
             {new Date(event.event_date).toLocaleDateString()}
           </EventDetailItem>
@@ -195,68 +195,68 @@ export default function ConferencePage() {
           </EventDetailItem>
         </motion.div>
 
-        {/* Rounds and Rules Sections */}
-        <motion.div variants={itemVariants} className="space-y-8 mb-12">
-          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl p-8 rounded-2xl border border-white/10">
-            <div className="flex items-center gap-3 mb-6">
+        {/* Rounds and Rules Sections - Responsive */}
+        <motion.div variants={itemVariants} className="space-y-6 sm:space-y-8 mb-8 sm:mb-12 px-4">
+          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl p-6 sm:p-8 rounded-2xl border border-white/10">
+            <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <div className="p-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500">
-                <ScrollText className="w-6 h-6 text-white" />
+                <ScrollText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-white">Rounds</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">Rounds</h2>
             </div>
             <div className="prose prose-invert max-w-none">
-              <pre className="whitespace-pre-wrap font-sans bg-black/20 p-6 rounded-xl border border-white/5">
+              <pre className="whitespace-pre-wrap font-sans bg-black/20 p-4 sm:p-6 rounded-xl border border-white/5 text-sm sm:text-base overflow-x-auto">
                 {event.rounds}
               </pre>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl p-8 rounded-2xl border border-white/10">
-            <div className="flex items-center gap-3 mb-6">
+          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl p-6 sm:p-8 rounded-2xl border border-white/10">
+            <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <div className="p-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500">
-                <ScrollText className="w-6 h-6 text-white" />
+                <ScrollText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-white">Rules</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">Rules</h2>
             </div>
             <div className="prose prose-invert max-w-none">
-              <pre className="whitespace-pre-wrap font-sans bg-black/20 p-6 rounded-xl border border-white/5">
+              <pre className="whitespace-pre-wrap font-sans bg-black/20 p-4 sm:p-6 rounded-xl border border-white/5 text-sm sm:text-base overflow-x-auto">
                 {event.rules}
               </pre>
             </div>
           </div>
         </motion.div>
         
-        {/* Coordinators Section */}
-        <motion.div variants={itemVariants} className="mb-12">
-          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl p-8 rounded-2xl border border-white/10">
-            <div className="flex items-center gap-3 mb-6">
+        {/* Coordinators Section - Responsive */}
+        <motion.div variants={itemVariants} className="mb-8 sm:mb-12 px-4">
+          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl p-6 sm:p-8 rounded-2xl border border-white/10">
+            <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <div className="p-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500">
-                <Users className="w-6 h-6 text-white" />
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-white">Event Coordinators</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">Event Coordinators</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-black/20 p-6 rounded-xl border border-white/5 hover:border-white/10 transition-all group">
-                <p className="text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="bg-black/20 p-4 sm:p-6 rounded-xl border border-white/5 hover:border-white/10 transition-all group">
+                <p className="text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-1">
                   {event.incharge_name1}
                 </p>
                 <a 
                   href={`tel:${event.incharge_phone1}`}
-                  className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 group-hover:text-purple-400"
+                  className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 group-hover:text-purple-400 text-sm sm:text-base"
                 >
-                  <Phone className="w-4 h-4" />
+                  <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
                   {event.incharge_phone1}
                 </a>
               </div>
-              <div className="bg-black/20 p-6 rounded-xl border border-white/5 hover:border-white/10 transition-all group">
-                <p className="text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-1">
+              <div className="bg-black/20 p-4 sm:p-6 rounded-xl border border-white/5 hover:border-white/10 transition-all group">
+                <p className="text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-1">
                   {event.incharge_name2}
                 </p>
                 <a 
                   href={`tel:${event.incharge_phone2}`}
-                  className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 group-hover:text-purple-400"
+                  className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 group-hover:text-purple-400 text-sm sm:text-base"
                 >
-                  <Phone className="w-4 h-4" />
+                  <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
                   {event.incharge_phone2}
                 </a>
               </div>
@@ -264,10 +264,10 @@ export default function ConferencePage() {
           </div>
         </motion.div>
 
-        {/* Registration Section */}
-        <motion.div variants={itemVariants}>
-          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl p-6 rounded-2xl border border-white/10">
-            <div className="flex flex-col sm:flex-row items-center gap-6 justify-between">
+        {/* Registration Section - Responsive */}
+        <motion.div variants={itemVariants} className="px-4">
+          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl p-4 sm:p-6 rounded-2xl border border-white/10">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
               {event && event.event_type === 'team' && (
                 <div className="w-full sm:w-auto space-y-2">
                   <label className="block text-sm text-gray-400">Team Size</label>
@@ -289,17 +289,16 @@ export default function ConferencePage() {
                 </div>
               )}
 
-              <div className="flex items-center gap-6">
-                <div className="text-xl font-semibold space-y-1">
-
-                  <p className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
+                <div className="text-center sm:text-right">
+                  <p className="text-lg sm:text-xl font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                     ₹{event.price}
                   </p>
                 </div>
                 <button
                   onClick={handleAddToCart}
                   disabled={isRegisteredForThisEvent || checkingRegistration || !isAuthenticated}
-                  className={`px-8 py-3 rounded-xl font-medium transition-all duration-300 disabled:cursor-not-allowed ${
+                  className={`w-full sm:w-auto px-6 sm:px-8 py-3 rounded-xl font-medium transition-all duration-300 disabled:cursor-not-allowed text-sm sm:text-base ${
                     isRegisteredForThisEvent
                       ? 'bg-green-500 text-white'
                       : checkingRegistration

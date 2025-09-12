@@ -84,29 +84,29 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
       animate={{ y: 0 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
     >
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 sm:px-6">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="text-2xl font-bold text-yellow-400">
+          <Link href="/" className="text-xl sm:text-2xl font-bold text-yellow-400">
             <div className="flex items-center space-x-2">
               <img
                 src="/assets/Badge.png"
                 alt="name"
-                className="w-12 h-auto"
+                className="w-10 sm:w-12 h-auto"
               />
-              <p>
+              <p className="hidden sm:block">
                 KRATOS 2k25
               </p>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-8">
+          <div className="hidden lg:flex space-x-4 xl:space-x-8">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`text-sm font-medium transition-all duration-300 ${
+                className={`text-xs xl:text-sm font-medium transition-all duration-300 px-2 py-1 rounded ${
                   pathname === item.href 
                     ? (isHTFPage 
                         ? 'text-cyan-300 glow-cyan' 
@@ -122,16 +122,16 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
           </div>
 
           {/* Right side actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             {isAuthenticated ? (
               <>
                 <Link
                   href="/cart"
                   className="relative p-2 text-white hover:text-yellow-400 transition-colors"
                 >
-                  <ShoppingCart className="w-5 h-5" />
+                  <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                   {cartItemsCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-xs">
                       {cartItemsCount}
                     </span>
                   )}
@@ -140,19 +140,19 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
                   href="/profile"
                   className="p-2 text-white hover:text-yellow-400 transition-colors"
                 >
-                  <User className="w-5 h-5" />
+                  <User className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Link>
                 <button
                   onClick={handleLogout}
                   className="p-2 text-white hover:text-red-400 transition-colors"
                 >
-                  <LogOut className="w-5 h-5" />
+                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </>
             ) : (
               <Link
                 href="/login"
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg transition-colors text-sm"
               >
                 Login
               </Link>
@@ -161,7 +161,7 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 text-white hover:text-yellow-400 transition-colors"
+              className="lg:hidden p-2 text-white hover:text-yellow-400 transition-colors"
             >
               {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -175,24 +175,24 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className={`md:hidden border-t ${
+              className={`lg:hidden border-t ${
                 isHTFPage ? 'border-cyan-500/30' : 'border-red-500/20'
               }`}
             >
-              <div className="py-4 space-y-2">
+              <div className="py-4 space-y-1 max-h-screen overflow-y-auto">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     href={item.href}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`block px-4 py-2 text-sm font-medium transition-all duration-300 ${
+                    className={`block px-4 py-3 text-sm font-medium transition-all duration-300 ${
                       pathname === item.href 
                         ? (isHTFPage 
-                            ? 'text-cyan-300 glow-cyan' 
-                            : 'text-yellow-400')
+                            ? 'text-cyan-300 glow-cyan bg-cyan-500/10' 
+                            : 'text-yellow-400 bg-yellow-400/10')
                         : (isHTFPage 
-                            ? 'text-white hover:text-cyan-300 hover:glow-cyan' 
-                            : 'text-white hover:text-yellow-400')
+                            ? 'text-white hover:text-cyan-300 hover:glow-cyan hover:bg-cyan-500/5' 
+                            : 'text-white hover:text-yellow-400 hover:bg-yellow-400/5')
                     }`}
                   >
                     {item.name}
