@@ -98,28 +98,18 @@ export default function HTFCountdownPage() {
 
         {/* Main Content */}
         <div className="relative z-10">
-          {/* Association Logos - Left Top Corner */}
-          <div className="absolute top-6 left-6 z-20">
+          {/* ACE Logo - Top Left Below Navbar */}
+          <div className="absolute top-20 left-6 z-20">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="flex flex-col items-start space-y-3"
             >
-              <p className="text-gray-300 text-sm font-medium">In Association With</p>
-              {/* Logos Row */}
-              <div className="flex items-center space-x-4">
-                <img
-                  src="/assets/ace-bw.png"
-                  alt="ACE Logo"
-                  className="h-20 md:h-24 w-auto filter drop-shadow-2xl"
-                />
-                <img
-                  src="/assets/easwari-bw.png"
-                  alt="Easwari Engineering College Logo"
-                  className="h-20 md:h-24 w-auto filter drop-shadow-2xl"
-                />
-              </div>
+              <img
+                src="/assets/ace-bw.png"
+                alt="ACE Logo"
+                className="h-20 md:h-24 w-auto filter drop-shadow-2xl"
+              />
             </motion.div>
           </div>
 

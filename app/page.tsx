@@ -73,28 +73,18 @@ export default function Home() {
       <div className="space-y-0">
         {/* Hero Section */}
         <section className="text-center py-0 relative">
-          {/* Association Logos - Left Top Corner */}
-          <div className="absolute top-6 left-6 z-10">
+          {/* ACE Logo - Top Left Below Navbar */}
+          <div className="absolute top-20 left-6 z-10">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="flex flex-col items-start space-y-3"
             >
-              <p className="text-gray-400 text-sm font-medium">In Association With</p>
-              {/* Logos Row */}
-              <div className="flex items-center space-x-4">
-                <img
-                  src="/assets/ace-bw.png"
-                  alt="ACE Logo"
-                  className="h-16 md:h-20 w-auto"
-                />
-                <img
-                  src="/assets/easwari-bw.png"
-                  alt="Easwari Engineering College Logo"
-                  className="h-16 md:h-20 w-auto"
-                />
-              </div>
+              <img
+                src="/assets/ace-bw.png"
+                alt="ACE Logo"
+                className="h-16 md:h-20 w-auto"
+              />
             </motion.div>
           </div>
 
@@ -103,8 +93,8 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            {/* Main Kratos Logo - Centered & Smaller */}
-            <div className="flex items-center justify-center relative pt-20">
+            {/* Main Kratos Logo - Centered */}
+            <div className="flex items-center justify-center relative pt-32">
               <img
                 src="/assets/name.png"
                 alt="Kratos 2K25 Logo"
