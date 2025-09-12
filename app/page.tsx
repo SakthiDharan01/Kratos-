@@ -32,19 +32,19 @@ export default function Home() {
   const eventCategories = [
     {
       title: 'Technical',
-      description: 'Core engineering & coding challenges',
+      description: 'Core coding challenges',
       href: '/technical',
       color: 'from-red-500 to-orange-600'
     },
     {
       title: 'Spark',
-      description: 'Prototype ideas without technical barriers',
+      description: 'Imagine. Create. Celebrate, Just Spark!',
       href: '/no-code',
       color: 'from-indigo-500 to-purple-600'
     },
     {
       title: 'PlayGround',
-      description: 'Fun experimental & casual contests',
+      description: 'Play Bold. Score Big. Shine Together!',
       href: '/playground',
       color: 'from-green-500 to-teal-600'
     },
@@ -56,12 +56,12 @@ export default function Home() {
     },
     {
       title: 'Hackathon', 
-      description: '24-hour coding marathon', 
+      description: '12-hour coding marathon', 
       href: '/hackathon', 
       color: 'from-blue-500 to-cyan-600'
     },
     {
-      title: 'Conference', 
+      title: 'Paper Conference', 
       description: 'IEEE Paper Presentation',
       href: '/conference', 
       color: 'from-pink-500 to-rose-600'
@@ -72,43 +72,43 @@ export default function Home() {
     <Layout>
       <div className="space-y-0">
         {/* Hero Section */}
-        <section className="text-center py-0">
+        <section className="text-center py-0 relative">
+          {/* Association Logos - Left Top Corner */}
+          <div className="absolute top-6 left-6 z-10">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="flex flex-col items-start space-y-3"
+            >
+              <p className="text-gray-400 text-sm font-medium">In Association With</p>
+              {/* Logos Row */}
+              <div className="flex items-center space-x-4">
+                <img
+                  src="/assets/ace-bw.png"
+                  alt="ACE Logo"
+                  className="h-16 md:h-20 w-auto"
+                />
+                <img
+                  src="/assets/easwari-bw.png"
+                  alt="Easwari Engineering College Logo"
+                  className="h-16 md:h-20 w-auto"
+                />
+              </div>
+            </motion.div>
+          </div>
+
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            {/* College and ACE Logos */}
-            <div className="pt-20 pb-8">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-                className="flex flex-col items-center space-y-6 mb-8"
-              >
-                <p className="text-gray-400 text-sm font-medium mb-4">In Association With</p>
-                {/* Logos Row */}
-                <div className="flex items-center justify-center space-x-8 md:space-x-12">
-                  <img
-                    src="/assets/ace-bw.png"
-                    alt="ACE Logo"
-                    className="h-16 md:h-20 w-auto"
-                  />
-                  <img
-                    src="/assets/easwari-bw.png"
-                    alt="Easwari Engineering College Logo"
-                    className="h-16 md:h-20 w-auto"
-                  />
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Main Kratos Logo - Centered & Slightly Smaller */}
-            <div className="flex items-center justify-center relative">
+            {/* Main Kratos Logo - Centered & Smaller */}
+            <div className="flex items-center justify-center relative pt-20">
               <img
                 src="/assets/name.png"
                 alt="Kratos 2K25 Logo"
-                className="w-auto h-40 md:h-52 lg:h-64"
+                className="w-auto h-32 md:h-44 lg:h-56"
               />
             </div>
             
