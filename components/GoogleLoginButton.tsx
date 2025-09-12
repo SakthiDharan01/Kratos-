@@ -1,6 +1,7 @@
 "use client";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
+import { getAppUrl } from "@/lib/utils";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Loader2, LogIn } from "lucide-react";
@@ -33,10 +34,17 @@ export default function GoogleLoginButton() {
     // Production: normal Google login
     try {
       setLoading(true);
+      
+      // Get the current app URL for redirect
+      const currentOrigin = getAppUrl();
+      const redirectUrl = `${currentOrigin}/auth/callback`;
+      
+      console.log('OAuth redirect URL will be:', redirectUrl);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/callback`,
+          redirectTo: redirectUrl,
         },
       });
       if (error) throw error;

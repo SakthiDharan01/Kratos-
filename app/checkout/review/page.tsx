@@ -91,7 +91,14 @@ export default function CheckoutReviewPage() {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Registration failed');
+          console.error('Registration API error:', errorData);
+          
+          // Provide specific error messages for common issues
+          if (response.status === 409 && errorData.error?.includes('already registered')) {
+            throw new Error(`Team "${eventData.teamName}" is already registered for this event. Please use a different team name or contact support if you believe this is an error.`);
+          }
+          
+          throw new Error(errorData.error || `Failed to create team registration for ${getEventName(eventData.eventId)}`);
         }
 
         const result = await response.json();
