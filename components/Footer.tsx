@@ -34,7 +34,7 @@ export default function Footer() {
                 </div>
                 <div className="flex items-center text-gray-300">
                   <Calendar className="w-4 h-4 mr-2 text-orange-400" />
-                  <span className="text-sm">India's Premier Technical Festival</span>
+                  <span className="text-sm">Mark Your Calenders on 10th September 2025</span>
                 </div>
               </div>
 
