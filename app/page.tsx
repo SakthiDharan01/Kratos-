@@ -1,6 +1,7 @@
 'use client'
 
 import Layout from '@/components/Layout'
+import Footer from '@/components/Footer'
 import { motion } from 'framer-motion'
 import { Calendar, Trophy, Users, Zap } from 'lucide-react'
 import Link from 'next/link'
@@ -101,7 +102,7 @@ export default function Home() {
             <div className="flex items-center justify-center relative pt-12 sm:pt-24 pb-4 sm:pb-8">
               <img
                 src="/assets/name.png"
-                alt="Kratos 2K25 Logo"
+                alt="Kratos 2025 Logo"
                 className="w-auto h-20 sm:h-24 md:h-32 lg:h-40"
               />
             </div>
@@ -120,7 +121,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             className="text-2xl sm:text-3xl lg:text-4xl font-bold text-yellow-400 text-center mb-8 sm:mb-12"
           >
-            Why Join Kratos 2k25?
+            Why Join Kratos 2025?
           </motion.h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {features.map((feature, index) => (
@@ -196,6 +197,7 @@ export default function Home() {
           </motion.div>
         </section>
       </div>
+      <Footer />
     </Layout>
   )
 }

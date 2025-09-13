@@ -190,103 +190,192 @@ function ReceiptContent() {
     }
   }
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
     if (registrations.length === 0) return
 
     const doc = new jsPDF()
     const registration = registrations[0]
     const event = registration.event
 
-    // Header with improved design
-    doc.setFontSize(28)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text('KRATOS 2K25', 105, 25, { align: 'center' })
-    
-    doc.setFontSize(14)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(100, 100, 100)
-    doc.text('Technical Symposium - Easwari Engineering College', 105, 35, { align: 'center' })
-    
-    // Draw header line
-    doc.setDrawColor(255, 215, 0) // Gold color
-    doc.setLineWidth(2)
-    doc.line(20, 42, 190, 42)
-    
-    doc.setFontSize(18)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text('Event Registration Receipt', 105, 55, { align: 'center' })
+    // Orange-Yellow gradient background
+    doc.setFillColor(255, 248, 220) // Light cream background
+    doc.rect(0, 0, 210, 297, 'F')
 
-    // Success indicator
+    // Professional orange header background
+    doc.setFillColor(255, 140, 0) // Dark orange
+    doc.rect(0, 0, 210, 50, 'F')
+
+    try {
+      // Add KRATOS logo (if available)
+      const kratosLogoUrl = '/assets/name.png'
+      const response = await fetch(kratosLogoUrl)
+      if (response.ok) {
+        const logoBlob = await response.blob()
+        const logoDataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.readAsDataURL(logoBlob)
+        })
+        doc.addImage(logoDataUrl, 'PNG', 20, 8, 40, 15)
+      }
+    } catch (error) {
+      console.log('Could not load KRATOS logo:', error)
+    }
+
+    try {
+      // Add Easwari College logo
+      const easwariLogoUrl = '/assets/easwari-bw.png'
+      const response = await fetch(easwariLogoUrl)
+      if (response.ok) {
+        const logoBlob = await response.blob()
+        const logoDataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.readAsDataURL(logoBlob)
+        })
+        doc.addImage(logoDataUrl, 'PNG', 150, 8, 40, 15)
+      }
+    } catch (error) {
+      console.log('Could not load Easwari logo:', error)
+    }
+
+    // Main header text on orange background
+    doc.setFontSize(32)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(255, 255, 255) // White text on orange
+    doc.text('KRATOS 2025', 105, 32, { align: 'center' })
+    
     doc.setFontSize(12)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(40, 167, 69) // Green color
-    doc.text('✓ Payment Confirmed', 105, 65, { align: 'center' })
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(255, 255, 255)
+    doc.text('Technical Symposium | Easwari Engineering College', 105, 42, { align: 'center' })
 
-    // Registration Details
-    doc.setFontSize(14)
+    // Orange accent line
+    doc.setDrawColor(255, 165, 0) // Orange
+    doc.setLineWidth(3)
+    doc.line(20, 55, 190, 55)
+
+    // Receipt title with professional styling
+    doc.setFillColor(255, 215, 0) // Golden yellow background
+    doc.roundedRect(30, 65, 150, 20, 5, 5, 'F')
+    
+    doc.setFontSize(20)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
-    doc.text('Registration Details:', 20, 85)
+    doc.text('PAYMENT RECEIPT', 105, 78, { align: 'center' })
+
+    // Success indicator with icon
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(34, 139, 34) // Forest green
+    doc.text('✓ PAYMENT CONFIRMED', 105, 95, { align: 'center' })
+
+    // Registration details in a styled box
+    doc.setFillColor(255, 250, 240) // Light orange background
+    doc.setDrawColor(255, 140, 0) // Orange border
+    doc.setLineWidth(1)
+    doc.roundedRect(20, 105, 170, 90, 5, 5, 'FD')
+
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(255, 69, 0) // Red-orange
+    doc.text('Registration Details', 25, 118)
 
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(11)
+    doc.setTextColor(0, 0, 0)
     const details = [
       `Event: ${event?.name || 'N/A'}`,
-      `Description: ${event?.description || 'N/A'}`,
-      `Date: ${event?.event_date ? new Date(event.event_date).toLocaleDateString() : 'Invalid Date'}`,
-      `Type: ${event?.event_type === 'team' ? `Team Event (${registration.team_size} members)` : 'Solo Event'}`,
+      `Event Type: ${event?.event_type === 'team' ? `Team Event (${registration.team_size} members)` : 'Solo Event'}`,
+      `Team Name: ${registration.team_name}`,
       `Amount Paid: ₹${registration.paid_amount}`,
       `Payment ID: ${registration.razorpay_payment_id || 'N/A'}`,
-      `Team Name: ${registration.team_name}`,
+      `Event Date: ${event?.event_date ? new Date(event.event_date).toLocaleDateString() : 'TBA'}`,
       `Registration Date: ${new Date(registration.registration_date).toLocaleDateString()}`
     ]
 
-    let yPos = 95
+    let yPos = 130
     details.forEach(detail => {
-      doc.text(detail, 20, yPos)
+      doc.text(detail, 25, yPos)
       yPos += 10
     })
 
-    // Contact Information
-    if (event?.incharge_name1 || event?.incharge_name2) {
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(0, 0, 0)
-      doc.text('Contact Information:', 20, yPos + 15)
-      yPos += 25
-      
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(11)
-      if (event.incharge_name1 && event.incharge_phone1) {
-        doc.text(`${event.incharge_name1}: ${event.incharge_phone1}`, 20, yPos)
-        yPos += 8
-      }
-      if (event.incharge_name2 && event.incharge_phone2) {
-        doc.text(`${event.incharge_name2}: ${event.incharge_phone2}`, 20, yPos)
-        yPos += 8
+    // Add QR Code if available
+    if (qrCode) {
+      try {
+        const qrResponse = await fetch(qrCode)
+        if (qrResponse.ok) {
+          const qrBlob = await qrResponse.blob()
+          const qrDataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result as string)
+            reader.readAsDataURL(qrBlob)
+          })
+          
+          // QR Code section
+          doc.setFillColor(255, 255, 255) // White background for QR
+          doc.setDrawColor(255, 140, 0) // Orange border
+          doc.setLineWidth(2)
+          doc.roundedRect(135, 200, 55, 65, 5, 5, 'FD')
+          
+          doc.addImage(qrDataUrl, 'PNG', 140, 205, 45, 45)
+          
+          doc.setFontSize(10)
+          doc.setFont('helvetica', 'bold')
+          doc.setTextColor(255, 69, 0)
+          doc.text('SCAN QR CODE', 162.5, 258, { align: 'center' })
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(8)
+          doc.setTextColor(0, 0, 0)
+          doc.text('Present at venue', 162.5, 263, { align: 'center' })
+        }
+      } catch (error) {
+        console.log('Could not add QR code to PDF:', error)
       }
     }
 
-    // Footer with better styling
-    doc.setDrawColor(255, 215, 0) // Gold color
-    doc.setLineWidth(1)
-    doc.line(20, 270, 190, 270)
+    // Contact Information
+    if (event?.incharge_name1 || event?.incharge_name2) {
+      doc.setFillColor(255, 245, 220) // Light peach background
+      doc.setDrawColor(255, 140, 0) // Orange border
+      doc.roundedRect(20, 200, 110, 50, 5, 5, 'FD')
+      
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(255, 69, 0)
+      doc.text('Contact Information', 25, 213)
+      
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(10)
+      doc.setTextColor(0, 0, 0)
+      let contactYPos = 225
+      
+      if (event.incharge_name1 && event.incharge_phone1) {
+        doc.text(`${event.incharge_name1}: ${event.incharge_phone1}`, 25, contactYPos)
+        contactYPos += 10
+      }
+      if (event.incharge_name2 && event.incharge_phone2) {
+        doc.text(`${event.incharge_name2}: ${event.incharge_phone2}`, 25, contactYPos)
+      }
+    }
+
+    // Professional footer with orange theme
+    doc.setFillColor(255, 140, 0) // Dark orange footer
+    doc.rect(0, 275, 210, 22, 'F')
     
     doc.setFontSize(12)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text('Thank you for registering with KRATOS 2K25!', 105, 280, { align: 'center' })
+    doc.setTextColor(255, 255, 255)
+    doc.text('Thank you for registering with KRATOS 2025!', 105, 284, { align: 'center' })
     
-    doc.setFontSize(10)
+    doc.setFontSize(9)
     doc.setFont('helvetica', 'normal')
-    doc.setTextColor(100, 100, 100)
-    doc.text('Keep this receipt for your records. Show the QR code at the event venue.', 105, 288, { align: 'center' })
-    doc.text('© 2024 KRATOS 2K25 - Easwari Engineering College', 105, 295, { align: 'center' })
+    doc.setTextColor(255, 255, 255)
+    doc.text('Association of Computer Engineers | Easwari Engineering College', 105, 291, { align: 'center' })
+    doc.text('© 2025 KRATOS - All Rights Reserved', 105, 295, { align: 'center' })
 
-    // Save PDF
-    doc.save(`KRATOS_Receipt_${registration.team_name}.pdf`)
+    // Save PDF with professional naming
+    doc.save(`KRATOS_2025_Receipt_${registration.team_name}_${registration.id}.pdf`)
   }
 
   if (loading) {
@@ -510,7 +599,7 @@ function ReceiptContent() {
 
           {/* Footer */}
           <div className="text-center text-gray-500 mt-8">
-            <p>&copy; 2024 Kratos. All rights reserved.</p>
+            <p>&copy; 2025 KRATOS. All rights reserved.</p>
           </div>
         </div>
       </div>
