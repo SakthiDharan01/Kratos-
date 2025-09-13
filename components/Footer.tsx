@@ -41,7 +41,7 @@ export default function Footer() {
               {/* Social Links */}
               <div className="flex space-x-4">
                 <motion.a
-                  href="https://www.linkedin.com/company/kratoseec"
+                  href="https://www.linkedin.com/in/cse-department-easwari-engineering-college-3b099b314/"
                   target="_blank"
                   rel="noopener noreferrer"
                   whileHover={{ scale: 1.1 }}
@@ -51,7 +51,7 @@ export default function Footer() {
                   <Linkedin className="w-5 h-5" />
                 </motion.a>
                 <motion.a
-                  href="https://www.instagram.com/kratoseec"
+                  href="https://www.instagram.com/kratos_2k25?igsh=Nm90Yjdnd2owcTM4"
                   target="_blank"
                   rel="noopener noreferrer"
                   whileHover={{ scale: 1.1 }}
@@ -61,7 +61,7 @@ export default function Footer() {
                   <Instagram className="w-5 h-5" />
                 </motion.a>
                 <motion.a
-                  href="mailto:kratos@eec.srmrmp.edu.in"
+                  href="mailto:updates.kratos@gmail.com"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   className="bg-gradient-to-r from-orange-600 to-red-700 p-3 rounded-full hover:from-orange-700 hover:to-red-800 transition-all duration-300 shadow-lg hover:shadow-orange-500/25"
@@ -142,7 +142,7 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <a href="mailto:support@kratoseec.com" className="text-gray-300 hover:text-orange-400 transition-colors duration-300 flex items-center">
+                  <a href="mailto:updates.kratos@gmail.com" className="text-gray-300 hover:text-orange-400 transition-colors duration-300 flex items-center">
                     <Mail className="w-4 h-4 mr-2" />
                     Support
                   </a>
@@ -171,7 +171,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-center md:text-left">
               <p className="text-gray-400 text-sm">
-                © {currentYear} KRATOS - All Rights Reserved
+                © {currentYear} KRATOS 2K25 - All Rights Reserved
               </p>
               <p className="text-gray-500 text-xs mt-1">
                 Organized by Association of Computer Engineers, Easwari Engineering College
@@ -181,7 +181,7 @@ export default function Footer() {
             <div className="flex items-center space-x-6">
               <div className="text-xs text-gray-500">
                 <span className="block">Made with ❤️ for students</span>
-                <span className="block text-center">by ACE Team</span>
+                <span className="block text-center">by ACE Club</span>
               </div>
             </div>
           </div>
