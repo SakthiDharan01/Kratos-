@@ -10,7 +10,7 @@ export interface Event {
   price: number
   min_team_size: number
   max_team_size: number
-  category: 'technical' | 'no_code' | 'playground' | 'online'
+  category: 'technical' | 'no_code' | 'playground' | 'online' | 'workshops'
   event_type: 'team' | 'solo'
   status: 'open' | 'closed' | 'completed'
   participant_limit: number

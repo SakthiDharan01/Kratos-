@@ -56,10 +56,16 @@ export default function Home() {
       color: 'from-yellow-500 to-red-600'
     },
     {
+      title: 'Workshops',
+      description: 'Hands-on skill building sessions',
+      href: '/workshops',
+      color: 'from-blue-500 to-indigo-600'
+    },
+    {
       title: 'Hackathon', 
       description: '12-hour coding marathon', 
       href: '/hackathon', 
-      color: 'from-blue-500 to-cyan-600'
+      color: 'from-purple-500 to-cyan-600'
     },
     {
       title: 'Paper Conference', 

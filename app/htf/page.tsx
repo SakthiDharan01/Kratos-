@@ -209,7 +209,7 @@ export default function HTFCountdownPage() {
                 className="mb-16"
               >
                 <Countdown 
-                  targetDate="2025-09-15T00:00:00"
+                  targetDate="2025-09-18T00:00:00"
                   title="🚀 Registration Opens In"
                   subtitle="Prepare to hack the future and make history with us!"
                   onComplete={() => {

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import { motion } from 'framer-motion'
-import { User, Mail, Building, BookOpen, Calendar, Phone, Edit, ShoppingBag, Loader2 } from 'lucide-react'
+import { User, Mail, Building, BookOpen, Calendar, Phone, Edit, ShoppingBag, Loader2, Receipt } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -281,9 +281,12 @@ export default function ProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-gray-900/50 border border-yellow-400/20 rounded-xl p-8 mb-8"
         >
-          <h2 className="text-2xl font-bold text-yellow-400 mb-4 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-yellow-400 mb-2 flex items-center gap-2">
             <Calendar className="w-6 h-6" /> Registration History
           </h2>
+          <p className="text-sm text-gray-400 mb-4">
+            💡 Click on confirmed registrations to view and download receipts
+          </p>
           <div className="mb-4 flex justify-end">
             <input
               type="text"
@@ -307,10 +310,33 @@ export default function ProfilePage() {
                 .map(reg => {
                   const status = reg.payment_status === 'paid' ? 'confirmed' : reg.payment_status;
                   const eventName = reg.events?.name || getEventName(reg.event_id);
+                  const canViewReceipt = status === 'confirmed' && reg.paid_amount > 0;
+                  
                   return (
-                    <div key={reg.id} className="border-b border-gray-700 pb-4 last:border-b-0 last:pb-0">
+                    <div 
+                      key={reg.id} 
+                      className={`border-b border-gray-700 pb-4 last:border-b-0 last:pb-0 relative ${
+                        canViewReceipt 
+                          ? 'cursor-pointer hover:bg-gray-800/50 rounded-lg p-4 transition-all duration-200 group hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-500/10' 
+                          : 'p-4'
+                      }`}
+                      onClick={() => {
+                        if (canViewReceipt) {
+                          router.push(`/receipt?registrant_id=${reg.id}`);
+                        }
+                      }}
+                      title={canViewReceipt ? 'Click to view receipt' : 'Receipt not available'}
+                    >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-bold text-white">{reg.team_name || '—'}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white">{reg.team_name || '—'}</span>
+                          {canViewReceipt && (
+                            <span className="text-xs bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full group-hover:bg-blue-600/40 group-hover:text-blue-300 transition-all duration-200 flex items-center gap-1 border border-blue-600/30 group-hover:border-blue-500/50">
+                              <Receipt className="w-3 h-3" />
+                              View Receipt
+                            </span>
+                          )}
+                        </div>
                         <span className={`px-3 py-1 rounded text-xs font-semibold ${status === 'confirmed' ? 'bg-green-700 text-green-300' : status === 'pending' ? 'bg-yellow-700 text-yellow-300' : 'bg-red-700 text-red-300'}`}>{status}</span>
                       </div>
                       <div className="text-yellow-400 font-semibold mb-1">Event: {eventName}</div>

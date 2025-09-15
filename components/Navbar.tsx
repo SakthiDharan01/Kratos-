@@ -28,6 +28,7 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
     { name: 'Spark Events', href: '/no-code' },
     { name: 'PlayGround', href: '/playground' },
     { name: 'Online Events', href: '/online' },
+    { name: 'Workshops', href: '/workshops' },
     { name: 'Hack to the Future', href: '/htf' },
     { name: 'Paper Conference', href: '/conference' }
   ]
