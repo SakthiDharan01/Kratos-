@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Download, CheckCircle, Calendar, Users, IndianRupee, Clock, MapPin, Phone, Mail } from 'lucide-react'
+import { Download, CheckCircle, Calendar, Users, IndianRupee, Clock, MapPin, Phone, Mail, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { jsPDF } from 'jspdf'
 
@@ -40,6 +40,7 @@ interface Registration {
 
 function ReceiptContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
@@ -450,6 +451,29 @@ function ReceiptContent() {
                 <h1 className="text-3xl font-bold text-white">Payment Successful!</h1>
                 <p className="text-gray-400">Your registration is confirmed</p>
               </div>
+            </div>
+
+            {/* Email Reminder */}
+            <div className="bg-blue-600/20 border border-blue-400/30 rounded-lg p-4 mb-6 max-w-md mx-auto">
+              <div className="flex items-center justify-center mb-2">
+                <Mail className="w-5 h-5 text-blue-400 mr-2" />
+                <span className="text-blue-300 font-medium">Check Your Email</span>
+              </div>
+              <p className="text-blue-200 text-sm">
+                A confirmation email with event details has been sent to your registered email address.
+              </p>
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-center gap-4">
+              <Button
+                onClick={() => router.push('/')}
+                variant="outline"
+                className="border-yellow-400/30 text-yellow-300 hover:bg-yellow-400/20"
+              >
+                <Home className="w-4 h-4 mr-2" />
+                Back to Home
+              </Button>
             </div>
           </div>
 
