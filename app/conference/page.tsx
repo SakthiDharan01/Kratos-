@@ -3,6 +3,7 @@
 import ConferenceLayout from '@/components/ConferenceLayout'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { fetchEvents } from '@/lib/events'
 import { Event, useStore } from '@/lib/store'
 import toast from 'react-hot-toast'
@@ -44,6 +45,7 @@ const EventDetailItem = ({ icon: Icon, label, children }: { icon: any, label: st
 // --- Main Page Component ---
 
 export default function ConferencePage() {
+  const router = useRouter()
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -107,6 +109,8 @@ export default function ConferencePage() {
     
     if (!isAuthenticated) {
       toast.error('Please login to register for events')
+      // Redirect to login page using Next.js router
+      router.push('/login')
       return
     }
 
@@ -296,15 +300,15 @@ export default function ConferencePage() {
                   </p>
                 </div>
                 <button
-                  onClick={handleAddToCart}
-                  disabled={isRegisteredForThisEvent || checkingRegistration || !isAuthenticated}
-                  className={`w-full sm:w-auto px-6 sm:px-8 py-3 rounded-xl font-medium transition-all duration-300 disabled:cursor-not-allowed text-sm sm:text-base ${
+                  onClick={!isAuthenticated ? () => router.push('/login') : handleAddToCart}
+                  disabled={isRegisteredForThisEvent || checkingRegistration}
+                  className={`w-full sm:w-auto px-6 sm:px-8 py-3 rounded-xl font-medium transition-all duration-300 text-sm sm:text-base ${
                     isRegisteredForThisEvent
                       ? 'bg-green-500 text-white'
                       : checkingRegistration
-                      ? 'bg-gray-600 text-white/70'
+                      ? 'bg-gray-600 text-white/70 cursor-not-allowed'
                       : !isAuthenticated
-                      ? 'bg-gray-600 text-white/70'
+                      ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105'
                       : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105'
                   }`}
                 >
