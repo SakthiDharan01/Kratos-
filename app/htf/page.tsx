@@ -35,6 +35,49 @@ export default function HTFCountdownPage() {
     }
   }, [])
 
+  // Ensure Devfolio SDK is loaded after client render so the apply button is detected
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const srcBase = 'https://apply.devfolio.co/v2/sdk.js'
+
+    // If a Devfolio script is already present, try to re-initialize by
+    // dispatching a custom event or calling the global init if available.
+    const existing = Array.from(document.scripts).find(s => s.src && s.src.startsWith(srcBase))
+    if (existing) {
+      // If the SDK exposes a global init method, call it. Otherwise, dispatch
+      // a DOM event that the SDK may listen to for reinitialization.
+      try {
+        const win = window as any
+        if (typeof win.Devfolio !== 'undefined' && typeof win.Devfolio.init === 'function') {
+          win.Devfolio.init()
+        } else {
+          // Dispatch a generic event which some SDKs listen to for re-scan
+          document.dispatchEvent(new Event('devfolio:reinit'))
+        }
+      } catch (err) {
+        // ignore errors and fall through
+      }
+
+      return
+    }
+
+    // Append script if not present
+    const script = document.createElement('script')
+    script.src = `${srcBase}`
+    script.async = true
+    script.defer = true
+    document.body.appendChild(script)
+
+    return () => {
+      try {
+        if (script.parentNode) script.parentNode.removeChild(script)
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [])
+
   // Floating tech elements
   const techElements = [
     { icon: <Cpu className="w-6 h-6" />, delay: 0, duration: 6 },
