@@ -143,13 +143,15 @@ export default function HTFPage() {
                 <div className="text-center">
                   <p className="text-sm text-gray-400 mb-4">Powered by</p>
                   <motion.div whileHover={{ scale: 1.05 }} transition={{ type: 'spring', stiffness: 300 }}>
-                    <img src="/hackathon/devfolio-logo.png" alt="Devfolio" className="w-40 h-auto object-contain opacity-80 hover:opacity-100 transition-opacity filter drop-shadow-lg" />
+                                          src="/hackathon/devfolio-logo.png"
+                      alt="DEVFOLIO LOGO"
+                      className="w-40 h-auto object-contain opacity-80 hover:opacity-100 transition-opacity filter drop-shadow-lg"
                   </motion.div>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-gray-400 mb-4">In partnership with</p>
                   <motion.div whileHover={{ scale: 1.05 }} transition={{ type: 'spring', stiffness: 300 }}>
-                    <img src="/hackathon/ethindia-logo.png" alt="ETHIndia" className="w-48 h-auto object-contain opacity-80 hover:opacity-100 transition-opacity filter drop-shadow-lg" />
+                    <img src="/hackathon/ethindia-logo.png" alt="ETHINDIA LOGO" className="w-48 h-auto object-contain opacity-80 hover:opacity-100 transition-opacity filter drop-shadow-lg" />
                   </motion.div>
                 </div>
               </motion.div>
