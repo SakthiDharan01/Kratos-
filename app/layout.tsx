@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Exo_2 } from "next/font/google";
+import Script from 'next/script'
 
 const exo2 = Exo_2({
   subsets: ["latin"],
@@ -25,6 +26,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${exo2.variable} font-sans`}>
         {children}
+        <Script
+          src="https://apply.devfolio.co/v2/sdk.js"
+          strategy="afterInteractive"
+          defer
+          async
+        />
       </body>
     </html>
   );
