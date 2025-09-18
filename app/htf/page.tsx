@@ -12,26 +12,7 @@ export default function HTFCountdownPage() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
-  // Initialize Devfolio button when SDK loads
-  useEffect(() => {
-    const checkAndInitDevfolio = () => {
-      const applyButton = document.querySelector('.apply-button')
-      if (applyButton && (window as any).Devfolio) {
-        try {
-          ;(window as any).Devfolio.init()
-        } catch (err) {
-          console.warn('Failed to initialize Devfolio button:', err)
-        }
-      }
-    }
-
-    // Check immediately if SDK is already loaded
-    checkAndInitDevfolio()
-
-    // Listen for SDK load event
-    window.addEventListener('devfolio:ready', checkAndInitDevfolio)
-    return () => window.removeEventListener('devfolio:ready', checkAndInitDevfolio)
-  }, [])
+  // No initialization needed for direct link button
 
   // Track mouse for parallax effect
   useEffect(() => {
@@ -246,11 +227,19 @@ export default function HTFCountdownPage() {
                 transition={{ delay: 1.5, duration: 0.8 }}
                 className="flex justify-center items-center mb-8"
               >
-                <div
-                  className="apply-button"
-                  data-hackathon-slug="hacktothefuture"
-                  data-button-theme="dark"
-                />
+                <motion.a
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  href="https://hacktothefuture.devfolio.co/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-[#3770FF] text-white font-bold py-4 px-8 rounded-lg hover:bg-[#2954bd] transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M12 24C18.6274 24 24 18.6274 24 12C24 5.37258 18.6274 0 12 0C5.37258 0 0 5.37258 0 12C0 18.6274 5.37258 24 12 24ZM16.7267 7.20414C17.1487 7.54623 17.2149 8.17116 16.8728 8.59318L11.0728 15.5932C10.8905 15.8179 10.6235 15.9593 10.3361 15.9871C10.0488 16.0148 9.76095 15.9267 9.54547 15.7413L6.74547 13.3413C6.36446 13.0148 6.31967 12.4273 6.64547 12.0459C6.97127 11.6646 7.55807 11.6197 7.93908 11.9462L10.0298 13.7506L15.3377 7.35025C15.6798 6.92823 16.3047 6.86205 16.7267 7.20414Z" fill="white"/>
+                  </svg>
+                  Apply with Devfolio
+                </motion.a>
               </motion.div>
 
               {/* Back to Kratos Link */}
