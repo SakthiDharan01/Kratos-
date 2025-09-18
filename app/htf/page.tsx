@@ -53,29 +53,53 @@ export default function HTFPage() {
     }
   }, [])
 
-  // Initialize Devfolio button when the element exists
+  // Initialize Devfolio button when both SDK and element exist
   useEffect(() => {
-    const initDevfolioButton = () => {
-      if (window.devfolio) {
-        window.devfolio.init()
-      } else {
-        // If SDK not loaded yet, wait and try again
-        const checkInterval = setInterval(() => {
-          if (window.devfolio) {
-            window.devfolio.init()
-            clearInterval(checkInterval)
-          }
-        }, 1000)
+    let initInterval: NodeJS.Timeout | null = null
+    let maxAttempts = 20 // 10 seconds maximum wait time
 
-        // Clean up interval if component unmounts
-        return () => clearInterval(checkInterval)
+    const initDevfolioButton = () => {
+      const button = document.querySelector('.apply-button[data-hackathon-slug]')
+      
+      if (window.devfolio && button) {
+        console.log('Initializing Devfolio button...')
+        window.devfolio.init()
+        return true
       }
+      return false
     }
 
-    // Start initialization when the apply-button element exists
-    const button = document.querySelector('.apply-button')
-    if (button) {
-      initDevfolioButton()
+    const startInitialization = () => {
+      let attempts = 0
+      
+      // Try immediately first
+      if (initDevfolioButton()) {
+        return
+      }
+
+      // If not successful, start polling
+      initInterval = setInterval(() => {
+        attempts++
+        
+        if (initDevfolioButton() || attempts >= maxAttempts) {
+          if (attempts >= maxAttempts) {
+            console.warn('Failed to initialize Devfolio button after maximum attempts')
+          }
+          if (initInterval) {
+            clearInterval(initInterval)
+          }
+        }
+      }, 500) // Check every 500ms
+    }
+
+    // Start the initialization process after a short delay to ensure DOM is ready
+    const startTimeout = setTimeout(startInitialization, 100)
+
+    return () => {
+      if (initInterval) {
+        clearInterval(initInterval)
+      }
+      clearTimeout(startTimeout)
     }
   }, [])
 
@@ -181,12 +205,14 @@ export default function HTFPage() {
                 transition={{ delay: 1.6, duration: 0.8 }}
                 className="flex flex-col justify-center items-center gap-6"
               >
-                <div
-                  className="apply-button"
-                  data-hackathon-slug="hacktothefuture"
-                  data-button-theme="light"
-                  style={{ height: '44px', width: '312px' }}
-                />
+                <div id="devfolio-button-container">
+                  <div
+                    className="apply-button"
+                    data-hackathon-slug="hacktothefuture"
+                    data-button-theme="dark"
+                    style={{ height: '44px', width: '312px' }}
+                  />
+                </div>
 
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Link href="/" className="inline-flex items-center gap-2 border-2 border-blue-400 text-blue-400 font-bold py-4 px-8 rounded-xl hover:bg-blue-400 hover:text-black transition-all duration-300">
