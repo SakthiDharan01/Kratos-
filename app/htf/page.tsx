@@ -53,55 +53,21 @@ export default function HTFPage() {
     }
   }, [])
 
-  // Initialize Devfolio button when both SDK and element exist
+  // Load Devfolio SDK
   useEffect(() => {
-    let initInterval: NodeJS.Timeout | null = null
-    let maxAttempts = 20 // 10 seconds maximum wait time
-
-    const initDevfolioButton = () => {
-      const button = document.querySelector('.apply-button[data-hackathon-slug]')
-      
-      if (window.devfolio && button) {
-        console.log('Initializing Devfolio button...')
-        window.devfolio.init()
-        return true
-      }
-      return false
-    }
-
-    const startInitialization = () => {
-      let attempts = 0
-      
-      // Try immediately first
-      if (initDevfolioButton()) {
-        return
-      }
-
-      // If not successful, start polling
-      initInterval = setInterval(() => {
-        attempts++
-        
-        if (initDevfolioButton() || attempts >= maxAttempts) {
-          if (attempts >= maxAttempts) {
-            console.warn('Failed to initialize Devfolio button after maximum attempts')
-          }
-          if (initInterval) {
-            clearInterval(initInterval)
-          }
-        }
-      }, 500) // Check every 500ms
-    }
-
-    // Start the initialization process after a short delay to ensure DOM is ready
-    const startTimeout = setTimeout(startInitialization, 100)
-
+    const script = document.createElement('script');
+    script.src = 'https://apply.devfolio.co/v2/sdk.js';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+    
     return () => {
-      if (initInterval) {
-        clearInterval(initInterval)
+      // Only remove if it exists to avoid errors
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
       }
-      clearTimeout(startTimeout)
     }
-  }, [])
+  }, []);
 
   const techElements = [
     { icon: <Cpu className="w-6 h-6" />, delay: 0, duration: 6 },
@@ -205,14 +171,12 @@ export default function HTFPage() {
                 transition={{ delay: 1.6, duration: 0.8 }}
                 className="flex flex-col justify-center items-center gap-6"
               >
-                <div id="devfolio-button-container">
-                  <div
-                    className="apply-button"
-                    data-hackathon-slug="hacktothefuture"
-                    data-button-theme="dark"
-                    style={{ height: '44px', width: '312px' }}
-                  />
-                </div>
+                <div 
+                  className="apply-button mx-auto" 
+                  data-hackathon-slug="hacktothefuture" 
+                  data-button-theme="dark"
+                  style={{ height: '44px', width: '312px' }}
+                ></div>
 
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Link href="/" className="inline-flex items-center gap-2 border-2 border-blue-400 text-blue-400 font-bold py-4 px-8 rounded-xl hover:bg-blue-400 hover:text-black transition-all duration-300">
