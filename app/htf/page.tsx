@@ -209,8 +209,8 @@ export default function HTFCountdownPage() {
                 className="mb-16"
               >
                 <Countdown 
-                  targetDate="2025-09-18T00:00:00"
-                  title="🚀 Registration Opens In"
+                  targetDate="2025-09-28T00:00:00"
+                  title="Registration Closes In "
                   subtitle="Prepare to hack the future and make history with us!"
                   onComplete={() => {
                     console.log("HTF Registration is now open!")
@@ -225,6 +225,14 @@ export default function HTFCountdownPage() {
                 transition={{ delay: 1.6, duration: 0.8 }}
                 className="flex justify-center items-center"
               >
+                {/* Apply button injected here (converted to JSX) */}
+                <div
+                  className="apply-button"
+                  data-hackathon-slug="hacktothefuture"
+                  data-button-theme="dark"
+                  style={{ height: '44px', width: '312px' }}
+                />
+
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
