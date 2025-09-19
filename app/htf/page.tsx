@@ -12,7 +12,6 @@ export default function HTFCountdownPage() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
-  // No initialization needed for direct link button
 
   // Track mouse for parallax effect
   useEffect(() => {
@@ -115,6 +114,11 @@ export default function HTFCountdownPage() {
             <img
               src="/assets/easwari-bw.png"
               alt="Easwari Engineering College Logo"
+              className="h-16 w-auto opacity-80 hover:opacity-100 transition-opacity"
+            />
+            <img
+              src="/hackathon/iet-logo.png"
+              alt="IET Logo"
               className="h-16 w-auto opacity-80 hover:opacity-100 transition-opacity"
             />
           </motion.div>
@@ -221,6 +225,30 @@ export default function HTFCountdownPage() {
               </motion.div>
 
               {/* Devfolio Apply Button */}
+              {/* Tracks Document Button */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.4, duration: 0.8 }}
+                className="flex justify-center items-center mb-4"
+              >
+                <motion.a
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  href="https://drive.google.com/file/d/1r1zmGi5KhudO_xt8ND3jtNAz_-PsKwfA/view?usp=sharing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-[#34A853] text-white font-bold py-3 px-7 rounded-lg hover:bg-[#257a3a] transition-all duration-300 shadow-md hover:shadow-lg"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+                    <path d="M6.5 3.5h11a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2zm0 0v2.5h11v-2.5m-11 0h11" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8 10h8M8 14h5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  View Hackathon Tracks
+                </motion.a>
+              </motion.div>
+
+              {/* Devfolio Apply Button */}
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -261,34 +289,6 @@ export default function HTFCountdownPage() {
                     <ArrowRight className="w-5 h-5" />
                   </Link>
                 </motion.div>
-              </motion.div>
-
-              {/* Additional Info */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 2, duration: 0.8 }}
-                className="mt-16 grid md:grid-cols-3 gap-8 max-w-4xl mx-auto"
-              >
-                {[
-                  { icon: <Users className="w-6 h-6" />, title: "Team Event", desc: "Form teams of 3-4 members" },
-                  { icon: <Clock className="w-6 h-6" />, title: "12 Hours", desc: "Non-stop innovation sprint" },
-                  { icon: <Trophy className="w-6 h-6" />, title: "Amazing Prizes", desc: "Win exciting rewards & recognition" }
-                ].map((item, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 2.2 + index * 0.1, duration: 0.6 }}
-                    className="bg-gradient-to-b from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-blue-500/20 rounded-xl p-6 text-center"
-                  >
-                    <div className="text-blue-400 mb-3 flex justify-center">
-                      {item.icon}
-                    </div>
-                    <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
-                    <p className="text-gray-300 text-sm">{item.desc}</p>
-                  </motion.div>
-                ))}
               </motion.div>
             </div>
           </section>
