@@ -50,7 +50,7 @@ export function EventDetailsModal({ event, onClose }: EventDetailsModalProps) {
             <h3 className="text-xl font-semibold text-white mb-3 border-b-2 border-yellow-500/20 pb-2">Event Information</h3>
             <div className="grid md:grid-cols-2 gap-4 text-gray-300">
               <div>
-                <p><span className="font-semibold text-yellow-400">Date:</span> {new Date(event.event_date).toLocaleDateString()}</p>
+                <p><span className="font-semibold text-yellow-400">Date:</span> {new Date(event.event_date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') }</p>
                 {event.time_slot && (
                   <p><span className="font-semibold text-yellow-400">Time Slot:</span> {
                     event.time_slot === 'morning' ? 'Morning Session' : 

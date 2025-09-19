@@ -133,7 +133,7 @@ export function Countdown({
         >
           <Calendar className="w-5 h-5" />
           <span className="text-lg">
-            Registration opens: <span className="font-semibold text-blue-200">September 15, 2025</span>
+            Registration Are Open Until: <span className="font-semibold text-blue-200">September 27, 2025</span>
           </span>
         </motion.div>
       </div>
