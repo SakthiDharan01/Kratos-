@@ -230,7 +230,7 @@ export default function HTFCountdownPage() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.4, duration: 0.8 }}
-                className="flex justify-center items-center mb-4"
+                className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-4"
               >
                 <motion.a
                   whileHover={{ scale: 1.05 }}
@@ -245,6 +245,21 @@ export default function HTFCountdownPage() {
                     <path d="M8 10h8M8 14h5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                   View Hackathon Tracks
+                </motion.a>
+                <motion.a
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  href="https://docs.google.com/presentation/d/1PFCoEUTjMVqp0wdsNuONC3Iy-hzb03_A/edit?usp=sharing&ouid=110643201876111089618&rtpof=true&sd=true"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-[#F9AB00] text-black font-bold py-3 px-7 rounded-lg hover:bg-[#c98a00] transition-all duration-300 shadow-md hover:shadow-lg"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+                    <rect x="3" y="3" width="18" height="18" rx="2" fill="#F9AB00" stroke="#c98a00" strokeWidth="2"/>
+                    <rect x="7" y="7" width="10" height="10" rx="1" fill="white"/>
+                    <text x="12" y="15" textAnchor="middle" fontSize="7" fill="#F9AB00" fontWeight="bold">PPT</text>
+                  </svg>
+                  PPT Template
                 </motion.a>
               </motion.div>
 
