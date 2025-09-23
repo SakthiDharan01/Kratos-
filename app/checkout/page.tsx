@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { supabase } from '@/lib/supabase';
 import Layout from '@/components/Layout'
@@ -52,16 +52,7 @@ export default function CheckoutPage() {
     recoverSavedData()
   }, [])
 
-  // Check for pending registrations
-  useEffect(() => {
-    if (user?.id && isAuthenticated) {
-      checkPendingRegistrations()
-    } else {
-      setCheckingPendingRegistrations(false)
-    }
-  }, [user?.id, isAuthenticated])
-
-  const checkPendingRegistrations = async () => {
+  const checkPendingRegistrations = useCallback(async () => {
     if (!user?.id) {
       setCheckingPendingRegistrations(false)
       return
@@ -93,7 +84,16 @@ export default function CheckoutPage() {
     } finally {
       setCheckingPendingRegistrations(false)
     }
-  }
+  }, [user?.id])
+
+  // Check for pending registrations
+  useEffect(() => {
+    if (user?.id && isAuthenticated) {
+      checkPendingRegistrations()
+    } else {
+      setCheckingPendingRegistrations(false)
+    }
+  }, [user?.id, isAuthenticated, checkPendingRegistrations])
 
   // Save to session storage whenever teamData changes with status indicator
   useEffect(() => {
@@ -103,11 +103,13 @@ export default function CheckoutPage() {
         sessionStorage.setItem('checkoutTeamData', JSON.stringify(teamData))
         setAutoSaveStatus('saved')
         setLastSaved(new Date())
-        setTimeout(() => setAutoSaveStatus('idle'), 2000)
+        const savedTimeout = setTimeout(() => setAutoSaveStatus('idle'), 2000)
+        return () => clearTimeout(savedTimeout)
       } catch (error) {
         console.error('Error auto-saving team data:', error)
         setAutoSaveStatus('error')
-        setTimeout(() => setAutoSaveStatus('idle'), 3000)
+        const errorTimeout = setTimeout(() => setAutoSaveStatus('idle'), 3000)
+        return () => clearTimeout(errorTimeout)
       }
     }
   }, [teamData])
@@ -219,7 +221,7 @@ export default function CheckoutPage() {
 
   // Initialize team data from user profile and cart
   useEffect(() => {
-    if (isProfileComplete && cart.length > 0 && teamData.length === 0) {
+    if (isProfileComplete && cart.length > 0 && teamData.length === 0 && user) {
       const initialTeamData = cart.map(item => ({
         eventId: item.event.id.toString(),
         teamName: `${user.name}'s Team`,
@@ -238,7 +240,7 @@ export default function CheckoutPage() {
       }))
       setTeamData(initialTeamData)
     }
-  }, [isProfileComplete, cart.length, user?.name, user?.email, user?.phone, user?.college, user?.department, user?.year]) // Remove teamData.length dependency
+  }, [isProfileComplete, cart.length, user, teamData.length])
 
   const handleStepNavigation = (step: CheckoutStep) => {
     if (step === 'profile' && !isProfileComplete) {
@@ -580,7 +582,7 @@ export default function CheckoutPage() {
       }
       reset(formData)
     }
-  }, [currentTeamIndex]) // Only depend on currentTeamIndex to avoid loops
+  }, [currentTeamIndex, teamData, reset]) // Include all dependencies
 
   return (
     <Layout>

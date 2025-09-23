@@ -5,7 +5,7 @@ import Layout from '@/components/Layout'
 import { motion } from 'framer-motion'
 import { User, Mail, Building, BookOpen, Calendar, Phone, Edit, ShoppingBag, Loader2, Receipt } from 'lucide-react'
 import { useStore } from '@/lib/store'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import { loadRazorpayScript, RazorpayOptions, RazorpayResponse } from '@/lib/razorpay'
@@ -55,7 +55,7 @@ export default function ProfilePage() {
 
   // Fetch registration history on mount
   // Add a refresh function for registration history
-  const refreshRegistrations = async () => {
+  const refreshRegistrations = useCallback(async () => {
     if (!user) return;
     setRegLoading(true);
     try {
@@ -112,7 +112,7 @@ export default function ProfilePage() {
     } finally {
       setRegLoading(false);
     }
-  };
+  }, [user]);
   
   useEffect(() => {
     refreshRegistrations();
@@ -139,9 +139,10 @@ export default function ProfilePage() {
 
     // Check if user came from payment success and refresh data with delay
     const urlParams = new URLSearchParams(window.location.search);
+    let paymentTimeout: NodeJS.Timeout | null = null;
     if (urlParams.get('from') === 'payment') {
       // Refresh after a short delay to allow database updates to complete
-      setTimeout(() => {
+      paymentTimeout = setTimeout(() => {
         refreshRegistrations();
       }, 2000);
       // Clean up URL without reload
@@ -152,12 +153,16 @@ export default function ProfilePage() {
     if (typeof window !== 'undefined') {
       window.addEventListener('focus', onFocus);
     }
+    
     return () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('focus', onFocus);
       }
+      if (paymentTimeout) {
+        clearTimeout(paymentTimeout);
+      }
     };
-  }, [user]);
+  }, [user, refreshRegistrations]);
 
   if (!isAuthenticated || !user) {
     return (
