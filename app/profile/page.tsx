@@ -280,9 +280,12 @@ export default function ProfilePage() {
       // Get the pending registration details
       const { data: registration, error: fetchError } = await supabase
         .from('registrants')
-        .select('*')
+        .select(`
+          *,
+          events(name, price)
+        `)
         .eq('id', registrantId)
-        .eq('status', 'pending')
+        .eq('payment_status', 'pending')
         .single();
 
       if (fetchError || !registration) {
@@ -295,7 +298,7 @@ export default function ProfilePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: registration.amount,
+          amount: registration.events?.price || registration.paid_amount,
           receipt: `retry_${registration.id}`,
           notes: {
             registrant_id: registration.id,
@@ -322,7 +325,7 @@ export default function ProfilePage() {
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'Kratos Event',
-        description: `Complete payment for ${registration.event_name}`,
+        description: `Complete payment for ${registration.events?.name}`,
         order_id: orderData.id,
         prefill: {
           name: user?.name || '',
@@ -397,7 +400,7 @@ export default function ProfilePage() {
         .from('registrants')
         .delete()
         .eq('id', registrantId)
-        .eq('status', 'pending'); // Safety check - only delete pending registrations
+        .eq('payment_status', 'pending'); // Safety check - only delete pending registrations
 
       if (deleteError) {
         throw new Error('Failed to cancel registration');

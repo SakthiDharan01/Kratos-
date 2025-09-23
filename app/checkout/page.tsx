@@ -54,28 +54,42 @@ export default function CheckoutPage() {
 
   // Check for pending registrations
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && isAuthenticated) {
       checkPendingRegistrations()
+    } else {
+      setCheckingPendingRegistrations(false)
     }
-  }, [user?.id])
+  }, [user?.id, isAuthenticated])
 
   const checkPendingRegistrations = async () => {
+    if (!user?.id) {
+      setCheckingPendingRegistrations(false)
+      return
+    }
+    
     try {
       setCheckingPendingRegistrations(true)
       const { data: pendingRegs, error } = await supabase
         .from('registrants')
-        .select('*')
-        .eq('created_by', user?.id)
-        .eq('status', 'pending')
+        .select(`
+          id,
+          team_name,
+          paid_amount,
+          events(name, price)
+        `)
+        .eq('user_id', user.id)
+        .eq('payment_status', 'pending')
       
       if (error) {
         console.error('Error checking pending registrations:', error)
+        setPendingRegistrations([])
         return
       }
       
       setPendingRegistrations(pendingRegs || [])
     } catch (error) {
       console.error('Error checking pending registrations:', error)
+      setPendingRegistrations([])
     } finally {
       setCheckingPendingRegistrations(false)
     }
@@ -507,8 +521,8 @@ export default function CheckoutPage() {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="text-white font-semibold">{reg.team_name}</p>
-                      <p className="text-gray-400 text-sm">{reg.event_name}</p>
-                      <p className="text-yellow-400 text-sm">₹{reg.amount}</p>
+                      <p className="text-gray-400 text-sm">{reg.events?.name}</p>
+                      <p className="text-yellow-400 text-sm">₹{reg.paid_amount || reg.events?.price}</p>
                     </div>
                     <span className="px-3 py-1 rounded text-xs font-semibold bg-yellow-700 text-yellow-300">
                       Pending
