@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import Navbar from './Navbar'
 import AnimatedBackground from './AnimatedBackground'
 import AuthProvider from './AuthProvider'
+import ConnectivityStatus from './ConnectivityStatus'
 import { Toaster } from 'react-hot-toast'
 
 interface LayoutProps {
@@ -19,6 +20,7 @@ export default function Layout({ children }: LayoutProps) {
     <AuthProvider>
       <div className="min-h-screen bg-black text-white relative overflow-hidden">
         <AnimatedBackground />
+        <ConnectivityStatus />
         <div className="sticky top-0 z-50">
           <Navbar enableAutoHide={isMainPage} />
           <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">

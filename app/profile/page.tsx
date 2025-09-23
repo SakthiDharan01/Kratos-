@@ -8,6 +8,7 @@ import { useStore } from '@/lib/store'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+import { loadRazorpayScript, RazorpayOptions, RazorpayResponse } from '@/lib/razorpay'
 
 export default function ProfilePage() {
   const { user, isAuthenticated, setUser } = useStore();
@@ -272,6 +273,147 @@ export default function ProfilePage() {
     setEditing(false);
   };
 
+  const handleCompletePayment = async (registrantId: string) => {
+    try {
+      setLoading(true);
+      
+      // Get the pending registration details
+      const { data: registration, error: fetchError } = await supabase
+        .from('registrants')
+        .select('*')
+        .eq('id', registrantId)
+        .eq('status', 'pending')
+        .single();
+
+      if (fetchError || !registration) {
+        toast.error('Registration not found or already processed');
+        return;
+      }
+
+      // Create a new Razorpay order for retry
+      const orderResponse = await fetch('/api/razorpay/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: registration.amount,
+          receipt: `retry_${registration.id}`,
+          notes: {
+            registrant_id: registration.id,
+            retry_payment: 'true'
+          }
+        }),
+      });
+
+      if (!orderResponse.ok) {
+        throw new Error('Failed to create payment order');
+      }
+
+      const orderData = await orderResponse.json();
+
+      // Load Razorpay script
+      const razorpayLoaded = await loadRazorpayScript();
+      if (!razorpayLoaded) {
+        throw new Error('Failed to load Razorpay SDK');
+      }
+
+      // Initialize Razorpay payment
+      const options: RazorpayOptions = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Kratos Event',
+        description: `Complete payment for ${registration.event_name}`,
+        order_id: orderData.id,
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+          contact: user?.phone || '',
+        },
+        theme: {
+          color: '#EAB308',
+        },
+        handler: async (response: RazorpayResponse) => {
+          try {
+            // Verify payment
+            const verifyResponse = await fetch('/api/razorpay/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                registrant_id: registration.id,
+              }),
+            });
+
+            if (verifyResponse.ok) {
+              toast.success('Payment completed successfully!');
+              refreshRegistrations(); // Refresh the registration data
+              
+              // Redirect to receipt page
+              router.push(`/receipt?registrant_id=${registration.id}&from=retry`);
+            } else {
+              throw new Error('Payment verification failed');
+            }
+          } catch (error) {
+            console.error('Payment verification error:', error);
+            toast.error('Payment verification failed. Please contact support.');
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            toast.error('Payment cancelled');
+          },
+        },
+      };
+
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+
+    } catch (error) {
+      console.error('Payment retry error:', error);
+      toast.error('Failed to initiate payment. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelRegistration = async (registrantId: string) => {
+    try {
+      setLoading(true);
+      
+      // Show confirmation dialog
+      const confirmed = window.confirm(
+        'Are you sure you want to cancel this registration? This action cannot be undone.'
+      );
+      
+      if (!confirmed) {
+        setLoading(false);
+        return;
+      }
+
+      // Delete the pending registration and all its participants
+      const { error: deleteError } = await supabase
+        .from('registrants')
+        .delete()
+        .eq('id', registrantId)
+        .eq('status', 'pending'); // Safety check - only delete pending registrations
+
+      if (deleteError) {
+        throw new Error('Failed to cancel registration');
+      }
+
+      toast.success('Registration cancelled successfully');
+      refreshRegistrations(); // Refresh the registration data
+
+    } catch (error) {
+      console.error('Cancel registration error:', error);
+      toast.error('Failed to cancel registration. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-8">
@@ -331,13 +473,63 @@ export default function ProfilePage() {
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-white">{reg.team_name || '—'}</span>
                           {canViewReceipt && (
-                            <span className="text-xs bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full group-hover:bg-blue-600/40 group-hover:text-blue-300 transition-all duration-200 flex items-center gap-1 border border-blue-600/30 group-hover:border-blue-500/50">
+                            <motion.span 
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              whileHover={{ scale: 1.05 }}
+                              className="text-xs bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full group-hover:bg-blue-600/40 group-hover:text-blue-300 transition-all duration-200 flex items-center gap-1 border border-blue-600/30 group-hover:border-blue-500/50 shadow-lg shadow-blue-500/20"
+                            >
                               <Receipt className="w-3 h-3" />
-                              View Receipt
+                              Receipt Available
+                            </motion.span>
+                          )}
+                          {status === 'confirmed' && !canViewReceipt && (
+                            <span className="text-xs bg-green-600/20 text-green-400 px-3 py-1 rounded-full flex items-center gap-1 border border-green-600/30">
+                              <Receipt className="w-3 h-3 opacity-50" />
+                              Confirmed
                             </span>
                           )}
                         </div>
-                        <span className={`px-3 py-1 rounded text-xs font-semibold ${status === 'confirmed' ? 'bg-green-700 text-green-300' : status === 'pending' ? 'bg-yellow-700 text-yellow-300' : 'bg-red-700 text-red-300'}`}>{status}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-3 py-1 rounded text-xs font-semibold ${status === 'confirmed' ? 'bg-green-700 text-green-300' : status === 'pending' ? 'bg-yellow-700 text-yellow-300' : 'bg-red-700 text-red-300'}`}>
+                            {status}
+                          </span>
+                          {status === 'pending' && (
+                            <div className="flex gap-2">
+                              <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCompletePayment(reg.id);
+                                }}
+                                className="bg-yellow-600 hover:bg-yellow-700 text-black px-3 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1"
+                              >
+                                💳 Complete Payment
+                              </motion.button>
+                              <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCancelRegistration(reg.id);
+                                }}
+                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1"
+                              >
+                                ❌ Cancel
+                              </motion.button>
+                            </div>
+                          )}
+                          {canViewReceipt && (
+                            <motion.div 
+                              initial={{ opacity: 0, x: 10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className="text-xs text-blue-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            >
+                              Click to open receipt →
+                            </motion.div>
+                          )}
+                        </div>
                       </div>
                       <div className="text-yellow-400 font-semibold mb-1">Event: {eventName}</div>
                       <div className="text-gray-300 text-sm mb-2">Registered on: {new Date(reg.registration_date).toLocaleString()}</div>
