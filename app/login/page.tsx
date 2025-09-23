@@ -12,30 +12,26 @@ import GoogleLoginButton from '@/components/GoogleLoginButton'
 export default function LoginPage() {
   return (
     <Layout>
-      <main className="max-w-md mx-auto">
+      <div className="max-w-md mx-auto">
         {/* Add even more top margin and spacing */}
         <div className="mt-40 mb-16">
-          <motion.section
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-gray-900/50 border border-red-500/20 rounded-xl p-8 backdrop-blur-sm text-center"
-            role="main"
-            aria-labelledby="login-title"
           >
-            <h1 id="login-title" className="text-3xl font-bold text-yellow-400 mb-8">
+            <h1 className="text-3xl font-bold text-yellow-400 mb-8">
               Join Kratos'25
             </h1>
-            <p className="text-gray-300 mb-12">
-              Sign in with Google to continue to event registration.
-            </p>
+            <p className="text-gray-300 mb-12">Sign in with Google to continue.</p>
             
             {/* Move login button even further down with more spacing */}
             <div className="mt-12 pt-8 border-t border-gray-700/50">
               <GoogleLoginButton />
             </div>
-          </motion.section>
+          </motion.div>
         </div>
-      </main>
+      </div>
     </Layout>
   )
 }

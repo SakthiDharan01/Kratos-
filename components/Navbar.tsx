@@ -36,18 +36,11 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
   // Check if we're on the HTF page for special styling
   const isHTFPage = pathname === '/htf'
 
-  // Handle keyboard navigation for mobile menu
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Escape' && isMenuOpen) {
-      setIsMenuOpen(false)
-    }
-  }
-
   // Auto-hide navbar logic - only when enableAutoHide is true
   useEffect(() => {
     if (!enableAutoHide) {
       setIsVisible(true)
-      return undefined // Don't add event listener
+      return
     }
 
     const handleScroll = () => {
@@ -135,30 +128,24 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
               <>
                 <Link
                   href="/cart"
-                  className="relative p-2 text-white hover:text-yellow-400 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-black"
-                  aria-label={`Shopping cart with ${cartItemsCount} items`}
+                  className="relative p-2 text-white hover:text-yellow-400 transition-colors"
                 >
                   <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                   {cartItemsCount > 0 && (
-                    <span 
-                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-xs"
-                      aria-hidden="true"
-                    >
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-xs">
                       {cartItemsCount}
                     </span>
                   )}
                 </Link>
                 <Link
                   href="/profile"
-                  className="p-2 text-white hover:text-yellow-400 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-black"
-                  aria-label="View profile"
+                  className="p-2 text-white hover:text-yellow-400 transition-colors"
                 >
                   <User className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="p-2 text-white hover:text-red-400 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-black"
-                  aria-label="Log out"
+                  className="p-2 text-white hover:text-red-400 transition-colors"
                 >
                   <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
@@ -175,11 +162,7 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              onKeyDown={handleKeyDown}
-              className="lg:hidden p-2 text-white hover:text-yellow-400 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-black"
-              aria-expanded={isMenuOpen}
-              aria-controls="mobile-menu"
-              aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              className="lg:hidden p-2 text-white hover:text-yellow-400 transition-colors"
             >
               {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -189,16 +172,13 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
         {/* Mobile Navigation */}
         <AnimatePresence>
           {isMenuOpen && (
-            <motion.nav
+            <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className={`lg:hidden border-t ${
                 isHTFPage ? 'border-cyan-500/30' : 'border-red-500/20'
               }`}
-              id="mobile-menu"
-              role="navigation"
-              aria-label="Mobile navigation"
             >
               <div className="py-4 space-y-1 max-h-screen overflow-y-auto">
                 {navigation.map((item) => (
@@ -206,11 +186,11 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
                     key={item.name}
                     href={item.href}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`block px-4 py-3 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-inset ${
+                    className={`block px-4 py-3 text-sm font-medium transition-all duration-300 ${
                       pathname === item.href 
                         ? (isHTFPage 
-                            ? 'text-cyan-300 glow-cyan bg-cyan-500/10 focus:ring-cyan-400' 
-                            : 'text-yellow-400 bg-yellow-400/10 focus:ring-yellow-400')
+                            ? 'text-cyan-300 glow-cyan bg-cyan-500/10' 
+                            : 'text-yellow-400 bg-yellow-400/10')
                         : (isHTFPage 
                             ? 'text-white hover:text-cyan-300 hover:glow-cyan hover:bg-cyan-500/5' 
                             : 'text-white hover:text-yellow-400 hover:bg-yellow-400/5')
@@ -220,7 +200,7 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
                   </Link>
                 ))}
               </div>
-            </motion.nav>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

@@ -64,21 +64,11 @@ export default function GoogleLoginButton() {
       whileTap={{ scale: 0.98 }}
       onClick={handleLogin}
       disabled={loading}
-      className="w-full bg-white text-black font-medium py-4 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-3 disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-gray-900 min-h-[48px]"
-      aria-label={loading ? "Signing in with Google..." : "Sign in with Google"}
-      type="button"
+      className="w-full bg-white text-black font-medium py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:opacity-70"
     >
-      {loading ? (
-        <>
-          <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
-          <span>Connecting...</span>
-        </>
-      ) : (
-        <>
-          <LogIn className="w-5 h-5" aria-hidden="true" />
-          <span>Continue with Google</span>
-        </>
-      )}
+      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
+      <span>{loading ? "Connecting..." : "Continue with Google"}</span>
     </motion.button>
+    //Continue with Google
   );
 }

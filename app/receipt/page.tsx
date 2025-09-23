@@ -1,13 +1,11 @@
 'use client'
 
-import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Download, CheckCircle, Calendar, Users, IndianRupee, Clock, MapPin, Phone, Mail, Home, Send } from 'lucide-react'
+import { Download, CheckCircle, Calendar, Users, IndianRupee, Clock, MapPin, Phone, Mail, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { jsPDF } from 'jspdf'
-import toast from 'react-hot-toast'
-import { useEmailApi } from '@/hooks/use-api-call'
 
 interface Event {
   id: string
@@ -48,50 +46,15 @@ function ReceiptContent() {
   const [user, setUser] = useState<any>(null)
   const [qrCode, setQrCode] = useState<string>('')
   const [qrError, setQrError] = useState<string>('')
-  const [downloadLoading, setDownloadLoading] = useState(false)
-  const emailApi = useEmailApi()
-
-  const generateQRCode = useCallback(async (registration: Registration) => {
-    try {
-      const qrData = {
-        registrationId: registration.id,
-        eventName: registration.event?.name,
-        teamName: registration.team_name,
-        participantEmail: user?.email,
-        paymentId: registration.razorpay_payment_id,
-        amount: registration.paid_amount,
-        eventDate: registration.event?.event_date,
-        teamSize: registration.team_size
-      }
-
-      const qrString = JSON.stringify(qrData)
-      const response = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrString)}`)
-      
-      if (response.ok) {
-        setQrCode(response.url)
-        setQrError('')
-      } else {
-        throw new Error('Failed to generate QR code')
-      }
-    } catch (error) {
-      console.error('QR Code generation error:', error)
-      setQrError('Failed to generate QR code')
-    }
-  }, [user?.email])
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout | null = null
-    let isCancelled = false
-
     const fetchReceiptData = async (retryCount = 0) => {
-      if (isCancelled) return
-      
       const maxRetries = 3;
       const retryDelay = 2000; // 2 seconds
 
       try {
         const { data: { user: currentUser } } = await supabase.auth.getUser()
-        if (!currentUser || isCancelled) {
+        if (!currentUser) {
           console.error('No user found')
           return
         }
@@ -134,19 +97,15 @@ function ReceiptContent() {
               }))
 
               console.log('Transformed data:', transformedData)
-              if (!isCancelled) {
-                setRegistrations(transformedData)
+              setRegistrations(transformedData)
 
-                if (transformedData.length > 0) {
-                  generateQRCode(transformedData[0])
-                }
+              if (transformedData.length > 0) {
+                generateQRCode(transformedData[0])
               }
               return
             } else {
               console.error('Registration found but access denied - not owner and payment not completed')
-              if (!isCancelled) {
-                setRegistrations([])
-              }
+              setRegistrations([])
               return
             }
           }
@@ -170,65 +129,74 @@ function ReceiptContent() {
             }))
 
             console.log('Transformed data:', transformedData)
-            if (!isCancelled) {
-              setRegistrations(transformedData)
+            setRegistrations(transformedData)
 
-              if (transformedData.length > 0) {
-                generateQRCode(transformedData[0])
-              }
+            if (transformedData.length > 0) {
+              generateQRCode(transformedData[0])
             }
             return
           }
         }
 
         // If we get here, no data was found
-        if (retryCount < maxRetries && !isCancelled) {
+        if (retryCount < maxRetries) {
           console.log(`Retrying... (${retryCount + 1}/${maxRetries})`)
-          timeoutId = setTimeout(() => fetchReceiptData(retryCount + 1), retryDelay)
+          setTimeout(() => fetchReceiptData(retryCount + 1), retryDelay)
           return
         }
         console.error('No registrations found for:', registrantId ? `registrant_id: ${registrantId}` : `user_id: ${currentUser.id}`)
-        if (!isCancelled) {
-          setRegistrations([])
-        }
+        setRegistrations([])
 
       } catch (error) {
         console.error('Error fetching receipt data:', error)
-        if (retryCount < maxRetries && !isCancelled) {
+        if (retryCount < maxRetries) {
           console.log(`Retrying... (${retryCount + 1}/${maxRetries})`)
-          timeoutId = setTimeout(() => fetchReceiptData(retryCount + 1), retryDelay)
+          setTimeout(() => fetchReceiptData(retryCount + 1), retryDelay)
         } else {
-          if (!isCancelled) {
-            setRegistrations([])
-          }
+          setRegistrations([])
         }
       } finally {
-        if (!isCancelled) {
-          setLoading(false)
-        }
+        setLoading(false)
       }
     }
 
     fetchReceiptData()
+  }, [])
 
-    return () => {
-      isCancelled = true
-      if (timeoutId) {
-        clearTimeout(timeoutId)
+  const generateQRCode = async (registration: Registration) => {
+    try {
+      const qrData = {
+        registrationId: registration.id,
+        eventName: registration.event?.name,
+        teamName: registration.team_name,
+        participantEmail: user?.email,
+        paymentId: registration.razorpay_payment_id,
+        amount: registration.paid_amount,
+        eventDate: registration.event?.event_date,
+        teamSize: registration.team_size
       }
+
+      const qrString = JSON.stringify(qrData)
+      const response = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrString)}`)
+      
+      if (response.ok) {
+        setQrCode(response.url)
+        setQrError('')
+      } else {
+        throw new Error('Failed to generate QR code')
+      }
+    } catch (error) {
+      console.error('QR Code generation error:', error)
+      setQrError('Failed to generate QR code')
     }
-  }, [searchParams, generateQRCode])
+  }
 
   const generatePDF = async () => {
     if (registrations.length === 0) return
 
-    setDownloadLoading(true)
-    toast.loading('Generating PDF receipt...', { id: 'pdf-generation' })
-
-    try {
-      const doc = new jsPDF()
-      const registration = registrations[0]
-      const event = registration.event
+    const doc = new jsPDF()
+    const registration = registrations[0]
+    const event = registration.event
 
     // Orange-Yellow gradient background
     doc.setFillColor(255, 248, 220) // Light cream background
@@ -409,39 +377,6 @@ function ReceiptContent() {
 
     // Save PDF with professional naming
     doc.save(`KRATOS_2025_Receipt_${registration.team_name}_${registration.id}.pdf`)
-    
-    toast.success('Receipt downloaded successfully!', { id: 'pdf-generation' })
-  } catch (error) {
-    console.error('Error generating PDF:', error)
-    toast.error('Failed to generate PDF receipt', { id: 'pdf-generation' })
-  } finally {
-    setDownloadLoading(false)
-  }
-  }
-
-  // Send receipt via email with error recovery
-  const sendReceiptEmail = async () => {
-    if (registrations.length === 0 || !user?.email) return
-
-    const registration = registrations[0]
-    
-    await emailApi.execute(async () => {
-      const response = await fetch('/api/send-confirmation-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          registrant_id: registration.id,
-          email: user.email
-        })
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`Failed to send email: ${errorText}`)
-      }
-
-      return response.json()
-    })
   }
 
   if (loading) {
@@ -671,33 +606,13 @@ function ReceiptContent() {
                         <p className="text-gray-400 text-sm text-center mb-4">
                           Scan this QR code for event verification
                         </p>
-                        <div className="flex flex-col gap-2 w-full">
-                          <Button
-                            onClick={generatePDF}
-                            disabled={downloadLoading}
-                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50"
-                          >
-                            {downloadLoading ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            ) : (
-                              <Download className="w-4 h-4 mr-2" />
-                            )}
-                            {downloadLoading ? 'Generating...' : 'Download PDF'}
-                          </Button>
-                          <Button
-                            onClick={sendReceiptEmail}
-                            disabled={emailApi.isLoading || !user?.email}
-                            variant="outline"
-                            className="w-full border-yellow-400/30 text-yellow-300 hover:bg-yellow-400/20 disabled:opacity-50"
-                          >
-                            {emailApi.isLoading ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-400 mr-2"></div>
-                            ) : (
-                              <Send className="w-4 h-4 mr-2" />
-                            )}
-                            {emailApi.isLoading ? 'Sending...' : 'Email Receipt'}
-                          </Button>
-                        </div>
+                        <Button
+                          onClick={generatePDF}
+                          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download Receipt
+                        </Button>
                       </div>
                     </div>
                   </div>

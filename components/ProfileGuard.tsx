@@ -19,7 +19,6 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
   const [loading, setLoading] = useState(true)
   const [showProfileForm, setShowProfileForm] = useState(false)
   const [profileCheckDone, setProfileCheckDone] = useState(false)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -28,49 +27,6 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
     department: user?.department || '',
     year: user?.year || ''
   })
-
-  // Field validation functions
-  const validateField = (name: string, value: string): string => {
-    switch (name) {
-      case 'name':
-        if (!value.trim()) return 'Name is required'
-        if (value.length < 2) return 'Name must be at least 2 characters'
-        if (!/^[a-zA-Z\s]+$/.test(value)) return 'Name can only contain letters and spaces'
-        return ''
-      case 'email':
-        if (!value.trim()) return 'Email is required'
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address'
-        return ''
-      case 'phone':
-        if (!value.trim()) return 'Phone number is required'
-        if (!/^[6-9]\d{9}$/.test(value.replace(/\D/g, ''))) return 'Please enter a valid 10-digit Indian mobile number'
-        return ''
-      case 'college':
-        if (!value.trim()) return 'College name is required'
-        if (value.length < 3) return 'College name must be at least 3 characters'
-        return ''
-      case 'department':
-        if (!value.trim()) return 'Department is required'
-        if (value.length < 2) return 'Department must be at least 2 characters'
-        return ''
-      case 'year':
-        if (!value.trim()) return 'Academic year is required'
-        return ''
-      default:
-        return ''
-    }
-  }
-
-  const handleFieldChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    
-    // Real-time validation
-    const error = validateField(field, value)
-    setFieldErrors(prev => ({
-      ...prev,
-      [field]: error
-    }))
-  }
 
   useEffect(() => {
     // Fast synchronous check - no async needed
@@ -115,27 +71,19 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validate all fields
-    const errors: Record<string, string> = {}
-    Object.keys(formData).forEach(field => {
-      const error = validateField(field, formData[field as keyof typeof formData])
-      if (error) errors[field] = error
-    })
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors)
-      const firstError = Object.keys(errors)[0]
-      toast.error(`Please fix the error in ${firstError}: ${errors[firstError]}`)
-      // Focus the first error field
-      const errorElement = document.querySelector(`[name="${firstError}"]`) as HTMLInputElement
-      if (errorElement) errorElement.focus()
+    // Validate all fields are filled
+    const requiredFields = ['name', 'email', 'phone', 'college', 'department', 'year']
+    const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData])
+    
+    if (missingFields.length > 0) {
+      toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`)
       return
     }
 
     try {
       setLoading(true)
       
-      // Check if user already exists
+      // First, try to check if user already exists
       const { data: existingUser } = await supabase
         .from('users')
         .select('id')
@@ -179,13 +127,13 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
       // Mark profile as completed for this session
       sessionStorage.setItem('profileCompleted', 'true')
 
-      toast.success('✅ Profile completed successfully!')
+      toast.success('Profile completed successfully!')
       setShowProfileForm(false)
       setProfileCheckDone(true)
     } catch (error) {
       console.error('Error updating profile:', error)
       
-      // More detailed error handling
+      // More detailed error logging for 409 debugging
       if (error && typeof error === 'object') {
         const err = error as any
         console.error('Error details:', {
@@ -244,156 +192,98 @@ export default function ProfileGuard({ children, requiresCompleteProfile = true 
                 <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  name="name"
                   placeholder="Full Name *"
                   value={formData.name}
-                  onChange={(e) => handleFieldChange('name', e.target.value)}
-                  className={`w-full bg-gray-800/50 border rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none transition-colors ${
-                    fieldErrors.name ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-red-500'
-                  }`}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full bg-gray-800/50 border border-gray-600 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
                   required
-                  aria-describedby={fieldErrors.name ? "name-error" : undefined}
                 />
-                {fieldErrors.name && (
-                  <p id="name-error" className="text-red-400 text-xs mt-1 ml-1">
-                    {fieldErrors.name}
-                  </p>
-                )}
               </div>
 
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <input
                   type="email"
-                  name="email"
                   placeholder="Email Address *"
                   value={formData.email}
-                  onChange={(e) => handleFieldChange('email', e.target.value)}
-                  className={`w-full bg-gray-800/50 border rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none transition-colors ${
-                    fieldErrors.email ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-red-500'
-                  }`}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full bg-gray-800/50 border border-gray-600 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
                   required
-                  aria-describedby={fieldErrors.email ? "email-error" : undefined}
                 />
-                {fieldErrors.email && (
-                  <p id="email-error" className="text-red-400 text-xs mt-1 ml-1">
-                    {fieldErrors.email}
-                  </p>
-                )}
               </div>
 
               <div className="relative">
                 <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <input
                   type="tel"
-                  name="phone"
                   placeholder="Phone Number *"
                   value={formData.phone}
-                  onChange={(e) => handleFieldChange('phone', e.target.value)}
-                  className={`w-full bg-gray-800/50 border rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none transition-colors ${
-                    fieldErrors.phone ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-red-500'
-                  }`}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full bg-gray-800/50 border border-gray-600 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
                   required
-                  aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
                 />
-                {fieldErrors.phone && (
-                  <p id="phone-error" className="text-red-400 text-xs mt-1 ml-1">
-                    {fieldErrors.phone}
-                  </p>
-                )}
               </div>
 
               <div className="relative">
                 <Building className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  name="college"
                   placeholder="College/Institution *"
                   value={formData.college}
-                  onChange={(e) => handleFieldChange('college', e.target.value)}
-                  className={`w-full bg-gray-800/50 border rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none transition-colors ${
-                    fieldErrors.college ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-red-500'
-                  }`}
+                  onChange={(e) => setFormData(prev => ({ ...prev, college: e.target.value }))}
+                  className="w-full bg-gray-800/50 border border-gray-600 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
                   required
-                  aria-describedby={fieldErrors.college ? "college-error" : undefined}
                 />
-                {fieldErrors.college && (
-                  <p id="college-error" className="text-red-400 text-xs mt-1 ml-1">
-                    {fieldErrors.college}
-                  </p>
-                )}
               </div>
 
               <div className="relative">
                 <BookOpen className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  name="department"
                   placeholder="Department/Branch *"
                   value={formData.department}
-                  onChange={(e) => handleFieldChange('department', e.target.value)}
-                  className={`w-full bg-gray-800/50 border rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none transition-colors ${
-                    fieldErrors.department ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-red-500'
-                  }`}
+                  onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+                  className="w-full bg-gray-800/50 border border-gray-600 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
                   required
-                  aria-describedby={fieldErrors.department ? "department-error" : undefined}
                 />
-                {fieldErrors.department && (
-                  <p id="department-error" className="text-red-400 text-xs mt-1 ml-1">
-                    {fieldErrors.department}
-                  </p>
-                )}
               </div>
 
               <div className="relative">
                 <Calendar className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <select
-                  name="year"
                   value={formData.year}
-                  onChange={(e) => handleFieldChange('year', e.target.value)}
-                  className={`w-full bg-gray-800/50 border rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none transition-colors ${
-                    fieldErrors.year ? 'border-red-500 focus:border-red-400' : 'border-gray-600 focus:border-red-500'
-                  }`}
+                  onChange={(e) => setFormData(prev => ({ ...prev, year: e.target.value }))}
+                  className="w-full bg-gray-800/50 border border-gray-600 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-red-500"
                   required
-                  aria-describedby={fieldErrors.year ? "year-error" : undefined}
                 >
-                  <option value="">Select Academic Year *</option>
+                  <option value="">Select Year *</option>
                   <option value="1st Year">1st Year</option>
                   <option value="2nd Year">2nd Year</option>
                   <option value="3rd Year">3rd Year</option>
                   <option value="4th Year">4th Year</option>
                   <option value="5th Year">5th Year</option>
-                  <option value="Graduate">Graduate</option>
-                  <option value="Post Graduate">Post Graduate</option>
+                  <option value="Postgraduate">Postgraduate</option>
+                  <option value="PhD">PhD</option>
+                  <option value="Other">Other</option>
                 </select>
-                {fieldErrors.year && (
-                  <p id="year-error" className="text-red-400 text-xs mt-1 ml-1">
-                    {fieldErrors.year}
-                  </p>
-                )}
               </div>
 
-              {/* Field completion indicator */}
-              <div className="flex items-center justify-between py-2 px-3 bg-gray-800/30 rounded-lg">
-                <span className="text-sm text-gray-400">Profile Completion</span>
-                <div className="flex items-center gap-2">
-                  {Object.values(fieldErrors).every(error => !error) && Object.values(formData).every(value => value.trim()) ? (
-                    <span className="text-green-400 text-sm font-medium">✅ Complete</span>
-                  ) : (
-                    <span className="text-yellow-400 text-sm font-medium">
-                      {Object.values(formData).filter(value => value.trim()).length}/6 fields
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 type="submit"
-                disabled={loading || Object.values(fieldErrors).some(error => error) || !Object.values(formData).every(value => value.trim())}
-                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors duration-200"
+                disabled={loading}
+                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-medium py-3 rounded-lg transition-colors disabled:cursor-not-allowed flex items-center justify-center"
               >
-                {loading ? 'Updating Profile...' : 'Continue Registration →'}
-              </button>
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving Profile...
+                  </>
+                ) : (
+                  'Complete Profile'
+                )}
+              </motion.button>
             </form>
           </motion.div>
         </div>

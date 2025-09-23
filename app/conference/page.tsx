@@ -2,7 +2,7 @@
 
 import ConferenceLayout from '@/components/ConferenceLayout'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { fetchEvents } from '@/lib/events'
 import { Event, useStore } from '@/lib/store'
@@ -55,7 +55,7 @@ export default function ConferencePage() {
   
   const { addToCart, isAuthenticated, checkEventRegistrationStatus } = useStore()
 
-  const fetchData = useCallback(async () => {
+  const fetchData = async () => {
     try {
       setLoading(true)
       setError(null)
@@ -74,11 +74,11 @@ export default function ConferencePage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }
 
   useEffect(() => {
     fetchData()
-  }, [fetchData])
+  }, [])
 
   // Check registration status
   useEffect(() => {
