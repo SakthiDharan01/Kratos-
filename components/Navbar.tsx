@@ -47,7 +47,7 @@ export default function Navbar({ enableAutoHide = false }: NavbarProps) {
   useEffect(() => {
     if (!enableAutoHide) {
       setIsVisible(true)
-      return
+      return undefined // Don't add event listener
     }
 
     const handleScroll = () => {

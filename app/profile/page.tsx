@@ -164,25 +164,14 @@ export default function ProfilePage() {
     };
   }, [user, refreshRegistrations]);
 
-  if (!isAuthenticated || !user) {
-    return (
-      <Layout>
-        <div className="text-center py-20">
-          <h1 className="text-3xl font-bold text-yellow-400 mb-4">Please Login</h1>
-          <p className="text-gray-300 mb-8">You need to be logged in to view your profile.</p>
-          <button
-            onClick={() => router.push('/login')}
-            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors"
-          >
-            Go to Login
-          </button>
-        </div>
-      </Layout>
-    );
-  }
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast.error('User not found');
+      return;
+    }
+    
     setLoading(true);
     
     // Debug: Log form data
@@ -421,6 +410,24 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
+
+  // Early return for authentication check - after all hooks are called
+  if (!isAuthenticated || !user) {
+    return (
+      <Layout>
+        <div className="text-center py-20">
+          <h1 className="text-3xl font-bold text-yellow-400 mb-4">Please Login</h1>
+          <p className="text-gray-300 mb-8">You need to be logged in to view your profile.</p>
+          <button
+            onClick={() => router.push('/login')}
+            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors"
+          >
+            Go to Login
+          </button>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
