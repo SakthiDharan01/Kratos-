@@ -276,18 +276,18 @@ export default function CheckoutPage() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-black text-white p-6">
+      <div className="min-h-screen bg-black text-white p-4 sm:p-6">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl font-bold text-yellow-400 mb-8 text-center">Checkout</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold text-yellow-400 mb-8 text-center">Checkout</h1>
 
-            {/* Step Indicator */}
-            <div className="flex justify-center mb-8">
-              <div className="flex items-center space-x-4">
+            {/* Step Indicator - Mobile Responsive */}
+            <div className="flex justify-center mb-8 overflow-x-auto">
+              <div className="flex items-center space-x-2 sm:space-x-4 min-w-max px-2">
                 {[
                   { key: 'profile', label: 'Profile', icon: User },
                   { key: 'team', label: 'Team Details', icon: Users },
@@ -303,18 +303,18 @@ export default function CheckoutPage() {
                   
                   return (
                     <div key={step.key} className="flex items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${
                         isActive ? 'bg-yellow-400 text-black' :
                         isCompleted ? 'bg-green-500 text-white' :
                         'bg-gray-600 text-gray-300'
                       }`}>
-                        <Icon size={20} />
+                        <Icon size={16} className="sm:w-5 sm:h-5" />
                       </div>
-                      <span className={`ml-2 ${isActive ? 'text-yellow-400' : 'text-gray-300'}`}>
+                      <span className={`ml-1 sm:ml-2 text-xs sm:text-sm ${isActive ? 'text-yellow-400' : 'text-gray-300'} whitespace-nowrap`}>
                         {step.label}
                       </span>
                       {index < 3 && (
-                        <div className={`w-8 h-0.5 mx-4 ${
+                        <div className={`w-4 sm:w-8 h-0.5 mx-2 sm:mx-4 ${
                           isCompleted ? 'bg-green-500' : 'bg-gray-600'
                         }`} />
                       )}

@@ -89,7 +89,6 @@ export async function POST(request: NextRequest) {
             payment_status: 'paid',
             razorpay_payment_id: paymentId,
             payment_time: new Date().toISOString(),
-            webhook_verified: true, // Mark as webhook verified
           })
           .eq('razorpay_order_id', orderId);
 
@@ -171,7 +170,6 @@ export async function POST(request: NextRequest) {
         .update({
           payment_status: 'failed',
           razorpay_payment_id: paymentId,
-          webhook_verified: true,
         })
         .eq('razorpay_order_id', orderId);
 

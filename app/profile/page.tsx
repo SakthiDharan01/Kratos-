@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import { motion } from 'framer-motion'
-import { User, Mail, Building, BookOpen, Calendar, Phone, Edit, ShoppingBag, Loader2, Receipt } from 'lucide-react'
+import { User, Mail, Building, BookOpen, Calendar, Phone, Edit, ShoppingBag, Loader2, Receipt, RefreshCw, X, AlertCircle } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -44,6 +44,76 @@ export default function ProfilePage() {
     totalSpent: 0,
     pendingPayments: 0,
   });
+
+  const [verifyingPayment, setVerifyingPayment] = useState<number | null>(null);
+  const [cancellingPayment, setCancellingPayment] = useState<number | null>(null);
+
+  // Function to verify pending payment
+  const verifyPendingPayment = async (registrantId: number) => {
+    setVerifyingPayment(registrantId);
+    try {
+      const response = await fetch('/api/verify-pending-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ registrantId }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success('Payment verified successfully! Redirecting to receipt...', {
+          duration: 4000,
+        });
+        refreshRegistrations();
+        
+        // Redirect to receipt page after successful verification
+        setTimeout(() => {
+          router.push(`/receipt?registrant_id=${registrantId}`);
+        }, 1500);
+      } else {
+        toast.error(result.error || 'Failed to verify payment');
+      }
+    } catch (error) {
+      console.error('Error verifying payment:', error);
+      toast.error('Failed to verify payment');
+    } finally {
+      setVerifyingPayment(null);
+    }
+  };
+
+  // Function to cancel pending payment
+  const cancelPendingPayment = async (registrantId: number) => {
+    if (!confirm('Are you sure you want to cancel this payment? This action cannot be undone.')) {
+      return;
+    }
+
+    setCancellingPayment(registrantId);
+    try {
+      const response = await fetch('/api/cancel-pending-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ registrantId }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success('Payment cancelled successfully');
+        refreshRegistrations();
+      } else {
+        toast.error(result.error || 'Failed to cancel payment');
+      }
+    } catch (error) {
+      console.error('Error cancelling payment:', error);
+      toast.error('Failed to cancel payment');
+    } finally {
+      setCancellingPayment(null);
+    }
+  };
   // Helper to get event name from cart (fallback to eventId)
   const { cart } = useStore();
   const getEventName = (eventId: number | string) => {
@@ -327,9 +397,9 @@ export default function ProfilePage() {
                       }}
                       title={canViewReceipt ? 'Click to view receipt' : 'Receipt not available'}
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-white">{reg.team_name || '—'}</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-white text-sm sm:text-base break-words">{reg.team_name || '—'}</span>
                           {canViewReceipt && (
                             <span className="text-xs bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full group-hover:bg-blue-600/40 group-hover:text-blue-300 transition-all duration-200 flex items-center gap-1 border border-blue-600/30 group-hover:border-blue-500/50">
                               <Receipt className="w-3 h-3" />
@@ -337,14 +407,79 @@ export default function ProfilePage() {
                             </span>
                           )}
                         </div>
-                        <span className={`px-3 py-1 rounded text-xs font-semibold ${status === 'confirmed' ? 'bg-green-700 text-green-300' : status === 'pending' ? 'bg-yellow-700 text-yellow-300' : 'bg-red-700 text-red-300'}`}>{status}</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`px-3 py-1 rounded text-xs font-semibold whitespace-nowrap ${
+                            status === 'confirmed' 
+                              ? 'bg-green-700 text-green-300' 
+                              : status === 'pending' 
+                                ? 'bg-yellow-700 text-yellow-300' 
+                                : 'bg-red-700 text-red-300'
+                          }`}>
+                            {status}
+                          </span>
+                          
+                          {/* Pending payment actions */}
+                          {status === 'pending' && (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  verifyPendingPayment(reg.id);
+                                }}
+                                disabled={verifyingPayment === reg.id}
+                                className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 disabled:opacity-50"
+                                title="Verify payment and view receipt"
+                              >
+                                {verifyingPayment === reg.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <RefreshCw className="w-3 h-3" />
+                                )}
+                                Verify & View Receipt
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  cancelPendingPayment(reg.id);
+                                }}
+                                disabled={cancellingPayment === reg.id}
+                                className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 disabled:opacity-50"
+                                title="Cancel this pending payment"
+                              >
+                                {cancellingPayment === reg.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <X className="w-3 h-3" />
+                                )}
+                                Cancel
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-yellow-400 font-semibold mb-1">Event: {eventName}</div>
-                      <div className="text-gray-300 text-sm mb-2">Registered on: {new Date(reg.registration_date).toLocaleString()}</div>
+                      
+                      {/* Pending payment notice */}
+                      {status === 'pending' && (
+                        <div className="bg-yellow-900/30 border border-yellow-600/30 rounded-lg p-3 mb-3">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-yellow-200">
+                              <p className="font-medium mb-1">Payment is pending</p>
+                              <p className="text-xs text-yellow-300">
+                                If you have already paid, click "Verify & View Receipt" to update the status and download your receipt. 
+                                If you want to cancel this registration, click "Cancel".
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="text-yellow-400 font-semibold mb-1 text-sm sm:text-base break-words">Event: {eventName}</div>
+                      <div className="text-gray-300 text-xs sm:text-sm mb-2">Registered on: {new Date(reg.registration_date).toLocaleString()}</div>
                       <div className="text-white text-sm">Participants:</div>
                       <ul className="ml-4 mt-1">
                         {reg.registrations?.map((p: any, idx: number) => (
-                          <li key={idx} className="text-gray-200">
+                          <li key={idx} className="text-gray-200 text-sm break-words">
                             {p.is_leader ? <span className="text-yellow-400 font-bold">Leader:</span> : null} {p.name} ({p.email})
                           </li>
                         ))}
@@ -396,81 +531,81 @@ export default function ProfilePage() {
               </div>
 
               {editing ? (
-                <form onSubmit={handleSave} className="grid md:grid-cols-2 gap-6">
+                <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
                     <label className="flex items-center space-x-2 text-sm font-medium text-gray-300">
-                      <User className="w-5 h-5" />
+                      <User className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span>Full Name</span>
                     </label>
                     <input
                       type="text"
                       value={form.name}
                       onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-white text-sm sm:text-base"
                       required
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="flex items-center space-x-2 text-sm font-medium text-gray-300">
-                      <Mail className="w-5 h-5" />
+                      <Mail className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span>Email</span>
                     </label>
                     <input
                       type="email"
                       value={form.email}
                       onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-white text-sm sm:text-base"
                       required
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="flex items-center space-x-2 text-sm font-medium text-gray-300">
-                      <Phone className="w-5 h-5" />
+                      <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span>Phone</span>
                     </label>
                     <input
                       type="tel"
                       value={form.phone}
                       onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-white text-sm sm:text-base"
                       required
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="flex items-center space-x-2 text-sm font-medium text-gray-300">
-                      <Building className="w-5 h-5" />
+                      <Building className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span>College</span>
                     </label>
                     <input
                       type="text"
                       value={form.college}
                       onChange={e => setForm(f => ({ ...f, college: e.target.value }))}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-white text-sm sm:text-base"
                       required
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="flex items-center space-x-2 text-sm font-medium text-gray-300">
-                      <BookOpen className="w-5 h-5" />
+                      <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span>Department</span>
                     </label>
                     <input
                       type="text"
                       value={form.department}
                       onChange={e => setForm(f => ({ ...f, department: e.target.value }))}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-white text-sm sm:text-base"
                       required
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="flex items-center space-x-2 text-sm font-medium text-gray-300">
-                      <Calendar className="w-5 h-5" />
+                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span>Year</span>
                     </label>
                     <select
                       value={form.year}
                       onChange={e => setForm(f => ({ ...f, year: e.target.value }))}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-white text-sm sm:text-base"
                       required
                     >
                       <option value="">Select Year</option>
@@ -481,10 +616,10 @@ export default function ProfilePage() {
                       <option value="Graduate">Graduate</option>
                     </select>
                   </div>
-                  <div className="md:col-span-2 flex space-x-4 mt-4">
+                  <div className="sm:col-span-2 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 mt-4">
                     <button
                       type="button"
-                      className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 rounded-lg transition-colors"
+                      className="w-full sm:flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base"
                       onClick={handleCancel}
                       disabled={loading}
                     >
@@ -492,10 +627,10 @@ export default function ProfilePage() {
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center"
+                      className="w-full sm:flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 sm:py-3 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center text-sm sm:text-base"
                       disabled={loading}
                     >
-                      {loading ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : null}
+                      {loading ? <Loader2 className="animate-spin w-4 h-4 sm:w-5 sm:h-5 mr-2" /> : null}
                       {loading ? 'Saving...' : 'Save Profile'}
                     </button>
                   </div>
