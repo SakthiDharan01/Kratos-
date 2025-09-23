@@ -47,10 +47,61 @@ export default function CheckoutPage() {
   const [validationErrors, setValidationErrors] = useState<{[key: string]: {[key: string]: string}}>({})
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm()
 
+  // Enhanced data recovery with better error handling
+  const recoverSavedData = useCallback(() => {
+    try {
+      const savedData = sessionStorage.getItem('checkoutTeamData')
+      const savedStep = sessionStorage.getItem('checkoutCurrentStep')
+      const savedTeamIndex = sessionStorage.getItem('checkoutCurrentTeamIndex')
+      const savedFormData = sessionStorage.getItem('checkoutFormData')
+      
+      let hasRecoveredData = false
+      
+      if (savedData) {
+        const parsedTeamData = JSON.parse(savedData)
+        if (Array.isArray(parsedTeamData) && parsedTeamData.length > 0) {
+          setTeamData(parsedTeamData)
+          hasRecoveredData = true
+        }
+      }
+      
+      if (savedStep && ['profile', 'team', 'participants', 'review'].includes(savedStep)) {
+        setCurrentStep(savedStep as CheckoutStep)
+        hasRecoveredData = true
+      }
+      
+      if (savedTeamIndex) {
+        const parsedIndex = parseInt(savedTeamIndex)
+        if (!isNaN(parsedIndex) && parsedIndex >= 0) {
+          setCurrentTeamIndex(parsedIndex)
+          hasRecoveredData = true
+        }
+      }
+      
+      if (savedFormData) {
+        const parsedFormData = JSON.parse(savedFormData)
+        reset(parsedFormData)
+        hasRecoveredData = true
+      }
+      
+      if (hasRecoveredData) {
+        toast.success('Previous progress restored!', {
+          duration: 4000,
+          icon: '💾'
+        })
+        setLastSaved(new Date())
+      }
+      
+    } catch (error) {
+      console.error('Error recovering saved checkout data:', error)
+      toast.error('Failed to recover saved progress')
+    }
+  }, [reset, setTeamData, setCurrentStep, setCurrentTeamIndex, setLastSaved])
+
   // Load data from session storage on mount
   useEffect(() => {
     recoverSavedData()
-  }, [])
+  }, [recoverSavedData])
 
   const checkPendingRegistrations = useCallback(async () => {
     if (!user?.id) {
@@ -144,57 +195,6 @@ export default function CheckoutPage() {
         // Reset to idle after 3 seconds
         setTimeout(() => setAutoSaveStatus('idle'), 3000)
       }
-    }
-  }
-
-  // Enhanced data recovery with better error handling
-  const recoverSavedData = () => {
-    try {
-      const savedData = sessionStorage.getItem('checkoutTeamData')
-      const savedStep = sessionStorage.getItem('checkoutCurrentStep')
-      const savedTeamIndex = sessionStorage.getItem('checkoutCurrentTeamIndex')
-      const savedFormData = sessionStorage.getItem('checkoutFormData')
-      
-      let hasRecoveredData = false
-      
-      if (savedData) {
-        const parsedTeamData = JSON.parse(savedData)
-        if (Array.isArray(parsedTeamData) && parsedTeamData.length > 0) {
-          setTeamData(parsedTeamData)
-          hasRecoveredData = true
-        }
-      }
-      
-      if (savedStep && ['profile', 'team', 'participants', 'review'].includes(savedStep)) {
-        setCurrentStep(savedStep as CheckoutStep)
-        hasRecoveredData = true
-      }
-      
-      if (savedTeamIndex) {
-        const parsedIndex = parseInt(savedTeamIndex)
-        if (!isNaN(parsedIndex) && parsedIndex >= 0) {
-          setCurrentTeamIndex(parsedIndex)
-          hasRecoveredData = true
-        }
-      }
-      
-      if (savedFormData) {
-        const parsedFormData = JSON.parse(savedFormData)
-        reset(parsedFormData)
-        hasRecoveredData = true
-      }
-      
-      if (hasRecoveredData) {
-        toast.success('Previous progress restored!', {
-          duration: 4000,
-          icon: '💾'
-        })
-        setLastSaved(new Date())
-      }
-      
-    } catch (error) {
-      console.error('Error recovering saved checkout data:', error)
-      toast.error('Failed to recover saved progress')
     }
   }
 
