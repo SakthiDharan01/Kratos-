@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Download, CheckCircle, Calendar, Users, IndianRupee, Clock, MapPin, Phone, Mail, Home, Send } from 'lucide-react'
@@ -51,14 +51,47 @@ function ReceiptContent() {
   const [downloadLoading, setDownloadLoading] = useState(false)
   const emailApi = useEmailApi()
 
+  const generateQRCode = useCallback(async (registration: Registration) => {
+    try {
+      const qrData = {
+        registrationId: registration.id,
+        eventName: registration.event?.name,
+        teamName: registration.team_name,
+        participantEmail: user?.email,
+        paymentId: registration.razorpay_payment_id,
+        amount: registration.paid_amount,
+        eventDate: registration.event?.event_date,
+        teamSize: registration.team_size
+      }
+
+      const qrString = JSON.stringify(qrData)
+      const response = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrString)}`)
+      
+      if (response.ok) {
+        setQrCode(response.url)
+        setQrError('')
+      } else {
+        throw new Error('Failed to generate QR code')
+      }
+    } catch (error) {
+      console.error('QR Code generation error:', error)
+      setQrError('Failed to generate QR code')
+    }
+  }, [user?.email])
+
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null
+    let isCancelled = false
+
     const fetchReceiptData = async (retryCount = 0) => {
+      if (isCancelled) return
+      
       const maxRetries = 3;
       const retryDelay = 2000; // 2 seconds
 
       try {
         const { data: { user: currentUser } } = await supabase.auth.getUser()
-        if (!currentUser) {
+        if (!currentUser || isCancelled) {
           console.error('No user found')
           return
         }
@@ -101,15 +134,19 @@ function ReceiptContent() {
               }))
 
               console.log('Transformed data:', transformedData)
-              setRegistrations(transformedData)
+              if (!isCancelled) {
+                setRegistrations(transformedData)
 
-              if (transformedData.length > 0) {
-                generateQRCode(transformedData[0])
+                if (transformedData.length > 0) {
+                  generateQRCode(transformedData[0])
+                }
               }
               return
             } else {
               console.error('Registration found but access denied - not owner and payment not completed')
-              setRegistrations([])
+              if (!isCancelled) {
+                setRegistrations([])
+              }
               return
             }
           }
@@ -133,67 +170,54 @@ function ReceiptContent() {
             }))
 
             console.log('Transformed data:', transformedData)
-            setRegistrations(transformedData)
+            if (!isCancelled) {
+              setRegistrations(transformedData)
 
-            if (transformedData.length > 0) {
-              generateQRCode(transformedData[0])
+              if (transformedData.length > 0) {
+                generateQRCode(transformedData[0])
+              }
             }
             return
           }
         }
 
         // If we get here, no data was found
-        if (retryCount < maxRetries) {
+        if (retryCount < maxRetries && !isCancelled) {
           console.log(`Retrying... (${retryCount + 1}/${maxRetries})`)
-          setTimeout(() => fetchReceiptData(retryCount + 1), retryDelay)
+          timeoutId = setTimeout(() => fetchReceiptData(retryCount + 1), retryDelay)
           return
         }
         console.error('No registrations found for:', registrantId ? `registrant_id: ${registrantId}` : `user_id: ${currentUser.id}`)
-        setRegistrations([])
+        if (!isCancelled) {
+          setRegistrations([])
+        }
 
       } catch (error) {
         console.error('Error fetching receipt data:', error)
-        if (retryCount < maxRetries) {
+        if (retryCount < maxRetries && !isCancelled) {
           console.log(`Retrying... (${retryCount + 1}/${maxRetries})`)
-          setTimeout(() => fetchReceiptData(retryCount + 1), retryDelay)
+          timeoutId = setTimeout(() => fetchReceiptData(retryCount + 1), retryDelay)
         } else {
-          setRegistrations([])
+          if (!isCancelled) {
+            setRegistrations([])
+          }
         }
       } finally {
-        setLoading(false)
+        if (!isCancelled) {
+          setLoading(false)
+        }
       }
     }
 
     fetchReceiptData()
-  }, [])
 
-  const generateQRCode = async (registration: Registration) => {
-    try {
-      const qrData = {
-        registrationId: registration.id,
-        eventName: registration.event?.name,
-        teamName: registration.team_name,
-        participantEmail: user?.email,
-        paymentId: registration.razorpay_payment_id,
-        amount: registration.paid_amount,
-        eventDate: registration.event?.event_date,
-        teamSize: registration.team_size
+    return () => {
+      isCancelled = true
+      if (timeoutId) {
+        clearTimeout(timeoutId)
       }
-
-      const qrString = JSON.stringify(qrData)
-      const response = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrString)}`)
-      
-      if (response.ok) {
-        setQrCode(response.url)
-        setQrError('')
-      } else {
-        throw new Error('Failed to generate QR code')
-      }
-    } catch (error) {
-      console.error('QR Code generation error:', error)
-      setQrError('Failed to generate QR code')
     }
-  }
+  }, [searchParams, generateQRCode])
 
   const generatePDF = async () => {
     if (registrations.length === 0) return
