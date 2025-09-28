@@ -215,8 +215,8 @@ export default function HTFCountdownPage() {
                 className="mb-16"
               >
                 <Countdown 
-                  targetDate="2025-09-28T00:00:00"
-                  title="Registration Closes In "
+                  targetDate="2025-09-30T00:00:00"
+                  title="Registrations Deadline Extended Till "
                   subtitle="Prepare to hack the future and make history with us!"
                   onComplete={() => {
                     console.log("HTF Registration is now open!")
