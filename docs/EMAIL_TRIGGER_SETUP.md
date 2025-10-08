@@ -1,6 +1,358 @@
 # Automatic Email Triggering on Payment Status Update
 
-This document explains the automatic email confirmation system when payment status changes from "pending" to "paid".
+This document explains the automatic email confirmation system when payment status changes from "pending" to "paid" using **Supabase Database Webhooks**.
+
+## Overview
+
+When an admin manually updates a registrant's payment status from "pending" to "paid" in Supabase, the system automatically triggers a confirmation email to be sent to the user.
+
+## Architecture
+
+### Simple Webhook-Based System
+
+```
+Admin updates payment → DB Trigger → Log entry → Supabase Webhook → Email API → Email sent
+```
+
+**Components**:
+1. **Database Trigger**: Logs payment status changes to `email_trigger_log` table
+2. **Supabase Webhook**: Listens for new entries in `email_trigger_log`
+3. **Webhook API**: `/api/send-confirmation-email-webhook` processes the trigger
+4. **Email Service**: Sends confirmation email via SMTP
+
+## Setup Instructions
+
+### Step 1: Run Database Migration
+
+Run this migration in your **Supabase SQL Editor**:
+
+```sql
+-- Copy and paste the entire content from:
+-- supabase/migrations/20251008_add_payment_status_email_trigger.sql
+```
+
+This creates:
+- `email_trigger_log` table to track email triggers
+- `log_payment_status_change()` function to detect payment status changes
+- Database trigger on `registrants` table
+- RLS policies for admin access
+
+### Step 2: Add Environment Variable
+
+Add to your `.env` file:
+
+```env
+# Supabase Webhook Secret (for authentication)
+SUPABASE_WEBHOOK_SECRET=your-random-webhook-secret-here
+```
+
+Generate a secure secret:
+```powershell
+# PowerShell
+-join ((48..57) + (65..90) + (97..122) | Get-Random -Count 32 | % {[char]$_})
+```
+
+**Important**: Add this same secret to your Vercel environment variables after deployment.
+
+### Step 3: Deploy to Vercel
+
+Deploy your application to Vercel:
+```bash
+git add .
+git commit -m "Add automatic email triggering on payment status update"
+git push
+```
+
+### Step 4: Configure Supabase Database Webhook
+
+1. **Go to Supabase Dashboard** → Database → Webhooks
+2. **Click "Create a new hook"**
+3. **Configure the webhook**:
+
+   | Field | Value |
+   |-------|-------|
+   | **Name** | Send Confirmation Email on Payment |
+   | **Table** | `email_trigger_log` |
+   | **Events** | ✅ Insert (check this box) |
+   | **Type** | HTTP Request |
+   | **Method** | POST |
+   | **URL** | `https://kratos-nu.vercel.app/api/send-confirmation-email-webhook` |
+
+4. **Add HTTP Headers**:
+   ```
+   Content-Type: application/json
+   x-webhook-secret: [paste your SUPABASE_WEBHOOK_SECRET here]
+   ```
+
+5. **Click "Create webhook"**
+
+### Step 5: Test the System
+
+1. **Update a registrant's payment status** in Supabase:
+   ```sql
+   UPDATE registrants 
+   SET 
+     payment_status = 'paid',
+     payment_time = NOW(),
+     razorpay_payment_id = 'test_manual_' || gen_random_uuid()::text
+   WHERE id = 123;  -- Replace with actual registrant ID
+   ```
+
+2. **Check the trigger log**:
+   ```sql
+   SELECT * FROM email_trigger_log 
+   ORDER BY created_at DESC 
+   LIMIT 5;
+   ```
+
+3. **Verify webhook execution** in Supabase:
+   - Dashboard → Database → Webhooks → [Your webhook] → Logs
+
+4. **Check if email was sent**:
+   ```sql
+   SELECT * FROM email_trigger_log 
+   WHERE email_sent = true 
+   ORDER BY created_at DESC 
+   LIMIT 5;
+   ```
+
+## How It Works
+
+### Detailed Workflow
+
+1. **Admin Action**: Admin updates `registrants.payment_status` to `'paid'` in Supabase
+2. **Database Trigger**: `trigger_log_payment_status_change` fires
+3. **Log Entry**: New record inserted into `email_trigger_log` table
+4. **Webhook Trigger**: Supabase detects INSERT and calls webhook URL
+5. **API Processing**: `/api/send-confirmation-email-webhook` receives webhook
+6. **Email Sending**: Calls `/api/send-confirmation-email` to send email
+7. **Log Update**: Updates `email_trigger_log.email_sent = true`
+
+### Database Schema
+
+**email_trigger_log**
+```sql
+id               SERIAL PRIMARY KEY
+registrant_id    INTEGER (FK to registrants)
+trigger_type     VARCHAR(50)  -- 'payment_status_update'
+old_status       VARCHAR(20)  -- e.g., 'pending'
+new_status       VARCHAR(20)  -- e.g., 'paid'
+triggered_at     TIMESTAMPTZ
+email_sent       BOOLEAN      -- false until webhook processes it
+error_message    TEXT         -- NULL if successful
+created_at       TIMESTAMPTZ
+```
+
+## Monitoring
+
+### View Recent Email Triggers
+
+```sql
+SELECT 
+  etl.id,
+  etl.registrant_id,
+  etl.old_status,
+  etl.new_status,
+  etl.email_sent,
+  etl.error_message,
+  etl.created_at,
+  r.team_name,
+  u.email,
+  u.name,
+  e.name as event_name
+FROM email_trigger_log etl
+JOIN registrants r ON r.id = etl.registrant_id
+JOIN users u ON u.id = r.user_id
+JOIN events e ON e.id = r.event_id
+ORDER BY etl.created_at DESC
+LIMIT 20;
+```
+
+### Check Failed Email Attempts
+
+```sql
+SELECT 
+  etl.*,
+  r.team_name,
+  u.email
+FROM email_trigger_log etl
+JOIN registrants r ON r.id = etl.registrant_id
+JOIN users u ON u.id = r.user_id
+WHERE etl.error_message IS NOT NULL
+ORDER BY etl.created_at DESC;
+```
+
+### View Webhook Logs in Supabase
+
+1. Go to **Supabase Dashboard** → Database → Webhooks
+2. Click on your webhook: **"Send Confirmation Email on Payment"**
+3. Click **"Logs"** tab to see execution history
+
+## Troubleshooting
+
+### Emails Not Being Sent
+
+**1. Check if database trigger is logging**:
+```sql
+SELECT * FROM email_trigger_log 
+ORDER BY created_at DESC 
+LIMIT 10;
+```
+- If no records: Database trigger may not be installed correctly
+- Solution: Re-run the migration
+
+**2. Check webhook execution in Supabase**:
+- Dashboard → Database → Webhooks → [Your webhook] → Logs
+- Look for failed requests (red status)
+- Check error messages
+
+**3. Check for error messages in log**:
+```sql
+SELECT * FROM email_trigger_log 
+WHERE error_message IS NOT NULL;
+```
+
+**4. Verify webhook secret**:
+- Ensure `SUPABASE_WEBHOOK_SECRET` in `.env` matches webhook header
+- Redeploy if you changed the secret
+
+**5. Test webhook endpoint directly**:
+```bash
+curl -X POST https://kratos-nu.vercel.app/api/send-confirmation-email-webhook \
+  -H "Content-Type: application/json" \
+  -H "x-webhook-secret: your-secret" \
+  -d '{
+    "type": "INSERT",
+    "table": "email_trigger_log",
+    "record": {
+      "id": 1,
+      "registrant_id": 123
+    }
+  }'
+```
+
+**6. Check SMTP configuration**:
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=updates.kratos@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=updates.kratos@gmail.com
+```
+
+### Webhook Returns 401 Unauthorized
+
+- **Cause**: Webhook secret mismatch
+- **Solution**: 
+  1. Check `SUPABASE_WEBHOOK_SECRET` in Vercel environment variables
+  2. Update webhook header in Supabase webhook configuration
+  3. Ensure both match exactly
+
+### Webhook Returns 404 Not Found
+
+- **Cause**: Registrant not found or deleted
+- **Solution**: Check if registrant ID exists in database
+
+### Duplicate Emails
+
+- **Prevention**: The system is idempotent
+- Email service checks `email_logs` table before sending
+- Each email is sent only once per payment
+
+## Security
+
+- ✅ Webhook authentication via secret header (`x-webhook-secret`)
+- ✅ RLS policies protect `email_trigger_log` (admin-only access)
+- ✅ Server-side only processing (uses service role key)
+- ✅ SMTP credentials never exposed to client
+- ✅ Validates payment status before sending email
+
+## Performance
+
+- ⚡ **Instant**: Webhook triggers immediately on payment status change
+- ⚡ **Async**: Email sending doesn't block database operations
+- ⚡ **Reliable**: Webhook logs provide audit trail
+- ⚡ **Scalable**: Handles multiple simultaneous updates
+
+## API Endpoints
+
+### POST /api/send-confirmation-email-webhook
+
+**Purpose**: Supabase webhook endpoint for email triggering
+
+**Authentication**: `x-webhook-secret` header
+
+**Request** (from Supabase):
+```json
+{
+  "type": "INSERT",
+  "table": "email_trigger_log",
+  "record": {
+    "id": 1,
+    "registrant_id": 123,
+    "old_status": "pending",
+    "new_status": "paid"
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Confirmation email sent successfully",
+  "registrantId": 123,
+  "logId": 1
+}
+```
+
+### GET /api/send-confirmation-email-webhook
+
+**Purpose**: Health check endpoint
+
+**Response**:
+```json
+{
+  "status": "ok",
+  "message": "Supabase webhook endpoint is active"
+}
+```
+
+## Testing Script
+
+Use the provided SQL test script:
+
+```bash
+# File: scripts/test_email_trigger.sql
+```
+
+Run in Supabase SQL Editor to:
+1. Find test registrants
+2. Update payment status
+3. Verify trigger logging
+4. Check email sending status
+
+## Summary
+
+✅ **Simple Setup**: Just run migration + configure one webhook  
+✅ **Instant Processing**: Emails sent immediately on status change  
+✅ **No Cron Jobs**: Supabase webhooks handle everything  
+✅ **Full Logging**: Complete audit trail in `email_trigger_log`  
+✅ **Error Tracking**: Failed attempts logged with error messages  
+✅ **Production Ready**: Secure, scalable, and reliable  
+
+## Next Steps
+
+1. ✅ Run database migration in Supabase
+2. ✅ Add `SUPABASE_WEBHOOK_SECRET` to `.env`
+3. ✅ Deploy to Vercel
+4. ✅ Configure Supabase webhook
+5. ✅ Test with sample payment update
+6. ✅ Monitor `email_trigger_log` table
+
+---
+
+**Need Help?** Check webhook logs in Supabase Dashboard → Database → Webhooks → Logs
 
 ## Overview
 
