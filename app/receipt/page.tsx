@@ -85,12 +85,12 @@ function ReceiptContent() {
 
           console.log('Registration data found:', registrationsData)
 
-          // Check if registration exists and belongs to current user or if payment is completed
+          // Check if registration exists and belongs to current user or if payment is paid
           if (registrationsData && registrationsData.length > 0) {
             const registration = registrationsData[0]
             
-            // Allow access if user owns the registration OR if payment is completed
-            if (registration.user_id === currentUser.id || registration.payment_status === 'completed') {
+            // Allow access if user owns the registration OR if payment is paid
+            if (registration.user_id === currentUser.id || registration.payment_status === 'paid') {
               const transformedData = registrationsData.map(reg => ({
                 ...reg,
                 team_size: reg.team_size || 1
@@ -104,14 +104,14 @@ function ReceiptContent() {
               }
               return
             } else {
-              console.error('Registration found but access denied - not owner and payment not completed')
+              console.error('Registration found but access denied - not owner and payment not paid')
               setRegistrations([])
               return
             }
           }
         } else {
-          // If no registrant_id provided, get all user's completed registrations
-          query = query.eq('user_id', currentUser.id).eq('payment_status', 'completed')
+          // If no registrant_id provided, get all user's paid registrations
+          query = query.eq('user_id', currentUser.id).eq('payment_status', 'paid')
           
           const { data: registrationsData, error } = await query
 

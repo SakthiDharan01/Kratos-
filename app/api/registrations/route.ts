@@ -90,8 +90,8 @@ export async function POST(request: NextRequest) {
       }
 
       console.log('Successfully cleaned up existing registrant');
-    } else if (existingRegistrant && existingRegistrant.payment_status === 'completed') {
-      // If there's already a completed payment, don't allow duplicate
+    } else if (existingRegistrant && existingRegistrant.payment_status === 'paid') {
+      // If there's already a paid registration, don't allow duplicate
       return NextResponse.json(
         { error: `Team "${team_name}" is already registered for this event with completed payment` },
         { status: 409 }
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
         team_size: participants.length,
         payment_status,
         registration_date: new Date().toISOString(),
-        payment_time: payment_status === 'completed' ? new Date().toISOString() : null
+        payment_time: payment_status === 'paid' ? new Date().toISOString() : null
       })
       .select('id')
       .single();
