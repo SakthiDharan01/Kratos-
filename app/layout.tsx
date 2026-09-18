@@ -1,32 +1,33 @@
-import "./globals.css";
 import type { Metadata } from "next";
-import { Exo_2 } from "next/font/google";
+import { Oswald, VT323 } from "next/font/google";
+import "./globals.css";
 
-const exo2 = Exo_2({
+const oswald = Oswald({
+  variable: "--font-oswald",
   subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-  variable: "--font-exo2",
+  weight: ["400", "500", "600", "700"],
+});
+
+const vt323 = VT323({
+  variable: "--font-vt323",
+  subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
-  title: "Kratos 2k25 - Multi-Event Platform",
-  description: "Register for technical and non-technical events at Kratos 2025 - National Level Technical Symposium",
-  icons: {
-    icon: '/assets/Badge.png',
-  },
+  title: "KRATOS'26 — Coming Soon",
+  description:
+    "Association of Computer Engineers · Easwari Engineering College, Ramapuram — temporal monitoring teaser",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en">
-      <body className={`${exo2.variable} font-sans`}>
-        {children}
-        <script defer async src="https://apply.devfolio.co/v2/sdk.js"></script>
-      </body>
+    <html lang="en" className={`${oswald.variable} ${vt323.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }
